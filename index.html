@@ -9349,7 +9349,8 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     return !!r;
   }
   function overlay() {
-    if (document.getElementById('mrpLock') || !get()) return;
+    var skip = ''; try { skip = sessionStorage.getItem('mrp_lock_skip') || ''; } catch (e) {}
+    if (document.getElementById('mrpLock') || !get() || skip) return;
     var o = document.createElement('div'); o.id = 'mrpLock';
     o.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#0b1127;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
     o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.18;pointer-events:none"></div>'
@@ -9364,7 +9365,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
       busy = false;
     }
     document.getElementById('mrpUnlock').onclick = go;
-    document.getElementById('mrpUsePw').onclick = function () { put(''); o.remove(); try { window.__mrpSignOut(); } catch (e) { location.reload(); } };
+    document.getElementById('mrpUsePw').onclick = function () { try { sessionStorage.setItem('mrp_lock_skip', '1'); } catch (e) {} o.remove(); try { window.__mrpSignOut(); } catch (e) { location.reload(); } };
     setTimeout(go, 250);
   }
   window.__mrpLockToggle = async function () {
@@ -9382,7 +9383,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   };
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) hiddenAt = Date.now();
-    else if (get() && hiddenAt && Date.now() - hiddenAt > 30000) overlay();
+    else if (get() && hiddenAt && Date.now() - hiddenAt > 30000) { try { sessionStorage.removeItem('mrp_lock_skip'); } catch (e) {} overlay(); }
   });
   function init() {
     var ua = navigator.userAgent || '', mobile = /iPhone|iPad|iPod|Android|Mobile/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
