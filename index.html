@@ -4138,7 +4138,7 @@ Add New Stop
           + dEdit('Phone', kind, id, 'phone', v.phone, 'tel', null, v.phone ? dCallBtn(v.phone) : '')
           + dEdit('Email', kind, id, 'email', v.email, 'email', null, v.email ? dEmailBtn(v.email, id) : '')
           + dEdit('Contact preference', kind, id, 'preferredContact', v.preferredContact || 'Phone Call', 'select', PREFERRED_OPTIONS)
-          + dEdit('Address', kind, id, 'streetAddress', v.streetAddress, 'text', null, v.streetAddress ? dMapsBtn(v.streetAddress) : '')
+          + dEdit('Address', kind, id, 'streetAddress', v.streetAddress, 'text', null, v.streetAddress ? '<div style="margin-top:8px;font-size:14px">' + addrLinkHtml(v.streetAddress, v.businessName) + '</div>' : '')
           + dEdit('Visited on', kind, id, 'visitDate', v.visitDate, 'date')
           + dEdit('Outcome status', kind, id, 'visitStatus', v.visitStatus || 'New Lead', 'select', STATUS_OPTIONS.map(x => [x, x]))
           + dEdit('Result of visit', kind, id, 'visitResult', v.visitResult || '', 'select', RESULT_OPTIONS.map(r => [r.value, r.label]))
@@ -4154,7 +4154,7 @@ Add New Stop
         title = f.streetAddress || detailName[kind];
         const outs = (kind === 'fire' ? FIRE_OUTCOMES : kind === 'water' ? WATER_OUTCOMES : PCW_OUTCOMES);
         const outList = [['', 'Pick outcome...']].concat(outs.map(o => [typeof o === 'string' ? o : (o.value || o.label), typeof o === 'string' ? o : (o.label || o.value)]));
-        html = dEdit('Address', kind, id, 'streetAddress', f.streetAddress, 'text', null, f.streetAddress ? dMapsBtn(f.streetAddress) : '')
+        html = dEdit('Address', kind, id, 'streetAddress', f.streetAddress, 'text', null, f.streetAddress ? '<div style="margin-top:8px;font-size:14px">' + addrLinkHtml(f.streetAddress) + '</div>' : '')
           + dEdit('Homeowner', kind, id, 'homeownerName', f.homeownerName)
           + dEdit('Property owner', kind, id, 'ownerName', f.ownerName)
           + dEdit('Phone', kind, id, 'phone', f.phone, 'tel', null, f.phone ? dCallBtn(f.phone) : '')
