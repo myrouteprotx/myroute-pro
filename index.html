@@ -659,6 +659,22 @@
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(7) { order: 1; }
     }
 
+    /* Rearrange mode */
+    #mrpArrangeBar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 100; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: #4f46e5; color: #fff; font-size: 14px; box-shadow: 0 4px 20px rgba(0,0,0,.5); }
+    #mrpArrangeBar .mrp-bar-btns { display: flex; gap: 8px; }
+    #mrpArrangeBar button { padding: 8px 16px; border-radius: 10px; font-weight: 800; border: 2px solid rgba(255,255,255,.6); background: rgba(255,255,255,.12); color: #fff; cursor: pointer; }
+    #mrpArrangeBar #mrpArrDone { background: #00e676; border-color: #39ff14; color: #04210f; }
+    body.mrp-arranging { padding-top: 56px; }
+    .mrp-arr { cursor: grab; min-height: 0 !important; padding: 0 !important; }
+    .mrp-arr > :not(.mrp-handle) { display: none !important; }
+    .mrp-arr.mrp-drag { opacity: .45; }
+    .mrp-handle { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border: 2px dashed #818cf8; border-radius: 22px; background: rgba(79,70,229,.18); color: #fff; font-size: 16px; font-weight: 800; user-select: none; }
+    .mrp-grip { font-size: 22px; letter-spacing: -4px; color: #a5b4fc; }
+    .mrp-title { flex: 1; }
+    .mrp-btns { display: flex; gap: 6px; }
+    .mrp-btns button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid #6366f1; background: #1e1b4b; color: #fff; cursor: pointer; }
+    .mrp-btns button:hover { background: #4338ca; }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
@@ -949,7 +965,7 @@
       </div>
 
       <!-- High Impact Colorful Dashboard Metric Cards (No Revenue/Pipeline) -->
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section id="statCardsSection" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
         <!-- Card 1: Today's Visits -->
         <div role="button" tabindex="0" onclick="goToToday()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" title="Jump to today's visits" class="cursor-pointer transition hover:scale-[1.02] active:scale-95 relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-indigo-600 via-indigo-700 to-blue-800 text-white shadow-xl shadow-indigo-900/30 border border-indigo-400/25">
@@ -1243,7 +1259,7 @@
       </section>
 
       <!-- Visits Database Table -->
-      <section class="bg-slate-800/80 backdrop-blur-xl border border-slate-700/80 rounded-3xl shadow-xl overflow-hidden">
+      <section id="visitsSection" class="bg-slate-800/80 backdrop-blur-xl border border-slate-700/80 rounded-3xl shadow-xl overflow-hidden">
         
         <!-- Controls & Filter Toolbar -->
         <div class="p-4 sm:p-5 border-b border-slate-700/80 flex flex-col lg:flex-row gap-3.5 lg:items-center lg:justify-between bg-slate-800/40">
@@ -2446,6 +2462,10 @@ Add New Stop
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Administrator</div>
           <div class="text-xs text-slate-200 font-semibold mt-1">Your Name</div>
           <div class="text-[11px] text-slate-400 mt-0.5">Deleting a visit requires the administrator password.</div>
+          <div id="mrpArrangeWrap" class="hidden mt-2.5">
+            <div class="text-[11px] text-slate-400 mb-1.5">Move the boxes on the Route Tracker page into the order you want. Desktop only.</div>
+            <button type="button" onclick="mrpArrangeStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Rearrange the page</button>
+          </div>
         </div>
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
@@ -6584,6 +6604,18 @@ Add New Stop
     const ADMIN_SALT = 'routepulse-admin-v1:';
     let pendingDeleteId = null;
     let pendingDeleteKind = 'visit';
+    let pendingAdminAction = null;
+    function adminGateTexts(kind) {
+      const sub = document.querySelector('#adminModal p.truncate'), lab = document.querySelector('label[for="adminPasswordInput"]');
+      if (kind === 'arrange') { if (sub) sub.textContent = 'Rearrange the page'; if (lab) lab.textContent = 'Enter the administrator password to rearrange the page'; }
+      else { if (sub) sub.innerHTML = 'Delete: <span id="adminDeleteLabel">visit</span>'; if (lab) lab.textContent = 'Enter the administrator password to delete this visit'; }
+    }
+    function openAdminGate(kind, action) {
+      pendingAdminAction = action; pendingDeleteId = null; adminGateTexts(kind);
+      document.getElementById('adminPasswordInput').value = ''; document.getElementById('adminError').textContent = '';
+      document.getElementById('adminModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('adminPasswordInput').focus(), 150);
+    }
 
     async function sha256Hex(text) {
       const data = new TextEncoder().encode(text);
@@ -6593,6 +6625,7 @@ Add New Stop
 
     function deleteVisit(id) {
       const item = visits.find(v => v.id === id);
+      pendingAdminAction = null; adminGateTexts('delete');
       pendingDeleteId = id;
       pendingDeleteKind = 'visit';
       document.getElementById('adminDeleteLabel').textContent = item ? item.businessName : 'this visit';
@@ -6608,6 +6641,7 @@ Add New Stop
       document.getElementById('adminPasswordInput').value = '';
       pendingDeleteId = null;
       pendingDeleteKind = 'visit';
+      pendingAdminAction = null;
     }
 
     async function confirmAdminDelete() {
@@ -6619,11 +6653,13 @@ Add New Stop
       }
       const hash = await sha256Hex(ADMIN_SALT + input.value);
       if (hash !== ADMIN_HASH) {
-        errorEl.textContent = 'Wrong password. The visit was not deleted.';
+        errorEl.textContent = pendingAdminAction ? 'Wrong password.' : 'Wrong password. The visit was not deleted.';
         input.value = '';
         input.focus();
         return;
       }
+      const act = pendingAdminAction;
+      if (act) { closeAdminModal(); act(); return; }
       const id = pendingDeleteId;
       const kind = pendingDeleteKind;
       closeAdminModal();
@@ -9463,6 +9499,104 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var blk = document.getElementById('mrpLockBlock'); if (blk && mobile) blk.style.display = '';
     if (!mobile) return;
     status(get() ? 'On.' : ''); overlay();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+<script>
+/* Rearrange mode (administrator only, desktop only): drag the boxes on the Route Tracker page into a new order. */
+(function () {
+  var KEY = 'mrp_layout_v1';
+  var ITEMS = [
+    ['weekBanner', 'Current Week summary'], ['statCardsSection', 'Dashboard cards'], ['radarSection', 'Follow-up reminders'],
+    ['todaySection', "Today's Visits"], ['firesSection', 'Fire Visits'], ['watersSection', 'Water Loss Visits'],
+    ['pcwsSection', 'Company Leads'], ['visitsSection', 'Route Marketing Visits']
+  ];
+  var dragEl = null, arranging = false;
+  function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches && window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
+  function el(id) { return document.getElementById(id); }
+  function currentOrder() {
+    var box = el('routeTrackerView'); if (!box) return [];
+    return Array.prototype.slice.call(box.children).map(function (c) { return c.id; }).filter(function (id) { return ITEMS.some(function (i) { return i[0] === id; }); });
+  }
+  function applyOrder(order) {
+    var box = el('routeTrackerView'); if (!box || !order || !order.length) return;
+    var have = ITEMS.map(function (i) { return i[0]; }).filter(function (id) { return el(id); });
+    var seq = order.filter(function (id) { return have.indexOf(id) >= 0; });
+    have.forEach(function (id) { if (seq.indexOf(id) < 0) seq.push(id); });
+    var kids = Array.prototype.slice.call(box.children), last = null;
+    kids.forEach(function (c) { if (have.indexOf(c.id) >= 0) last = c; });
+    if (!last) return;
+    var after = last.nextSibling;
+    seq.forEach(function (id) { box.insertBefore(el(id), after); });
+    var t = el('todaySection'), y = el('yesterdaySection'); if (t && y) t.parentNode.insertBefore(y, t.nextSibling);
+  }
+  function saveOrder() {
+    var order = currentOrder();
+    try { localStorage.setItem(KEY, JSON.stringify(order)); } catch (e) {}
+    try { if (typeof dbHandle !== 'undefined' && dbHandle) dbHandle.doc('meta/layout').set({ order: order, at: new Date().toISOString() }); } catch (e) {}
+  }
+  function loadLocal() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
+  function title(id) { for (var i = 0; i < ITEMS.length; i++) if (ITEMS[i][0] === id) return ITEMS[i][1]; return id; }
+
+  function handleFor(id) {
+    var h = document.createElement('div'); h.className = 'mrp-handle';
+    h.innerHTML = '<span class="mrp-grip">&#8942;&#8942;</span><span class="mrp-title"></span><span class="mrp-btns"><button type="button" data-d="-1" title="Move up">&#9650;</button><button type="button" data-d="1" title="Move down">&#9660;</button></span>';
+    h.querySelector('.mrp-title').textContent = title(id);
+    h.querySelectorAll('button').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); move(id, +b.getAttribute('data-d')); }; });
+    return h;
+  }
+  function move(id, d) {
+    var order = currentOrder(), i = order.indexOf(id), j = i + d;
+    if (i < 0 || j < 0 || j >= order.length) return;
+    var node = el(id), other = el(order[j]);
+    if (d < 0) other.parentNode.insertBefore(node, other); else other.parentNode.insertBefore(node, other.nextSibling);
+    var t = el('todaySection'), y = el('yesterdaySection'); if (t && y) t.parentNode.insertBefore(y, t.nextSibling);
+  }
+  function bar() {
+    var b = el('mrpArrangeBar'); if (b) return b;
+    b = document.createElement('div'); b.id = 'mrpArrangeBar';
+    b.innerHTML = '<div><b>Rearranging.</b> Drag a bar up or down, or use the arrows. Then press Done.</div><div class="mrp-bar-btns"><button type="button" id="mrpArrReset">Back to original order</button><button type="button" id="mrpArrDone">Done</button></div>';
+    document.body.appendChild(b);
+    el('mrpArrDone').onclick = stop;
+    el('mrpArrReset').onclick = function () { try { localStorage.removeItem(KEY); } catch (e) {} try { if (typeof dbHandle !== 'undefined' && dbHandle) dbHandle.doc('meta/layout').set({ order: [], at: new Date().toISOString() }); } catch (e) {} applyOrder(ITEMS.map(function (i) { return i[0]; })); };
+    return b;
+  }
+  function start() {
+    if (arranging || !isDesktop()) return;
+    try { if (typeof switchMainTab === 'function') switchMainTab('tracker'); } catch (e) {}
+    try { closeSettings(); } catch (e) {}
+    arranging = true; document.body.classList.add('mrp-arranging'); bar().style.display = 'flex';
+    ITEMS.forEach(function (i) {
+      var n = el(i[0]); if (!n) return;
+      n.classList.add('mrp-arr'); n.insertBefore(handleFor(i[0]), n.firstChild);
+      n.draggable = true;
+      n.ondragstart = function (e) { dragEl = n; n.classList.add('mrp-drag'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', i[0]); } catch (x) {} };
+      n.ondragend = function () { n.classList.remove('mrp-drag'); dragEl = null; };
+      n.ondragover = function (e) { if (!dragEl || dragEl === n) return; e.preventDefault(); var r = n.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) n.parentNode.insertBefore(dragEl, n); else n.parentNode.insertBefore(dragEl, n.nextSibling); var t = el('todaySection'), y = el('yesterdaySection'); if (t && y) t.parentNode.insertBefore(y, t.nextSibling); };
+    });
+    window.scrollTo({ top: 0 });
+  }
+  function stop() {
+    if (!arranging) return;
+    arranging = false; document.body.classList.remove('mrp-arranging');
+    var b = el('mrpArrangeBar'); if (b) b.style.display = 'none';
+    ITEMS.forEach(function (i) { var n = el(i[0]); if (!n) return; n.classList.remove('mrp-arr', 'mrp-drag'); n.draggable = false; n.ondragstart = n.ondragend = n.ondragover = null; var h = n.querySelector(':scope > .mrp-handle'); if (h) h.remove(); });
+    saveOrder();
+  }
+  window.mrpArrangeStart = function () { openAdminGate('arrange', start); };
+  window.mrpArrangeIsOn = function () { return arranging; };
+  function init() {
+    var w = el('mrpArrangeWrap'); if (w && isDesktop()) w.classList.remove('hidden');
+    if (isDesktop()) {
+      var o = loadLocal(); if (o && o.length) applyOrder(o);
+      var tries = 0, t = setInterval(function () {
+        tries++; if (typeof dbHandle !== 'undefined' && dbHandle) {
+          clearInterval(t);
+          try { dbHandle.doc('meta/layout').get().then(function (d) { if (d && d.exists && !arranging) { var data = d.data(); if (data && data.order && data.order.length) { try { localStorage.setItem(KEY, JSON.stringify(data.order)); } catch (e) {} applyOrder(data.order); } } }); } catch (e) {}
+        } else if (tries > 40) clearInterval(t);
+      }, 500);
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
