@@ -9585,7 +9585,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   function bar() {
     var b = el('mrpArrangeBar'); if (b) return b;
     b = document.createElement('div'); b.id = 'mrpArrangeBar';
-    b.innerHTML = '<div><b>Rearranging.</b> Drag a bar up or down, or use the arrows. Click a bar to open that box and resize what is inside it. Then press Done.</div><div class="mrp-bar-btns"><button type="button" data-mrp-restore="1">Restore deleted</button><button type="button" id="mrpArrReset">Back to original order</button><button type="button" id="mrpArrDone">Done</button></div>';
+    b.innerHTML = '<div><b>Rearranging.</b> Drag a bar up or down, or use the arrows. Click a bar to open that box and resize what is inside it. Then press Done.</div><div class="mrp-bar-btns"><button type="button" data-mrp-restore="1">Restore deleted</button><button type="button" id="mrpArrReset" title="Esc">Back to original order (Esc)</button><button type="button" id="mrpArrDone">Done</button></div>';
     document.body.appendChild(b);
     el('mrpArrDone').onclick = stop;
     el('mrpArrReset').onclick = function () { try { if (window.mrpResetBoxSizes) window.mrpResetBoxSizes(); } catch (e) {} try { localStorage.removeItem(KEY); } catch (e) {} try { if (typeof dbHandle !== 'undefined' && dbHandle) dbHandle.doc('meta/layout').set({ order: [], at: new Date().toISOString() }); } catch (e) {} applyOrder(ITEMS.map(function (i) { return i[0]; })); };
@@ -9665,7 +9665,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   function bar() {
     var b = el('mrpItemsBar'); if (b) return b;
     b = document.createElement('div'); b.id = 'mrpItemsBar';
-    b.innerHTML = '<div><b>Pills and tiles.</b> Drag one to move it. Drag its corner to resize it. Right-click one to delete it. Then press Done.</div><div class="mrp-bar-btns"><button type="button" data-mrp-restore="1">Restore deleted</button><button type="button" id="mrpItmReset">Back to original</button><button type="button" id="mrpItmDone">Done</button></div>';
+    b.innerHTML = '<div><b>Pills and tiles.</b> Drag one to move it. Drag its corner to resize it. Right-click one to delete it. Then press Done.</div><div class="mrp-bar-btns"><button type="button" data-mrp-restore="1">Restore deleted</button><button type="button" id="mrpItmReset" title="Esc">Back to original (Esc)</button><button type="button" id="mrpItmDone">Done</button></div>';
     document.body.appendChild(b);
     el('mrpItmDone').onclick = stop;
     el('mrpItmReset').onclick = function () {
@@ -9824,7 +9824,13 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     ctx.querySelector('button').onclick = function (ev) { ev.stopPropagation(); window.mrpHideEl(n); closeCtx(); };
   }, true);
   document.addEventListener('click', function (e) { if (ctx && !e.target.closest('#mrpCtx')) closeCtx(); if (e.target.closest && e.target.closest('[data-mrp-restore]')) window.mrpRestoreHidden(); }, true);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCtx(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (ctx) { closeCtx(); return; }
+    // Esc = Back to original, whichever edit mode is on
+    var a = document.body.classList.contains('mrp-arranging') ? document.getElementById('mrpArrReset') : (document.body.classList.contains('mrp-items-on') ? document.getElementById('mrpItmReset') : null);
+    if (a) { e.preventDefault(); a.click(); window.mrpRestoreHidden(); }
+  });
   window.addEventListener('resize', place); window.addEventListener('scroll', place, true);
   function applyAll() { applyMoves(rd(MKEY, [])); applySizes(rd(SKEY, {})); applyHidden(rd(HKEY, [])); }
   function pull(path, key, fn) { try { dbHandle.doc(path).get().then(function (d) { if (d && d.exists) { var x = d.data(); if (x && x.data) { try { localStorage.setItem(key, x.data); fn(JSON.parse(x.data)); } catch (e) {} } } }); } catch (e) {} }
