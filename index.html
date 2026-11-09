@@ -583,7 +583,7 @@
     /* Phone header: logo, company name and a second logo across the top, Add New Stop full width, then the three tabs */
     .hdr-logo-right { display: none; }
     @media screen and (max-width: 767px) {
-      .hdr-row { flex-direction: column !important; flex-wrap: nowrap !important; align-items: stretch !important; justify-content: flex-start !important; row-gap: 8px; }
+      .hdr-row { display: flex !important; flex-direction: column !important; flex-wrap: nowrap !important; align-items: stretch !important; justify-content: flex-start !important; row-gap: 8px; }
       #brandBlock { order: 1; width: 100%; justify-content: center; }
       #companyBrand { width: 100%; justify-content: center; gap: 10px; }
       #companyBrand img { height: 44px; width: auto; max-width: 30%; flex: 0 0 auto; }
