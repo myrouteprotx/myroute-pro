@@ -861,10 +861,10 @@
           </div>
           <div class="wk-actions flex items-center gap-2 flex-wrap">
             <span id="weekBannerVisits" role="button" tabindex="0" title="Go to the start of the route list" onclick="goToRouteStart()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goToRouteStart(); }" class="cursor-pointer hover:bg-indigo-500/40 active:scale-95 transition text-[11px] font-black px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-500/40">0 visits</span>
-            <span id="weekBannerHot" class="text-[11px] font-black px-3 py-1 rounded-full bg-rose-500/20 text-rose-200 border border-rose-500/40">0 hot leads</span>
-            <span id="weekBannerFire" class="text-[11px] font-black px-3 py-1 rounded-full bg-red-500/20 text-red-200 border border-red-500/40">0 fire visits</span>
-            <span id="weekBannerWater" class="text-[11px] font-black px-3 py-1 rounded-full bg-sky-500/20 text-sky-200 border border-sky-500/40">0 water visits</span>
-            <span id="weekBannerLeads" class="text-[11px] font-black px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">0 leads</span>
+            <span id="weekBannerHot" role="button" tabindex="0" title="Show all hot leads" onclick="goToHotLeads()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goToHotLeads(); }" style="cursor:pointer" class="active:scale-95 transition text-[11px] font-black px-3 py-1 rounded-full bg-rose-500/20 text-rose-200 border border-rose-500/40">0 hot leads</span>
+            <span id="weekBannerFire" role="button" tabindex="0" title="Go to Fire Visits" onclick="goToSectionById('firesSection')" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goToSectionById('firesSection'); }" style="cursor:pointer" class="active:scale-95 transition text-[11px] font-black px-3 py-1 rounded-full bg-red-500/20 text-red-200 border border-red-500/40">0 fire visits</span>
+            <span id="weekBannerWater" role="button" tabindex="0" title="Go to Water Visits" onclick="goToSectionById('watersSection')" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goToSectionById('watersSection'); }" style="cursor:pointer" class="active:scale-95 transition text-[11px] font-black px-3 py-1 rounded-full bg-sky-500/20 text-sky-200 border border-sky-500/40">0 water visits</span>
+            <span id="weekBannerLeads" role="button" tabindex="0" title="Go to Leads" onclick="goToSectionById('pcwsSection')" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goToSectionById('pcwsSection'); }" style="cursor:pointer" class="active:scale-95 transition text-[11px] font-black px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">0 leads</span>
             <span id="weekCallsWrap" class="relative inline-block" onclick="toggleWeekCalls()">
               <span id="weekBannerCalls" class="cursor-pointer text-[11px] font-black px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">0 calls</span>
               <div id="weekCallsPopover" class="hidden absolute top-full mt-2 z-30 max-h-72 overflow-y-auto rounded-2xl bg-slate-900 border border-slate-600 shadow-2xl p-3 text-left"></div>
@@ -3605,6 +3605,7 @@ Add New Stop
       showFilteredList('ALL', 'ALL', 'Showing all visits');
     }
 
+    function goToSectionById(id) { switchMainTab('tracker'); setTimeout(() => scrollToEl(id), 60); }
     function goToHotLeads() { showFilteredList('Hot Lead', 'ALL', 'Showing all hot leads. Change the filter to see everything again.'); }
     function goToScheduled() { showFilteredList('ALL', 'SCHEDULED', 'Showing all scheduled outreaches. Change the filter to see everything again.'); }
 
