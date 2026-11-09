@@ -675,6 +675,16 @@
     .mrp-btns button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid #6366f1; background: #1e1b4b; color: #fff; cursor: pointer; }
     .mrp-btns button:hover { background: #4338ca; }
 
+    /* Pills and tiles mode */
+    #mrpItemsBar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 100; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: #4f46e5; color: #fff; font-size: 14px; box-shadow: 0 4px 20px rgba(0,0,0,.5); }
+    #mrpItemsBar .mrp-bar-btns { display: flex; gap: 8px; }
+    #mrpItemsBar button { padding: 8px 16px; border-radius: 10px; font-weight: 800; border: 2px solid rgba(255,255,255,.6); background: rgba(255,255,255,.12); color: #fff; cursor: pointer; }
+    #mrpItemsBar #mrpItmDone { background: #00e676; border-color: #39ff14; color: #04210f; }
+    body.mrp-items-on { padding-top: 56px; }
+    .mrp-item { position: relative; cursor: grab; outline: 2px dashed #818cf8; outline-offset: 2px; }
+    .mrp-item.mrp-dragging { opacity: .4; }
+    .mrp-resize { position: absolute; right: -6px; bottom: -6px; width: 14px; height: 14px; border-radius: 4px; background: #818cf8; border: 2px solid #fff; cursor: nwse-resize; z-index: 5; }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
@@ -924,7 +934,7 @@
               <div id="weekBannerRange" class="text-base sm:text-lg font-black text-white">This week</div>
             </div>
           </div>
-          <div class="wk-actions flex items-center gap-2 flex-wrap">
+          <div id="weekPills" class="wk-actions flex items-center gap-2 flex-wrap">
             <span id="weekBannerVisits" role="button" tabindex="0" title="Go to the start of the route list" onclick="goToRouteStart()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goToRouteStart(); }" class="cursor-pointer hover:bg-indigo-500/40 active:scale-95 transition text-[11px] font-black px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-500/40">0 visits</span>
             <span id="weekBannerHot" role="button" tabindex="0" title="Show all hot leads" onclick="goToHotLeads()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goToHotLeads(); }" style="cursor:pointer" class="active:scale-95 transition text-[11px] font-black px-3 py-1 rounded-full bg-rose-500/20 text-rose-200 border border-rose-500/40">0 hot leads</span>
             <span id="weekBannerFire" role="button" tabindex="0" title="Go to Fire Visits" onclick="goToSectionById('firesSection')" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); goToSectionById('firesSection'); }" style="cursor:pointer" class="active:scale-95 transition text-[11px] font-black px-3 py-1 rounded-full bg-red-500/20 text-red-200 border border-red-500/40">0 fire visits</span>
@@ -934,15 +944,15 @@
               <span id="weekBannerCalls" class="cursor-pointer text-[11px] font-black px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">0 calls</span>
               <div id="weekCallsPopover" class="hidden absolute top-full mt-2 z-30 max-h-72 overflow-y-auto rounded-2xl bg-slate-900 border border-slate-600 shadow-2xl p-3 text-left"></div>
             </span>
-            <button type="button" onclick="openWeekEditor()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl transition shadow-md shadow-indigo-600/25">
+            <button type="button" id="weekBtnEdit" onclick="openWeekEditor()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl transition shadow-md shadow-indigo-600/25">
               <i data-lucide="calendar-range" class="w-3.5 h-3.5"></i>
               <span>Edit by week</span>
             </button>
-            <button type="button" onclick="openWeeklyReport()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 rounded-xl transition shadow-md shadow-pink-600/25">
+            <button type="button" id="weekBtnReport" onclick="openWeeklyReport()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 rounded-xl transition shadow-md shadow-pink-600/25">
               <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
               <span>View weekly report</span>
             </button>
-            <button type="button" onclick="openPastWeeks()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl transition shadow-md shadow-cyan-600/25">
+            <button type="button" id="weekBtnPast" onclick="openPastWeeks()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl transition shadow-md shadow-cyan-600/25">
               <i data-lucide="history" class="w-3.5 h-3.5"></i>
               <span>View past weekly report</span>
             </button>
@@ -968,7 +978,7 @@
       <section id="statCardsSection" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
         <!-- Card 1: Today's Visits -->
-        <div role="button" tabindex="0" onclick="goToToday()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" title="Jump to today's visits" class="cursor-pointer transition hover:scale-[1.02] active:scale-95 relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-indigo-600 via-indigo-700 to-blue-800 text-white shadow-xl shadow-indigo-900/30 border border-indigo-400/25">
+        <div id="tileToday" role="button" tabindex="0" onclick="goToToday()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" title="Jump to today's visits" class="cursor-pointer transition hover:scale-[1.02] active:scale-95 relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-indigo-600 via-indigo-700 to-blue-800 text-white shadow-xl shadow-indigo-900/30 border border-indigo-400/25">
           <div class="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
           <div class="flex justify-between items-start">
             <div>
@@ -986,7 +996,7 @@
         </div>
 
         <!-- Card 2: Reach-Backs Due Today -->
-        <div role="button" tabindex="0" onclick="goToReachBacks()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" title="Jump to the reach-backs that are due" class="cursor-pointer transition hover:scale-[1.02] active:scale-95 relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 text-white shadow-xl shadow-orange-900/30 border border-amber-300/30">
+        <div id="tileReach" role="button" tabindex="0" onclick="goToReachBacks()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" title="Jump to the reach-backs that are due" class="cursor-pointer transition hover:scale-[1.02] active:scale-95 relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 text-white shadow-xl shadow-orange-900/30 border border-amber-300/30">
           <div class="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
           <div class="flex justify-between items-start">
             <div>
@@ -1004,7 +1014,7 @@
         </div>
 
         <!-- Card 3: Hot Leads -->
-        <div role="button" tabindex="0" onclick="goToHotLeads()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" title="Show all hot leads" class="cursor-pointer transition hover:scale-[1.02] active:scale-95 relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-rose-500 via-pink-600 to-purple-800 text-white shadow-xl shadow-pink-900/30 border border-pink-300/30">
+        <div id="tileHot" role="button" tabindex="0" onclick="goToHotLeads()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" title="Show all hot leads" class="cursor-pointer transition hover:scale-[1.02] active:scale-95 relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-rose-500 via-pink-600 to-purple-800 text-white shadow-xl shadow-pink-900/30 border border-pink-300/30">
           <div class="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
           <div class="flex justify-between items-start">
             <div>
@@ -1022,7 +1032,7 @@
         </div>
 
         <!-- Card 4: Follow-ups Scheduled -->
-        <div role="button" tabindex="0" onclick="goToScheduled()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" title="Show all scheduled outreaches" class="cursor-pointer transition hover:scale-[1.02] active:scale-95 relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-800 text-white shadow-xl shadow-emerald-900/30 border border-emerald-300/30">
+        <div id="tileScheduled" role="button" tabindex="0" onclick="goToScheduled()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" title="Show all scheduled outreaches" class="cursor-pointer transition hover:scale-[1.02] active:scale-95 relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-800 text-white shadow-xl shadow-emerald-900/30 border border-emerald-300/30">
           <div class="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
           <div class="flex justify-between items-start">
             <div>
@@ -2465,6 +2475,8 @@ Add New Stop
           <div id="mrpArrangeWrap" class="hidden mt-2.5">
             <div class="text-[11px] text-slate-400 mb-1.5">Move the boxes on the Route Tracker page into the order you want. Desktop only.</div>
             <button type="button" onclick="mrpArrangeStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Rearrange the page</button>
+            <div class="text-[11px] text-slate-400 mt-2.5 mb-1.5">Move and resize the small pills and tiles near the top (the week summary pills and the four dashboard tiles).</div>
+            <button type="button" onclick="mrpItemsStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Move and resize pills and tiles</button>
           </div>
         </div>
 
@@ -9597,6 +9609,104 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
         } else if (tries > 40) clearInterval(t);
       }, 500);
     }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+<script>
+/* Pills and tiles (administrator only, desktop only): drag to move inside their group, drag the corner to resize. */
+(function () {
+  var KEY = 'mrp_items_v1';
+  var GROUPS = ['weekPills', 'statCardsSection'];
+  var on = false, dragEl = null;
+  function el(id) { return document.getElementById(id); }
+  function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches && window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
+  function kids(g) { var c = el(g); return c ? Array.prototype.slice.call(c.children).filter(function (n) { return n.id; }) : []; }
+  function snapshot() {
+    var out = { order: {}, sizes: {} };
+    GROUPS.forEach(function (g) { out.order[g] = kids(g).map(function (n) { return n.id; }); kids(g).forEach(function (n) { if (n.dataset.mrpW || n.dataset.mrpH) out.sizes[n.id] = { w: +n.dataset.mrpW || 0, h: +n.dataset.mrpH || 0 }; }); });
+    return out;
+  }
+  function size(n, w, h) {
+    if (w) { n.style.width = w + 'px'; n.style.minWidth = '0'; n.dataset.mrpW = w; } else { n.style.width = ''; n.style.minWidth = ''; delete n.dataset.mrpW; }
+    if (h) { n.style.height = h + 'px'; n.dataset.mrpH = h; } else { n.style.height = ''; delete n.dataset.mrpH; }
+    if (n.id && n.id.indexOf('tile') === 0) n.style.justifySelf = (w ? 'start' : '');
+  }
+  function apply(d) {
+    if (!d) return;
+    GROUPS.forEach(function (g) { var c = el(g); if (!c || !d.order || !d.order[g]) return; d.order[g].forEach(function (id) { var n = el(id); if (n && n.parentNode === c) c.appendChild(n); }); });
+    Object.keys(d.sizes || {}).forEach(function (id) { var n = el(id); if (n) size(n, d.sizes[id].w, d.sizes[id].h); });
+  }
+  function save() {
+    var d = snapshot();
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+    try { if (typeof dbHandle !== 'undefined' && dbHandle) dbHandle.doc('meta/layout2').set({ data: JSON.stringify(d), at: new Date().toISOString() }); } catch (e) {}
+  }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
+  function blockClicks(e) { if (on && e.target.closest && e.target.closest('#weekPills, #statCardsSection')) { e.stopPropagation(); e.preventDefault(); } }
+  function bar() {
+    var b = el('mrpItemsBar'); if (b) return b;
+    b = document.createElement('div'); b.id = 'mrpItemsBar';
+    b.innerHTML = '<div><b>Pills and tiles.</b> Drag one to move it. Drag its bottom-right corner to resize it. Then press Done.</div><div class="mrp-bar-btns"><button type="button" id="mrpItmReset">Back to original</button><button type="button" id="mrpItmDone">Done</button></div>';
+    document.body.appendChild(b);
+    el('mrpItmDone').onclick = stop;
+    el('mrpItmReset').onclick = function () {
+      GROUPS.forEach(function (g) { kids(g).forEach(function (n) { size(n, 0, 0); }); });
+      var o = { weekPills: ['weekBannerVisits', 'weekBannerHot', 'weekBannerFire', 'weekBannerWater', 'weekBannerLeads', 'weekCallsWrap', 'weekBtnEdit', 'weekBtnReport', 'weekBtnPast'], statCardsSection: ['tileToday', 'tileReach', 'tileHot', 'tileScheduled'] };
+      apply({ order: o, sizes: {} });
+    };
+    return b;
+  }
+  function start() {
+    if (on || !isDesktop()) return;
+    if (typeof mrpArrangeIsOn === 'function' && mrpArrangeIsOn()) return;
+    try { if (typeof switchMainTab === 'function') switchMainTab('tracker'); } catch (e) {}
+    try { closeSettings(); } catch (e) {}
+    on = true; document.body.classList.add('mrp-items-on'); bar().style.display = 'flex';
+    document.addEventListener('click', blockClicks, true);
+    GROUPS.forEach(function (g) {
+      kids(g).forEach(function (n) {
+        n.classList.add('mrp-item'); n.draggable = true;
+        var h = document.createElement('span'); h.className = 'mrp-resize'; h.title = 'Drag to resize';
+        n.appendChild(h);
+        h.onpointerdown = function (e) {
+          e.preventDefault(); e.stopPropagation(); n.draggable = false;
+          var r = n.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY, w0 = r.width, h0 = r.height;
+          function mv(ev) { size(n, Math.max(60, Math.round(w0 + ev.clientX - x0)), Math.max(24, Math.round(h0 + ev.clientY - y0))); }
+          function up() { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); n.draggable = true; }
+          document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+        };
+        n.ondragstart = function (e) { dragEl = n; n.classList.add('mrp-dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', n.id); } catch (x) {} };
+        n.ondragend = function () { n.classList.remove('mrp-dragging'); dragEl = null; };
+        n.ondragover = function (e) {
+          if (!dragEl || dragEl === n || dragEl.parentNode !== n.parentNode) return; e.preventDefault();
+          var r = n.getBoundingClientRect(), before = (e.clientX < r.left + r.width / 2);
+          n.parentNode.insertBefore(dragEl, before ? n : n.nextSibling);
+        };
+      });
+    });
+    window.scrollTo({ top: 0 });
+  }
+  function stop() {
+    if (!on) return;
+    on = false; document.body.classList.remove('mrp-items-on');
+    var b = el('mrpItemsBar'); if (b) b.style.display = 'none';
+    document.removeEventListener('click', blockClicks, true);
+    GROUPS.forEach(function (g) { kids(g).forEach(function (n) { n.classList.remove('mrp-item', 'mrp-dragging'); n.draggable = false; n.ondragstart = n.ondragend = n.ondragover = null; var h = n.querySelector(':scope > .mrp-resize'); if (h) h.remove(); }); });
+    save();
+  }
+  window.mrpItemsStart = function () { openAdminGate('arrange', start); };
+  window.mrpItemsIsOn = function () { return on; };
+  function init() {
+    if (!isDesktop()) return;
+    apply(load());
+    var tries = 0, t = setInterval(function () {
+      tries++;
+      if (typeof dbHandle !== 'undefined' && dbHandle) {
+        clearInterval(t);
+        try { dbHandle.doc('meta/layout2').get().then(function (d) { if (d && d.exists && !on) { var x = d.data(); if (x && x.data) { try { var parsed = JSON.parse(x.data); localStorage.setItem(KEY, x.data); apply(parsed); } catch (e) {} } } }); } catch (e) {}
+      } else if (tries > 40) clearInterval(t);
+    }, 500);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
