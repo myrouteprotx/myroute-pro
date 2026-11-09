@@ -2367,7 +2367,7 @@ Add New Stop
           <button type="button" onclick="window.__mrpSignOut()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Sign out of this device</button>
         </div>
 
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+        <div id="mrpLockBlock" style="display:none" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Face ID lock</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Ask for Face ID (or this device's fingerprint or passcode) each time you open the app. Set it up once on each device. <span id="mrpLockStatus" class="font-bold text-emerald-300"></span></div>
           <button type="button" id="mrpLockBtn" onclick="window.__mrpLockToggle()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Turn on Face ID lock</button>
@@ -9309,7 +9309,12 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     if (document.hidden) hiddenAt = Date.now();
     else if (get() && hiddenAt && Date.now() - hiddenAt > 30000) overlay();
   });
-  function init() { status(get() ? 'On.' : ''); overlay(); }
+  function init() {
+    var mobile = false; try { mobile = window.matchMedia('(pointer: coarse)').matches && window.matchMedia('(hover: none)').matches; } catch (e) {}
+    var blk = document.getElementById('mrpLockBlock'); if (blk && mobile) blk.style.display = '';
+    if (!mobile) { put(''); return; }
+    status(get() ? 'On.' : ''); overlay();
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
 </script>
