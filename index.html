@@ -595,16 +595,19 @@
       .hdr-row > .main-nav { order: 3; width: 100%; justify-content: center; }
     }
 
-    /* Phone: week summary box. Calls, Edit by week, View weekly report and View past weekly report are four equal boxes that fill the width */
+    /* Phone: week summary box. All nine pills and buttons are the same size and the same font, three across */
     @media screen and (max-width: 767px) {
-      .wk-actions { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; width: 100%; }
-      .wk-actions > #weekBannerVisits { grid-column: 1 / -1; }
-      .wk-actions > span, .wk-actions > button, .wk-actions > #weekCallsWrap { min-width: 0; }
-      .wk-actions > span:not(#weekCallsWrap) { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 36px; font-size: 13px !important; }
-      .wk-actions > #weekCallsWrap { display: block; }
-      .wk-actions > #weekCallsWrap > #weekBannerCalls,
-      .wk-actions > button { display: flex !important; align-items: center; justify-content: center; text-align: center; width: 100%; min-height: 56px; box-sizing: border-box; font-size: 14px !important; line-height: 1.2; padding: 8px 10px !important; border-radius: 14px !important; }
-      .wk-actions > button svg, .wk-actions > button i { width: 18px; height: 18px; }
+      .wk-actions { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px !important; width: 100%; }
+      .wk-actions > #weekCallsWrap, .wk-actions > #weekCallsWrap.wk-zero, .wk-actions > .wk-zero { display: block !important; min-width: 0; position: relative; }
+      .wk-actions #weekBannerVisits, .wk-actions #weekBannerHot, .wk-actions #weekBannerFire, .wk-actions #weekBannerWater, .wk-actions #weekBannerLeads, .wk-actions #weekBannerCalls,
+      .wk-actions > #weekCallsWrap ~ button.wk-glow {
+        display: flex !important; align-items: center; justify-content: center; text-align: center; gap: 4px;
+        width: 100% !important; height: 58px !important; min-height: 58px; margin: 0; padding: 4px 6px !important; box-sizing: border-box;
+        font-family: inherit !important; font-size: 12px !important; font-weight: 900 !important; line-height: 1.15 !important; letter-spacing: 0 !important;
+        white-space: normal !important; border-radius: 14px !important; color: #ffffff;
+      }
+      .wk-actions > button.wk-glow > i, .wk-actions > button.wk-glow > svg { display: none !important; }
+      .wk-actions > button.wk-glow > span { font-size: 12px !important; font-weight: 900 !important; }
     }
 
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
@@ -3196,13 +3199,14 @@ Add New Stop
       const year = range[1].slice(0, 4);
       const weekVisits = visits.filter(v => visitInWeek(v, wk) || v.includeInWeek === wk);
       const hot = weekVisits.filter(v => v.visitStatus === 'Hot Lead').length;
-      let callCount = 0;
+      let callCount = 0, todayCount = 0;
+      const todayStr = new Date().toLocaleDateString('en-CA');
       const weekCalls = [];
       visits.forEach(v => {
         (Array.isArray(v.calls) ? v.calls : []).forEach(c => {
           const day = new Date(c.at).toLocaleDateString('en-CA');
           if (day >= range[0] && day <= range[1]) {
-            callCount++;
+            callCount++; if (day === todayStr) todayCount++;
             weekCalls.push({ at: c.at, business: v.businessName, contact: v.clientName });
           }
         });
@@ -3214,7 +3218,7 @@ Add New Stop
       try {
         [fires, waters, pcws].forEach(list => list.forEach(f => (Array.isArray(f.calls) ? f.calls : []).forEach(c => {
           const day = new Date(c.at).toLocaleDateString('en-CA');
-          if (day >= range[0] && day <= range[1]) { callCount++; weekCalls.push({ at: c.at, business: f.streetAddress || 'Lead', contact: f.homeownerName || f.ownerName || '' }); }
+          if (day >= range[0] && day <= range[1]) { callCount++; if (day === todayStr) todayCount++; weekCalls.push({ at: c.at, business: f.streetAddress || 'Lead', contact: f.homeownerName || f.ownerName || '' }); }
         })));
       } catch (e) {}
       const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
@@ -3224,7 +3228,7 @@ Add New Stop
       set('weekBannerRange', `Week ${parseInt(weekNum, 10)} · ${fmt(range[0])} – ${fmt(range[1])}, ${year}`);
       set('weekBannerVisits', `${weekVisits.length} visit${weekVisits.length === 1 ? '' : 's'}`);
       set('weekBannerHot', `${hot} hot lead${hot === 1 ? '' : 's'}`);
-      set('weekBannerCalls', `${callCount} call${callCount === 1 ? '' : 's'}`);
+      set('weekBannerCalls', `${todayCount} call${todayCount === 1 ? '' : 's'} today`);
       // Chips with nothing in them stay hidden until they have a count
       const zero = (id, n) => { const el = document.getElementById(id); if (el) el.classList.toggle('wk-zero', !n); };
       zero('weekBannerVisits', weekVisits.length); zero('weekBannerHot', hot); zero('weekBannerFire', nFire); zero('weekBannerWater', nWater); zero('weekBannerLeads', nLead); zero('weekCallsWrap', callCount);
