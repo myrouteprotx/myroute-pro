@@ -640,7 +640,9 @@
     }
 
     /* Visit rows: Outcome, Result of visit, Visited on and Reach back are all the same size box */
-    .vbox { width: 12rem !important; min-width: 12rem; max-width: 100%; height: 2.25rem !important; box-sizing: border-box; font-size: 12px !important; }
+    .vbox { width: 10rem !important; min-width: 10rem !important; max-width: 10rem !important; height: 2.25rem !important; box-sizing: border-box; font-size: 12px !important; flex: 0 0 auto; }
+    td:has(> .vbox), td:has(> div > .vbox) { padding-left: 0.5rem !important; padding-right: 0.5rem !important; vertical-align: top; }
+    td:has(> div > .vbox) > div { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
     select.vbox { padding-top: 0 !important; padding-bottom: 0 !important; }
     .vdate { display: flex; align-items: center; gap: 4px; padding: 0 8px 0 10px; border-radius: 0.5rem; background: #0f172a; border: 1px solid #475569; color: #ffffff; }
     .vdate.vdate-overdue { border-color: #f43f5e; }
