@@ -625,6 +625,14 @@
     #fireSearch::placeholder { color: #ffffff !important; opacity: 1 !important; }
     #fireSearch { color: #ffffff !important; }
 
+    /* Phone: Water Loss Visits and Company Leads match Fire Visits. No count pill, full-width add button, white search text */
+    #waterSearch::placeholder, #pcwSearch::placeholder { color: #ffffff !important; opacity: 1 !important; }
+    #waterSearch, #pcwSearch { color: #ffffff !important; }
+    @media screen and (max-width: 767px) {
+      #waterCountBadge, #pcwCountBadge { display: none !important; }
+      #addWaterVisitBtn, #addPcwBtn { width: 100%; margin-left: 0 !important; justify-content: center; min-height: 48px; font-size: 14px !important; border-radius: 14px !important; }
+    }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
@@ -1140,9 +1148,10 @@
           </div>
           <span id="waterCountBadge" class="text-xs bg-sky-500/25 text-sky-100 border border-sky-400/60 px-2.5 py-0.5 rounded-full font-black">0 water losses</span>
           <span id="waterWeekBadge" class="text-[11px] bg-slate-900/60 text-slate-200 border border-slate-600 px-2.5 py-0.5 rounded-full font-bold">0 in this week's report</span>
-          <button type="button" onclick="openWaterModal()" class="ml-auto inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-white rounded-xl bg-gradient-to-r from-sky-600 via-sky-500 to-blue-500 shadow-lg shadow-sky-600/30 hover:from-sky-500 transition active:scale-95">
+          <button type="button" id="addWaterVisitBtn" onclick="openWaterModal()" class="ml-auto inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-white rounded-xl bg-gradient-to-r from-sky-600 via-sky-500 to-blue-500 shadow-lg shadow-sky-600/30 hover:from-sky-500 transition active:scale-95">
             <i data-lucide="plus" class="w-4 h-4"></i><span>Add water loss visit</span>
           </button>
+          <input type="search" id="waterSearch" autocomplete="off" placeholder="Search water loss visits: address, name, phone, date" oninput="waterQuery = this.value; renderWaters();" class="w-full basis-full text-sm px-4 py-3 rounded-xl bg-slate-900/80 border border-sky-500/50 text-white focus:outline-none focus:ring-2 focus:ring-sky-400" style="font-size:16px">
         </div>
         <div class="overflow-x-auto">
           <table class="stack w-full text-left text-xs border-collapse">
@@ -1179,9 +1188,10 @@
           </div>
           <span id="pcwCountBadge" class="text-xs bg-emerald-500/25 text-emerald-100 border border-emerald-400/60 px-2.5 py-0.5 rounded-full font-black">0 leads</span>
           <span id="pcwWeekBadge" class="text-[11px] bg-slate-900/60 text-slate-200 border border-slate-600 px-2.5 py-0.5 rounded-full font-bold">0 in this week's report</span>
-          <button type="button" onclick="openPcwModal()" class="ml-auto inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-white rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-500 shadow-lg shadow-emerald-600/30 hover:from-emerald-500 transition active:scale-95">
+          <button type="button" id="addPcwBtn" onclick="openPcwModal()" class="ml-auto inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-white rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-500 shadow-lg shadow-emerald-600/30 hover:from-emerald-500 transition active:scale-95">
             <i data-lucide="plus" class="w-4 h-4"></i><span>Add Company Lead</span>
           </button>
+          <input type="search" id="pcwSearch" autocomplete="off" placeholder="Search company leads: address, name, phone, date" oninput="pcwQuery = this.value; renderPcws();" class="w-full basis-full text-sm px-4 py-3 rounded-xl bg-slate-900/80 border border-emerald-500/50 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400" style="font-size:16px">
         </div>
         <div class="overflow-x-auto">
           <table class="stack w-full text-left text-xs border-collapse">
@@ -8301,22 +8311,33 @@ Add New Stop
         </tr>`;
     }
 
+    let waterQuery = '';
     function renderWaters() {
       try { renderYesterdayOthers(); } catch (e) {}
       const body = document.getElementById('waterTableBody');
       if (!body) return;
       const wk = getISOWeekString();
       const list = sortWaters([...waters]);
-      const shown = watersShowAll ? list : list.slice(0, WATERS_PAGE);
+      const weekList = list.filter(f => waterWeeks(f).includes(wk) || (!!f.visitDate && waterWeekOf(f.visitDate) === wk));
+      const q = (waterQuery || '').trim().toLowerCase();
+      const shown = q ? list.filter(f => fireMatches(f, q)) : (watersShowAll ? list : weekList);
       document.getElementById('waterCountBadge').textContent = `${list.length} water loss${list.length === 1 ? '' : 'es'} visited`;
-      document.getElementById('waterWeekBadge').textContent = `${list.filter(f => waterWeeks(f).includes(wk)).length} in this week's report`;
+      document.getElementById('waterWeekBadge').textContent = `${weekList.length} in this week's report`;
       body.innerHTML = shown.map(waterRowTemplate).join('');
-      body.closest('table').classList.toggle('hidden', list.length === 0);
-      document.getElementById('waterEmptyState').classList.toggle('hidden', list.length > 0);
+      body.closest('table').classList.toggle('hidden', shown.length === 0);
+      const empty = document.getElementById('waterEmptyState');
+      empty.classList.toggle('hidden', shown.length > 0);
+      if (shown.length === 0) {
+        empty.textContent = list.length === 0 ? 'No water loss visits logged yet. Tap "Add water loss visit" to log the first one.'
+          : q ? 'No water loss visits match your search.'
+          : 'No water loss visits this week yet. Search above or tap "Show all" to see older ones.';
+      }
       const more = document.getElementById('waterMoreBar');
-      more.classList.toggle('hidden', list.length <= WATERS_PAGE);
-      document.getElementById('waterMoreBtn').textContent = watersShowAll ? 'Show only the 8 most recent' : `Show all ${list.length} water loss visits`;
+      const older = list.length - weekList.length;
+      more.classList.toggle('hidden', !!q || older <= 0);
+      document.getElementById('waterMoreBtn').textContent = watersShowAll ? 'Show only this week' : `Show all ${list.length} water loss visits (${older} older)`;
     }
+
 
     function toggleAllWaters() { watersShowAll = !watersShowAll; renderWaters(); if (window.lucide) lucide.createIcons(); }
 
@@ -8713,22 +8734,33 @@ Add New Stop
         </tr>`;
     }
 
+    let pcwQuery = '';
     function renderPcws() {
       try { renderYesterdayOthers(); } catch (e) {}
       const body = document.getElementById('pcwTableBody');
       if (!body) return;
       const wk = getISOWeekString();
       const list = sortPcws([...pcws]);
-      const shown = pcwsShowAll ? list : list.slice(0, PCWS_PAGE);
+      const weekList = list.filter(f => pcwWeeks(f).includes(wk) || (!!f.visitDate && pcwWeekOf(f.visitDate) === wk));
+      const q = (pcwQuery || '').trim().toLowerCase();
+      const shown = q ? list.filter(f => fireMatches(f, q)) : (pcwsShowAll ? list : weekList);
       document.getElementById('pcwCountBadge').textContent = `${list.length} lead${list.length === 1 ? '' : 's'}`;
-      document.getElementById('pcwWeekBadge').textContent = `${list.filter(f => pcwWeeks(f).includes(wk)).length} in this week's report`;
+      document.getElementById('pcwWeekBadge').textContent = `${weekList.length} in this week's report`;
       body.innerHTML = shown.map(pcwRowTemplate).join('');
-      body.closest('table').classList.toggle('hidden', list.length === 0);
-      document.getElementById('pcwEmptyState').classList.toggle('hidden', list.length > 0);
+      body.closest('table').classList.toggle('hidden', shown.length === 0);
+      const empty = document.getElementById('pcwEmptyState');
+      empty.classList.toggle('hidden', shown.length > 0);
+      if (shown.length === 0) {
+        empty.textContent = list.length === 0 ? 'No company leads logged yet. Tap "Add Company Lead" to log the first one.'
+          : q ? 'No company leads match your search.'
+          : 'No company leads this week yet. Search above or tap "Show all" to see older ones.';
+      }
       const more = document.getElementById('pcwMoreBar');
-      more.classList.toggle('hidden', list.length <= PCWS_PAGE);
-      document.getElementById('pcwMoreBtn').textContent = pcwsShowAll ? 'Show only the 8 most recent' : `Show all ${list.length} Company leads`;
+      const older = list.length - weekList.length;
+      more.classList.toggle('hidden', !!q || older <= 0);
+      document.getElementById('pcwMoreBtn').textContent = pcwsShowAll ? 'Show only this week' : `Show all ${list.length} Company leads (${older} older)`;
     }
+
 
     function toggleAllPcws() { pcwsShowAll = !pcwsShowAll; renderPcws(); if (window.lucide) lucide.createIcons(); }
 
