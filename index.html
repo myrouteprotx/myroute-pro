@@ -703,6 +703,13 @@
     .mrp-item:hover, .mrp-item2:hover { outline: 2px solid #fbbf24 !important; box-shadow: 0 0 0 4px rgba(251,191,36,.28); cursor: grab; }
     .mrp-item2.mrp-dragging, .mrp-item.mrp-dragging { opacity: .4; }
 
+    /* Desktop table: each box is exactly as wide as its column (Visited on, Outcome status, Result of visit, When to reach back) */
+    @media screen and (min-width: 1100px) {
+      .vbox { width: 100% !important; min-width: 8.5rem !important; max-width: none !important; }
+      td:has(> div > .vbox) > div { align-items: stretch !important; }
+      td:has(> .vbox), td:has(> div > .vbox) { width: 10.5rem; }
+    }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
