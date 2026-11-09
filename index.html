@@ -5494,11 +5494,13 @@ Add New Stop
         if (!pt) { const lc = addr.toLowerCase(); const ck = Object.keys(RM_CITIES).find(c => lc.indexOf(c) >= 0); if (ck) { pt = RM_CITIES[ck].slice(); kind = 'rough'; } }
         if (!pt) { pt = [29.55 + (Math.random() - 0.5) * 0.12, -95.09 + (Math.random() - 0.5) * 0.12]; kind = 'spot'; }
         else if (kind === 'rough') { pt = [pt[0] + (Math.random() - 0.5) * 0.006, pt[1] + (Math.random() - 0.5) * 0.006]; }
-        v.lat = Math.round(pt[0] * 1e6) / 1e6;
-        v.lng = Math.round(pt[1] * 1e6) / 1e6;
-        v.geoApprox = kind !== 'exact';
+        const cur = visits.find(x => x.id === v.id);
+        if (!cur) continue;
+        cur.lat = Math.round(pt[0] * 1e6) / 1e6;
+        cur.lng = Math.round(pt[1] * 1e6) / 1e6;
+        cur.geoApprox = kind !== 'exact';
         if (kind === 'exact') exact++; else if (kind === 'rough') rough++; else spot++;
-        if ((i + 1) % 5 === 0) saveRecords();
+        saveRecords();
         await wait();
       }
       rmBulkBusy = false;
