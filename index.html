@@ -330,6 +330,10 @@
     .prop-grid > div { margin: 0 !important; }
     @media screen and (max-width: 767px) { .prop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .prop-grid > div { padding: 6px 8px !important; } .prop-grid > div > div:first-child { font-size: 12px !important; } .prop-grid > div > div { overflow-wrap: anywhere; } }
     @media screen and (max-width: 1099px) { .prop-incell { display: block; } .prop-row { display: none !important; } }
+    /* Settings window: it scrolls by itself and the page behind stays still (fixes the frozen screen on iPhone) */
+    body.mrp-noscroll { overflow: hidden !important; }
+    #settingsModal { overscroll-behavior: contain; touch-action: none; }
+    #settingsPanel { max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
     @media screen and (max-width: 767px) {
       /* Keep the page still: it scrolls up and down only, never sideways */
       html, body { overflow-x: hidden; max-width: 100%; width: 100%; overscroll-behavior-x: none; touch-action: pan-y pinch-zoom; }
@@ -2300,8 +2304,8 @@ Add New Stop
   </div>
 
   <!-- MODAL: SETTINGS -->
-  <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
-    <div class="bg-slate-900 rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-700 overflow-y-auto max-h-[92vh]">
+  <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 hidden">
+    <div id="settingsPanel" class="bg-slate-900 rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-700 overflow-y-auto max-h-[92vh]">
       <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md">
@@ -8937,14 +8941,14 @@ Add New Stop
       document.getElementById('settingsSyncStatus').textContent = synced
         ? 'Synced with your other devices'
         : 'This device only. Not sharing with your other devices.';
-      settingsModal.classList.remove('hidden');
+      settingsModal.classList.remove('hidden'); document.body.classList.add('mrp-noscroll');
       document.getElementById('logoStatus').textContent = '';
       renderCompany();
       lucide.createIcons();
     }
 
     function closeSettings() {
-      settingsModal.classList.add('hidden');
+      settingsModal.classList.add('hidden'); document.body.classList.remove('mrp-noscroll');
     }
 
     Object.keys(SETTING_FIELDS).forEach(id => {
