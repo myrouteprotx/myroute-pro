@@ -639,6 +639,17 @@
       #searchInput { height: 42px; }
     }
 
+    /* Visit rows: Outcome, Result of visit, Visited on and Reach back are all the same size box */
+    .vbox { width: 12rem !important; min-width: 12rem; max-width: 100%; height: 2.25rem !important; box-sizing: border-box; font-size: 12px !important; }
+    select.vbox { padding-top: 0 !important; padding-bottom: 0 !important; }
+    .vdate { display: flex; align-items: center; gap: 4px; padding: 0 8px 0 10px; border-radius: 0.5rem; background: #0f172a; border: 1px solid #475569; color: #ffffff; }
+    .vdate.vdate-overdue { border-color: #f43f5e; }
+    .vdate input { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0; margin: 0; background: transparent; border: 0; outline: none; color: #ffffff; font-size: 12px; font-weight: 600; font-family: inherit; }
+    .vdate input::-webkit-calendar-picker-indicator { display: none; }
+    .vdate button { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; padding: 4px; border: 0; background: transparent; color: #a5b4fc; cursor: pointer; }
+    .vdate button:hover, .vdate button:active { color: #ffffff; }
+    .vdate:focus-within { box-shadow: 0 0 0 2px #818cf8; }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
@@ -2942,6 +2953,16 @@ Add New Stop
 
     const STATUS_OPTIONS = ['New Lead', 'Hot Lead', 'Warm Prospect', 'Cold Drop', 'Follow-up Needed', 'Gatekeeper / Come Back', 'Not Interested'];
 
+    // A date box with an active calendar icon at the right. It is the same size as the outcome box.
+    function dateBoxHtml(value, onchangeJs, aria, title, overdue) {
+      const cal = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/></svg>';
+      return `<div class="vbox vdate${overdue ? ' vdate-overdue' : ''}"><input type="date" value="${escapeHtml(value || '')}" onchange="${onchangeJs}" aria-label="${escapeHtml(aria)}" title="${escapeHtml(title)}"><button type="button" onclick="openDatePicker(this.previousElementSibling)" aria-label="Open calendar" title="Open calendar">${cal}</button></div>`;
+    }
+    function openDatePicker(inp) {
+      if (!inp) return;
+      try { if (inp.showPicker) { inp.showPicker(); return; } } catch (e) {}
+      try { inp.focus(); inp.click(); } catch (e) {}
+    }
     function getStatusSelectClass(status) {
       const classes = {
         'New Lead': 'bg-sky-500/20 text-sky-200 border border-sky-400/60 font-bold shadow-[0_0_10px_rgba(0,208,240,0.40)]',
@@ -2959,7 +2980,7 @@ Add New Stop
       const options = STATUS_OPTIONS.map(s =>
         `<option value="${escapeHtml(s)}" style="background:#1e293b;color:#ffffff;" ${item.visitStatus === s ? 'selected' : ''}>${escapeHtml(s)}</option>`
       ).join('');
-      return `<select onchange="changeStatus('${item.id}', this.value)" aria-label="Outcome status" class="text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 ${getStatusSelectClass(item.visitStatus)}">${options}</select>`;
+      return `<select onchange="changeStatus('${item.id}', this.value)" aria-label="Outcome status" class="vbox text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 ${getStatusSelectClass(item.visitStatus)}">${options}</select>`;
     }
 
     function changeStatus(id, newStatus) {
@@ -2989,7 +3010,7 @@ Add New Stop
       const cls = item.visitResult
         ? 'bg-emerald-900/60 border-emerald-500/50 text-emerald-100'
         : 'bg-slate-900 border-slate-600 text-slate-300';
-      return `<select onchange="changeResult('${item.id}', this.value)" aria-label="Result of visit" class="text-[11px] rounded-lg px-2.5 py-1.5 border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 ${cls}">${opts}</select>`;
+      return `<select onchange="changeResult('${item.id}', this.value)" aria-label="Result of visit" class="vbox text-[11px] rounded-lg px-2.5 py-1.5 border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 ${cls}">${opts}</select>`;
     }
 
     function changeResult(id, value) {
@@ -4518,7 +4539,7 @@ Add New Stop
               <div class="mt-2 text-[11px] space-y-1">
                 <label class="flex items-center gap-1.5 text-amber-200 font-semibold">
                   <span>Reach back on</span>
-                  <input type="date" value="${escapeHtml(item.followUpDate || '')}" onchange="changeReachBack('${item.id}', this.value)" aria-label="Edit reach-back date" class="text-[11px] px-2 py-1 bg-slate-900 border border-slate-600 rounded-lg text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400">
+                  <input type="date" value="${escapeHtml(item.followUpDate || '')}" onchange="changeReachBack('${item.id}', this.value)" aria-label="Edit reach-back date" title="${item.followUpDate && item.followUpDate < todayString ? 'Overdue. ' : ''}Change the reach-back date" class="text-[11px] px-2 py-1.5 bg-slate-900 border ${item.followUpDate && item.followUpDate < todayString ? 'border-rose-500' : 'border-slate-600'} rounded-lg text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400">
                 </label>
                 <div class="flex items-center gap-1.5 text-indigo-300 font-semibold">
                   <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
@@ -4697,9 +4718,7 @@ Add New Stop
             </td>
 
             <td class="py-3.5 px-4 whitespace-nowrap text-slate-300 font-semibold">
-              <div class="flex items-center gap-1.5">
-                <input type="date" value="${escapeHtml(item.visitDate || '')}" onchange="changeVisitDate('${item.id}', this.value)" aria-label="Visit date" title="Choose the visit date" class="text-[11px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-white font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400">
-              </div>
+              ${dateBoxHtml(item.visitDate, `changeVisitDate('${item.id}', this.value)`, 'Visit date', 'Choose the visit date', false)}
             </td>
 
             <td class="py-3.5 px-4 whitespace-nowrap">
@@ -4707,7 +4726,7 @@ Add New Stop
             </td>
 
             <td class="py-3.5 px-4 whitespace-nowrap">
-              <input type="date" value="${escapeHtml(item.followUpDate || '')}" onchange="changeReachBack('${item.id}', this.value)" aria-label="Edit reach-back date" title="${item.followUpDate && item.followUpDate < todayString ? 'Overdue. ' : ''}Change the reach-back date" class="text-[11px] px-2 py-1.5 bg-slate-900 border ${item.followUpDate && item.followUpDate < todayString ? 'border-rose-500' : 'border-slate-600'} rounded-lg text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400">
+              ${dateBoxHtml(item.followUpDate, `changeReachBack('${item.id}', this.value)`, 'Edit reach-back date', (item.followUpDate && item.followUpDate < todayString ? 'Overdue. ' : '') + 'Change the reach-back date', !!(item.followUpDate && item.followUpDate < todayString))}
             </td>
 
             <td class="py-3.5 px-4 max-w-xs">
