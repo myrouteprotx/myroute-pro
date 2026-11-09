@@ -3915,7 +3915,15 @@ Add New Stop
     function dDate(v) { try { return v ? escapeHtml(fireFmtDate(v)) : ''; } catch (e) { return dText(v); } }
     function dPhone(v) { return v ? `<a href="${escapeHtml(telHref(v))}" target="_top" class="text-blue-300 hover:underline">${escapeHtml(v)}</a>` : ''; }
     function dEmail(v) { return v ? `<a href="mailto:${escapeHtml(v)}" class="text-pink-300 hover:underline">${escapeHtml(v)}</a>` : ''; }
-    function dMap(addr, extra) { return addr ? `${escapeHtml(addr)}<div class="mt-2"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((extra || '') + ' ' + addr)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1 rounded-lg"><i data-lucide="navigation-2" class="w-3 h-3"></i><span>Open in Maps</span></a></div>` : ''; }
+    // A real street address (it has a number in it) becomes a blue link to the map. Anything else stays plain text.
+    function addrLinkHtml(addr, extra, small) {
+      const a = String(addr || '').trim();
+      if (!a) return '';
+      if (!/\d/.test(a) || a.length < 6) return escapeHtml(a);
+      const u = escapeHtml('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(((extra || '') + ' ' + a).trim()));
+      return `<a href="${u}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open this address in Maps" style="color:#60a5fa;text-decoration:underline;text-underline-offset:2px;font-weight:700">${escapeHtml(a)}</a>`;
+    }
+    function dMap(addr, extra) { return addr ? addrLinkHtml(addr, extra) : ''; }
     function dPhotos(ids, label) {
       const list = (ids || []).filter(Boolean);
       if (!list.length) return '';
@@ -4684,16 +4692,7 @@ Add New Stop
 
             <td class="py-3.5 px-4 max-w-[200px]">
               ${item.streetAddress ? `
-                <div class="space-y-1">
-                  <div class="text-[11px] text-slate-300 truncate" title="${escapeHtml(item.streetAddress)}">
-                    ${escapeHtml(item.streetAddress)}
-                  </div>
-                  <a href="https://www.google.com/maps/search/?api=1&query=${mapsQuery}" target="_blank" 
-                    class="inline-flex items-center gap-1 text-[10px] font-black text-cyan-300 hover:text-cyan-200 bg-cyan-950/60 border border-cyan-800/80 px-2 py-0.5 rounded-lg">
-                    <i data-lucide="navigation-2" class="w-2.5 h-2.5"></i>
-                    <span>Open in Maps</span>
-                  </a>
-                </div>
+                <div class="text-[11px] font-semibold" style="word-break:break-word">${addrLinkHtml(item.streetAddress, item.businessName)}</div>
               ` : '<span class="text-slate-500 italic text-[11px]">No address</span>'}
             </td>
 
