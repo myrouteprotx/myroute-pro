@@ -633,6 +633,12 @@
       #addWaterVisitBtn, #addPcwBtn { width: 100%; margin-left: 0 !important; justify-content: center; min-height: 48px; font-size: 14px !important; border-radius: 14px !important; }
     }
 
+    /* Phone: the three filter boxes are the same size as the search box above them */
+    @media screen and (max-width: 767px) {
+      #statusFilter, #urgencyFilter, #sortFilter { width: 100% !important; flex: 1 1 100%; height: 42px; font-size: 16px !important; padding: 0 12px !important; box-sizing: border-box; border-radius: 12px !important; }
+      #searchInput { height: 42px; }
+    }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
@@ -1267,13 +1273,8 @@
               <option value="businessNameAsc">Business (A - Z)</option>
             </select>
 
-            <!-- Export CSV -->
-            <button type="button" onclick="fuVisitId = null; openLibrary('manage')" title="My files: photos and PDFs to attach to emails" class="px-3 py-2 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">My Files</button>
-            <button type="button" onclick="fuVisitId = null; openTemplateFolder()" title="Email templates: edit the wording of your follow-up emails" class="px-3 py-2 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">Email Templates</button>
-
-            <button id="exportCsvBtn" title="Export CSV spreadsheet" class="p-2 text-slate-300 bg-slate-900 border border-slate-700 rounded-xl hover:bg-slate-700 hover:text-white transition">
-              <i data-lucide="download" class="w-4 h-4"></i>
-            </button>
+            <!-- My Files, Email Templates and the CSV download now live in Settings. The download button stays here, hidden, because Settings clicks it. -->
+            <button id="exportCsvBtn" type="button" class="hidden" aria-hidden="true" tabindex="-1" title="Export CSV spreadsheet"></button>
           </div>
         </div>
 
@@ -2445,6 +2446,15 @@ Add New Stop
           <input type="file" id="importBackupInput" accept=".json,application/json" class="hidden">
           <button type="button" onclick="document.getElementById('importBackupInput').click()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Choose backup file</button>
           <p id="importBackupStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Files and email wording</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Photos and PDFs you attach to emails, and the wording of your follow-up emails.</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="closeSettings(); fuVisitId = null; openLibrary('manage')" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">My Files</button>
+            <button type="button" onclick="closeSettings(); fuVisitId = null; openTemplateFolder()" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">Email Templates</button>
+          </div>
         </div>
 
         <button type="button" onclick="document.getElementById('exportCsvBtn').click()" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">
