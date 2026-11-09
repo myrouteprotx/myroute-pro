@@ -549,7 +549,11 @@
       -webkit-user-select: none;
       user-select: none;
     }
-    #rmTiles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; filter: invert(1) hue-rotate(180deg) brightness(0.82) contrast(0.92) saturate(0.7); opacity: 0.9; }
+    #rmTiles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0.95; }
+    #rmTiles.m-light { filter: saturate(0.85) brightness(0.97); }
+    #rmTiles.m-dark { filter: invert(1) hue-rotate(180deg) brightness(1.05) contrast(0.95) saturate(0.2); opacity: 0.8; }
+    #rmTiles.m-off { display: none; }
+    #rmStyleBtn { position: absolute; left: 8px; top: 8px; padding: 6px 10px; border-radius: 10px; font: 800 11px 'Plus Jakarta Sans', sans-serif; color: #fff; background: rgba(11,17,39,0.85); border: 1px solid rgba(148,163,184,0.5); }
     #rmTiles img { position: absolute; display: block; max-width: none; user-select: none; -webkit-user-drag: none; }
     #rmCredit { position: absolute; left: 8px; bottom: 6px; font: 600 10px 'Plus Jakarta Sans', sans-serif; color: rgba(226,232,240,0.7); pointer-events: none; text-shadow: 0 0 3px #0b1127; }
     #rmSvg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
@@ -1131,6 +1135,7 @@ Add New Stop
 
         <div id="rmStage" class="rm-stage">
           <div id="rmTiles" aria-hidden="true"></div>
+          <button type="button" id="rmStyleBtn" onclick="rmCycleStyle()">Map: Light</button>
           <div id="rmCredit">© OpenStreetMap contributors</div>
           <svg id="rmSvg" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Map of your visits"></svg>
           <div class="rm-ctrl">
@@ -5179,10 +5184,27 @@ Add New Stop
       return out;
     }
 
+    // Map picture style: Light, Dark or Off (remembered on this device)
+    function rmGetStyle() { try { const m = localStorage.getItem('mrp_map_style'); if (m === 'light' || m === 'dark' || m === 'off') return m; } catch (e) {} return 'light'; }
+    function rmApplyStyle() {
+      const m = rmGetStyle();
+      const box = rmEl('rmTiles'), btn = rmEl('rmStyleBtn'), cr = rmEl('rmCredit');
+      if (box) box.className = 'm-' + m;
+      if (btn) btn.textContent = 'Map: ' + (m === 'light' ? 'Light' : m === 'dark' ? 'Dark' : 'Off');
+      if (cr) cr.style.display = m === 'off' ? 'none' : '';
+    }
+    function rmCycleStyle() {
+      const next = { light: 'dark', dark: 'off', off: 'light' }[rmGetStyle()];
+      try { localStorage.setItem('mrp_map_style', next); } catch (e) {}
+      rmApplyStyle();
+    }
+
     // Street map pictures (OpenStreetMap), laid under the pins
     function rmTiles() {
       const box = rmEl('rmTiles');
       if (!box) return;
+      rmApplyStyle();
+      if (rmGetStyle() === 'off') { box.innerHTML = ''; return; }
       const cos = rmCos();
       const z = Math.round(Math.log2(cos * RM.S * 360 / 256));
       if (!RM.w || z < 8) { box.innerHTML = ''; return; }
@@ -5422,6 +5444,42 @@ Add New Stop
       el.textContent = t;
     }
 
+    // Add every stop that has a street address to the map in one go (one lookup per second)
+    let rmBulkBusy = false;
+    async function rmPlaceAll() {
+      if (rmBulkBusy) return;
+      const list = visits.filter(v => !rmHasGeo(v) && String(v.streetAddress || '').trim());
+      const st = () => rmEl('rmPlaceAllStatus');
+      const btn = () => rmEl('rmPlaceAllBtn');
+      if (!list.length) { if (st()) st().textContent = 'None of these stops have a street address to look up.'; return; }
+      rmBulkBusy = true;
+      let ok = 0, miss = [];
+      for (let i = 0; i < list.length; i++) {
+        const v = list[i];
+        if (st()) st().textContent = 'Adding ' + (i + 1) + ' of ' + list.length + '...';
+        if (btn()) btn().disabled = true;
+        try {
+          const q = String(v.streetAddress).replace(/\s+/g, ' ').trim();
+          const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=' + encodeURIComponent(q));
+          const j = r.ok ? await r.json() : [];
+          if (j && j[0] && isFinite(parseFloat(j[0].lat))) {
+            v.lat = Math.round(parseFloat(j[0].lat) * 1e6) / 1e6;
+            v.lng = Math.round(parseFloat(j[0].lon) * 1e6) / 1e6;
+            v.geoApprox = true;
+            ok++;
+            if (ok % 5 === 0) saveRecords();
+          } else { miss.push(v.businessName || 'Stop'); }
+        } catch (e) { miss.push(v.businessName || 'Stop'); }
+        await new Promise(res => setTimeout(res, 1100));
+      }
+      rmBulkBusy = false;
+      saveRecords();
+      renderRouteMap();
+      const s2 = rmEl('rmPlaceAllStatus');
+      if (s2) s2.textContent = 'Added ' + ok + ' stop' + (ok === 1 ? '' : 's') + (miss.length ? '. Could not find: ' + miss.slice(0, 6).join(', ') + (miss.length > 6 ? ' and ' + (miss.length - 6) + ' more' : '') + '. Place those by hand.' : '.');
+      showToast('Added ' + ok + ' stops to the map');
+    }
+
     function rmUnplaced() {
       const el = rmEl('rmUnplaced');
       if (!el) return;
@@ -5430,6 +5488,7 @@ Add New Stop
       if (!list.length) { el.innerHTML = ''; return; }
       el.innerHTML = `<h3 class="text-sm font-black text-white flex items-center gap-2"><i data-lucide="map-pin-off" class="w-4 h-4 text-amber-300"></i><span>Not on the map yet (${list.length})</span></h3>
         <p class="text-[11px] text-slate-400 font-semibold mt-1">Tap Place on map, then tap the spot on the map where the stop is. Use "See streets here" to find it first if you need to.</p>
+        <div class="mt-2 flex flex-wrap items-center gap-2"><button type="button" id="rmPlaceAllBtn" onclick="rmPlaceAll()" class="px-3 py-2 rounded-xl text-[11px] font-black text-white bg-cyan-700 hover:bg-cyan-600 border border-cyan-400/60 transition">Select all and add to map</button><span id="rmPlaceAllStatus" class="text-[11px] text-slate-300 font-semibold"></span></div>
         <div class="mt-3 space-y-1.5">${list.map(v => `<div class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700">
           <span class="min-w-0"><span class="block text-xs font-extrabold text-white truncate">${escapeHtml(v.businessName || 'Visit')}</span><span class="block text-[11px] text-slate-400 truncate">${escapeHtml(v.streetAddress || 'No address')}</span></span>
           <button type="button" onclick="rmStartPlace('${escapeHtml(v.id)}')" class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black text-cyan-200 bg-cyan-950/60 border border-cyan-800/80 active:scale-95"><i data-lucide="crosshair" class="w-3.5 h-3.5"></i><span>Place on map</span></button></div>`).join('')}</div>`;
