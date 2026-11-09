@@ -403,6 +403,8 @@
     /* Hide the "in this week's report" count badges on the fire, water and lead boxes */
     #fireWeekBadge, #waterWeekBadge, #pcwWeekBadge { display: none !important; }
 
+    @media (max-width: 640px) { #undoDock { display: none !important; } .mobile-settings-link { display: block !important; } }
+    .mobile-settings-link { display: none; }
     /* Go back and Settings buttons: same amber color, vibrant border */
     .dock-btn { border: 3px solid #ffb300 !important; box-shadow: 0 0 10px #ffb300, 0 0 22px rgba(255,179,0,.65), inset 0 0 10px rgba(255,179,0,.35); }
 
@@ -2251,6 +2253,7 @@ Add New Stop
   <div class="no-print" aria-hidden="true" style="position: fixed; inset: 2.5%; z-index: 20; pointer-events: none; background: url('/_blob/3552279c9dbdc6fb76d2748df0e11f19') center center / contain no-repeat; opacity: 0.12;"></div>
 
   <!-- Notification Toast -->
+  <div class="no-print mobile-settings-link" style="text-align:center;padding:18px 0 28px"><button type="button" onclick="openSettings()" style="color:#94a3b8;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0">Settings</button></div>
   <div id="undoDock" class="no-print fixed bottom-5 left-5 z-50 max-w-[90vw]" style="display: inline-grid; grid-template-columns: 2fr 1fr; gap: 8px; align-items: stretch;">
     <button type="button" id="undoBtn" onclick="goBack()" class="dock-btn inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-xs font-black text-white bg-gradient-to-r from-amber-500 to-orange-600 active:scale-95 transition">
       <i data-lucide="undo-2" class="w-4 h-4 shrink-0"></i>
