@@ -5445,6 +5445,9 @@ Add New Stop
     }
 
     // Add every stop that has a street address to the map in one go (one lookup per second)
+    // Built-in centers for the zip codes along the route, used if the online lookup cannot be reached
+    const RM_ZIPS = {'77598':[29.537,-95.119],'77573':[29.495,-95.111],'77574':[29.470,-95.140],'77565':[29.544,-95.023],'77571':[29.666,-95.048],'77058':[29.552,-95.096],'77546':[29.523,-95.200],'77550':[29.301,-94.798],'77027':[29.743,-95.443],'77098':[29.737,-95.420],'77057':[29.745,-95.490],'77056':[29.746,-95.466],'77006':[29.741,-95.392],'77008':[29.800,-95.412],'77017':[29.690,-95.261],'77092':[29.833,-95.460],'77380':[30.160,-95.470],'77478':[29.600,-95.610]};
+    const RM_CITIES = {'webster':[29.537,-95.119],'league city':[29.495,-95.111],'kemah':[29.544,-95.023],'la porte':[29.666,-95.048],'friendswood':[29.523,-95.200],'galveston':[29.301,-94.798],'houston':[29.760,-95.370],'the woodlands':[30.160,-95.470],'sugar land':[29.600,-95.610],'seabrook':[29.564,-95.036],'nassau bay':[29.545,-95.091]};
     let rmBulkBusy = false;
     async function rmGeo(q) {
       const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=' + encodeURIComponent(q));
@@ -5476,7 +5479,8 @@ Add New Stop
             }
             if (!pt) {
               const zip = (addr.match(/\b\d{5}\b/) || [])[0];
-              if (zip) {
+              if (zip && RM_ZIPS[zip]) { pt = RM_ZIPS[zip].slice(); kind = 'rough'; }
+              if (!pt && zip) {
                 try { const r = await fetch('https://api.zippopotam.us/us/' + zip); const j = r.ok ? await r.json() : null; const p = j && j.places && j.places[0]; if (p) { pt = [parseFloat(p.latitude), parseFloat(p.longitude)]; kind = 'rough'; } } catch (e) {}
               }
             }
@@ -5487,6 +5491,7 @@ Add New Stop
             }
           }
         } catch (e) {}
+        if (!pt) { const lc = addr.toLowerCase(); const ck = Object.keys(RM_CITIES).find(c => lc.indexOf(c) >= 0); if (ck) { pt = RM_CITIES[ck].slice(); kind = 'rough'; } }
         if (!pt) { pt = [29.55 + (Math.random() - 0.5) * 0.12, -95.09 + (Math.random() - 0.5) * 0.12]; kind = 'spot'; }
         else if (kind === 'rough') { pt = [pt[0] + (Math.random() - 0.5) * 0.006, pt[1] + (Math.random() - 0.5) * 0.006]; }
         v.lat = Math.round(pt[0] * 1e6) / 1e6;
