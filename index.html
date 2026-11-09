@@ -8002,8 +8002,8 @@ Add New Stop
       }
       const more = document.getElementById('fireMoreBar');
       const older = list.length - weekList.length;
-      more.classList.toggle('hidden', !!q || older <= 0);
-      document.getElementById('fireMoreBtn').textContent = firesShowAll ? 'Show only this week' : `Show all ${list.length} fire visits (${older} older)`;
+      more.classList.toggle('hidden', !!q || list.length === 0);
+      document.getElementById('fireMoreBtn').textContent = firesShowAll ? 'Show only this week' : `Show all ${list.length} fire visit${list.length === 1 ? '' : 's'}${older > 0 ? ` (${older} older)` : ''}`;
     }
 
     function toggleAllFires() { firesShowAll = !firesShowAll; renderFires(); if (window.lucide) lucide.createIcons(); }
@@ -8435,8 +8435,8 @@ Add New Stop
       }
       const more = document.getElementById('waterMoreBar');
       const older = list.length - weekList.length;
-      more.classList.toggle('hidden', !!q || older <= 0);
-      document.getElementById('waterMoreBtn').textContent = watersShowAll ? 'Show only this week' : `Show all ${list.length} water loss visits (${older} older)`;
+      more.classList.toggle('hidden', !!q || list.length === 0);
+      document.getElementById('waterMoreBtn').textContent = watersShowAll ? 'Show only this week' : `Show all ${list.length} water loss visit${list.length === 1 ? '' : 's'}${older > 0 ? ` (${older} older)` : ''}`;
     }
 
 
@@ -8858,8 +8858,8 @@ Add New Stop
       }
       const more = document.getElementById('pcwMoreBar');
       const older = list.length - weekList.length;
-      more.classList.toggle('hidden', !!q || older <= 0);
-      document.getElementById('pcwMoreBtn').textContent = pcwsShowAll ? 'Show only this week' : `Show all ${list.length} Company leads (${older} older)`;
+      more.classList.toggle('hidden', !!q || list.length === 0);
+      document.getElementById('pcwMoreBtn').textContent = pcwsShowAll ? 'Show only this week' : `Show all ${list.length} Company lead${list.length === 1 ? '' : 's'}${older > 0 ? ` (${older} older)` : ''}`;
     }
 
 
