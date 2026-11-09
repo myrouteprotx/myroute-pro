@@ -691,6 +691,16 @@
     .mrp-resize2 { position: absolute; width: 14px; height: 14px; border-radius: 4px; background: #34d399; border: 2px solid #fff; cursor: nwse-resize; z-index: 120; }
     .mrp-handle { cursor: pointer; }
 
+    /* Right click delete */
+    .mrp-hidden { display: none !important; }
+    #mrpCtx { position: fixed; z-index: 200; background: #0f172a; border: 1px solid #6366f1; border-radius: 10px; padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.6); }
+    #mrpCtx button { display: block; width: 100%; padding: 8px 18px; border: 0; background: transparent; color: #fda4af; font-weight: 800; font-size: 13px; text-align: left; border-radius: 8px; cursor: pointer; }
+    #mrpCtx button:hover { background: #4c0519; }
+
+    /* Hover: it shows you can grab it */
+    .mrp-item:hover, .mrp-item2:hover { outline: 2px solid #fbbf24 !important; box-shadow: 0 0 0 4px rgba(251,191,36,.28); cursor: grab; }
+    .mrp-item2.mrp-dragging, .mrp-item.mrp-dragging { opacity: .4; }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
@@ -9575,7 +9585,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   function bar() {
     var b = el('mrpArrangeBar'); if (b) return b;
     b = document.createElement('div'); b.id = 'mrpArrangeBar';
-    b.innerHTML = '<div><b>Rearranging.</b> Drag a bar up or down, or use the arrows. Click a bar to open that box and resize what is inside it. Then press Done.</div><div class="mrp-bar-btns"><button type="button" id="mrpArrReset">Back to original order</button><button type="button" id="mrpArrDone">Done</button></div>';
+    b.innerHTML = '<div><b>Rearranging.</b> Drag a bar up or down, or use the arrows. Click a bar to open that box and resize what is inside it. Then press Done.</div><div class="mrp-bar-btns"><button type="button" data-mrp-restore="1">Restore deleted</button><button type="button" id="mrpArrReset">Back to original order</button><button type="button" id="mrpArrDone">Done</button></div>';
     document.body.appendChild(b);
     el('mrpArrDone').onclick = stop;
     el('mrpArrReset').onclick = function () { try { if (window.mrpResetBoxSizes) window.mrpResetBoxSizes(); } catch (e) {} try { localStorage.removeItem(KEY); } catch (e) {} try { if (typeof dbHandle !== 'undefined' && dbHandle) dbHandle.doc('meta/layout').set({ order: [], at: new Date().toISOString() }); } catch (e) {} applyOrder(ITEMS.map(function (i) { return i[0]; })); };
@@ -9655,7 +9665,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   function bar() {
     var b = el('mrpItemsBar'); if (b) return b;
     b = document.createElement('div'); b.id = 'mrpItemsBar';
-    b.innerHTML = '<div><b>Pills and tiles.</b> Drag one to move it. Drag its bottom-right corner to resize it. Then press Done.</div><div class="mrp-bar-btns"><button type="button" id="mrpItmReset">Back to original</button><button type="button" id="mrpItmDone">Done</button></div>';
+    b.innerHTML = '<div><b>Pills and tiles.</b> Drag one to move it. Drag its corner to resize it. Right-click one to delete it. Then press Done.</div><div class="mrp-bar-btns"><button type="button" data-mrp-restore="1">Restore deleted</button><button type="button" id="mrpItmReset">Back to original</button><button type="button" id="mrpItmDone">Done</button></div>';
     document.body.appendChild(b);
     el('mrpItmDone').onclick = stop;
     el('mrpItmReset').onclick = function () {
@@ -9720,86 +9730,112 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 })();
 </script>
 <script>
-/* Inside a box (administrator only, desktop only): in Rearrange mode, click a bar to open that box and resize the items inside it. */
+/* Inside a box (administrator only, desktop only): in Rearrange mode, click a bar to open that box, then move, resize or delete the items inside it. */
 (function () {
-  var KEY = 'mrp_sizes_v1';
+  var SKEY = 'mrp_sizes_v1', HKEY = 'mrp_hidden_v1', MKEY = 'mrp_moves_v1';
   var SKIP_SECTIONS = ['statCardsSection'];
   var SEL = 'button, select, input:not([type="hidden"]), [role="button"], h2, h3, h4, .rounded-full, a[href]';
-  var open = {}, handles = [];
+  var open = {}, handles = [], ctx = null, dragEl = null;
   function el(id) { return document.getElementById(id); }
   function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches && window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
-  function candidates(sec) {
-    if (!sec) return [];
-    var all = Array.prototype.slice.call(sec.querySelectorAll(SEL)).filter(function (n) {
-      if (n.closest('table, tbody, .mrp-handle, #weekPills, #mrpArrangeBar, [id$="Modal"]')) return false;
-      if (n.closest('.hidden')) return false;
-      return true;
-    });
+  function sections() { return Array.prototype.slice.call(document.querySelectorAll('#routeTrackerView > section[id]')).filter(function (s) { return SKIP_SECTIONS.indexOf(s.id) < 0; }); }
+  function allItems(sec) {
+    var all = Array.prototype.slice.call(sec.querySelectorAll(SEL)).filter(function (n) { return !n.closest('table, tbody, .mrp-handle, #weekPills, #mrpArrangeBar, [id$="Modal"]'); });
     return all.filter(function (n) { return !all.some(function (m) { return m !== n && m.contains(n); }); });
   }
-  function keyOf(sec, n, i) { return n.id ? n.id : (sec.id + '~' + n.tagName.toLowerCase() + i); }
-  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } }
-  function store(d) {
-    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
-    try { if (typeof dbHandle !== 'undefined' && dbHandle) dbHandle.doc('meta/layout3').set({ data: JSON.stringify(d), at: new Date().toISOString() }); } catch (e) {}
+  // Every item gets one fixed key from the original page order, so saved sizes, moves and deletes keep matching after things move.
+  function ensureKeys() { sections().forEach(function (sec) { allItems(sec).forEach(function (n, i) { if (!n.dataset.mrpK) n.dataset.mrpK = n.id || (sec.id + '~' + n.tagName.toLowerCase() + i); }); }); }
+  function byKey() { var m = {}; document.querySelectorAll('[data-mrp-k]').forEach(function (n) { m[n.dataset.mrpK] = n; }); return m; }
+  function visibleItems(sec) { return allItems(sec).filter(function (n) { return !n.closest('.hidden') && !n.classList.contains('mrp-hidden'); }); }
+  function rd(k, d) { try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
+  function wr(k, v, docPath) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+    try { if (typeof dbHandle !== 'undefined' && dbHandle) dbHandle.doc(docPath).set({ data: JSON.stringify(v), at: new Date().toISOString() }); } catch (e) {}
   }
   function setSize(n, w, h) {
     if (w) { n.style.width = w + 'px'; n.style.minWidth = '0'; n.style.maxWidth = 'none'; n.style.flex = '0 0 auto'; } else { n.style.width = ''; n.style.minWidth = ''; n.style.maxWidth = ''; n.style.flex = ''; }
     n.style.height = h ? h + 'px' : '';
   }
-  function applyAll(d) {
-    document.querySelectorAll('#routeTrackerView > section[id]').forEach(function (sec) {
-      if (SKIP_SECTIONS.indexOf(sec.id) >= 0) return;
-      candidates(sec).forEach(function (n, i) { var v = d[keyOf(sec, n, i)]; if (v) setSize(n, v.w, v.h); });
+  function applySizes(d) { var m = byKey(); Object.keys(d || {}).forEach(function (k) { if (m[k]) setSize(m[k], d[k].w, d[k].h); }); }
+  function applyHidden(a) { var m = byKey(); (a || []).forEach(function (k) { if (m[k]) m[k].classList.add('mrp-hidden'); else if (el(k)) el(k).classList.add('mrp-hidden'); }); }
+  function applyMoves(groups) {
+    var m = byKey();
+    (groups || []).forEach(function (keys) {
+      var nodes = keys.map(function (k) { return m[k]; }).filter(Boolean);
+      if (nodes.length < 2) return;
+      var parent = nodes[0].parentNode; if (nodes.some(function (n) { return n.parentNode !== parent; })) return;
+      var mk = document.createComment(''); parent.insertBefore(mk, nodes[0]); nodes.forEach(function (n) { parent.insertBefore(n, mk); }); mk.remove();
     });
+  }
+  function saveMoveGroup(n) {
+    var parent = n.parentNode, sec = n.closest('section[id]'); if (!sec) return;
+    var keys = allItems(sec).filter(function (x) { return x.parentNode === parent; }).map(function (x) { return x.dataset.mrpK; });
+    var groups = rd(MKEY, []).filter(function (g) { return !g.some(function (k) { return keys.indexOf(k) >= 0; }); });
+    groups.push(keys); wr(MKEY, groups, 'meta/layout5');
   }
   function place() {
-    handles.forEach(function (o) {
-      var r = o.n.getBoundingClientRect();
-      o.h.style.left = (window.scrollX + r.right - 7) + 'px'; o.h.style.top = (window.scrollY + r.bottom - 7) + 'px';
-    });
+    handles.forEach(function (o) { var r = o.n.getBoundingClientRect(); o.h.style.left = (window.scrollX + r.right - 7) + 'px'; o.h.style.top = (window.scrollY + r.bottom - 7) + 'px'; });
   }
-  function clearHandles(secId) {
-    handles = handles.filter(function (o) { if (!secId || o.sec === secId) { o.n.classList.remove('mrp-item2'); o.h.remove(); return false; } return true; });
-  }
+  function clearHandles(secId) { handles = handles.filter(function (o) { if (!secId || o.sec === secId) { o.n.classList.remove('mrp-item2'); o.n.draggable = false; o.n.ondragstart = o.n.ondragend = o.n.ondragover = null; o.h.remove(); return false; } return true; }); }
+  function blocker(e) { if (e.currentTarget.classList.contains('mrp-item2')) { e.preventDefault(); e.stopPropagation(); } }
   function openBox(id) {
     var sec = el(id); if (!sec || open[id] || SKIP_SECTIONS.indexOf(id) >= 0) return;
     open[id] = true; sec.classList.remove('mrp-arr'); sec.classList.add('mrp-open'); sec.draggable = false;
-    var d = load();
-    candidates(sec).forEach(function (n, i) {
-      n.classList.add('mrp-item2');
+    visibleItems(sec).forEach(function (n) {
+      var key = n.dataset.mrpK;
+      n.classList.add('mrp-item2'); n.draggable = true; n.addEventListener('click', blocker, true);
       var h = document.createElement('div'); h.className = 'mrp-resize2'; h.title = 'Drag to resize'; document.body.appendChild(h);
       handles.push({ n: n, h: h, sec: id });
       h.onpointerdown = function (e) {
-        e.preventDefault(); e.stopPropagation();
-        var r = n.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY, w0 = r.width, h0 = r.height;
-        function mv(ev) { var w = Math.max(40, Math.round(w0 + ev.clientX - x0)), hh = Math.max(20, Math.round(h0 + ev.clientY - y0)); setSize(n, w, hh); var dd = load(); dd[keyOf(sec, n, i)] = { w: w, h: hh }; window.__mrpSizesDraft = dd; place(); }
-        function up() { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); if (window.__mrpSizesDraft) { store(window.__mrpSizesDraft); window.__mrpSizesDraft = null; } place(); }
+        e.preventDefault(); e.stopPropagation(); n.draggable = false;
+        var r = n.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY, w0 = r.width, h0 = r.height, d = rd(SKEY, {});
+        function mv(ev) { var w = Math.max(40, Math.round(w0 + ev.clientX - x0)), hh = Math.max(20, Math.round(h0 + ev.clientY - y0)); setSize(n, w, hh); d[key] = { w: w, h: hh }; place(); }
+        function up() { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); wr(SKEY, d, 'meta/layout3'); n.draggable = true; place(); }
         document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
       };
-      n.addEventListener('click', blocker, true);
+      n.ondragstart = function (e) { e.stopPropagation(); dragEl = n; n.classList.add('mrp-dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', key); } catch (x) {} };
+      n.ondragend = function () { n.classList.remove('mrp-dragging'); if (dragEl) saveMoveGroup(dragEl); dragEl = null; place(); };
+      n.ondragover = function (e) {
+        if (!dragEl || dragEl === n || dragEl.parentNode !== n.parentNode) return; e.preventDefault(); e.stopPropagation();
+        var r = n.getBoundingClientRect(), before = (e.clientX < r.left + r.width / 2) || (e.clientY < r.top + r.height / 2 && e.clientX < r.right);
+        n.parentNode.insertBefore(dragEl, before ? n : n.nextSibling); place();
+      };
     });
     place();
   }
-  function blocker(e) { if (e.currentTarget.classList.contains('mrp-item2')) { e.preventDefault(); e.stopPropagation(); } }
   function closeBox(id) {
     var sec = el(id); if (!sec || !open[id]) return;
-    candidates(sec).forEach(function (n) { n.removeEventListener('click', blocker, true); });
+    allItems(sec).forEach(function (n) { n.removeEventListener('click', blocker, true); });
     clearHandles(id); open[id] = false; sec.classList.remove('mrp-open');
     if (document.body.classList.contains('mrp-arranging')) { sec.classList.add('mrp-arr'); sec.draggable = true; }
   }
   window.mrpToggleBox = function (id) { if (open[id]) closeBox(id); else openBox(id); };
   window.mrpCloseAllBoxes = function () { Object.keys(open).forEach(function (id) { if (open[id]) closeBox(id); }); clearHandles(); };
-  window.mrpResetBoxSizes = function () { try { localStorage.removeItem(KEY); } catch (e) {} store({}); document.querySelectorAll('#routeTrackerView > section[id]').forEach(function (sec) { candidates(sec).forEach(function (n) { setSize(n, 0, 0); }); }); place(); };
+  window.mrpResetBoxSizes = function () { wr(SKEY, {}, 'meta/layout3'); wr(MKEY, [], 'meta/layout5'); sections().forEach(function (sec) { allItems(sec).forEach(function (n) { setSize(n, 0, 0); }); }); place(); };
+  window.mrpHideEl = function (n) { var k = n.dataset.mrpK || n.id; if (!k) return; var a = rd(HKEY, []); if (a.indexOf(k) < 0) a.push(k); wr(HKEY, a, 'meta/layout4'); n.classList.add('mrp-hidden'); place(); };
+  window.mrpRestoreHidden = function () { wr(HKEY, [], 'meta/layout4'); document.querySelectorAll('.mrp-hidden').forEach(function (n) { n.classList.remove('mrp-hidden'); }); place(); };
+  function closeCtx() { if (ctx) { ctx.remove(); ctx = null; } }
+  document.addEventListener('contextmenu', function (e) {
+    if (!(document.body.classList.contains('mrp-items-on') || document.body.classList.contains('mrp-arranging')) || !isDesktop()) return;
+    var n = e.target.closest && e.target.closest('.mrp-item, .mrp-item2'); if (!n) return;
+    e.preventDefault(); closeCtx();
+    ctx = document.createElement('div'); ctx.id = 'mrpCtx'; ctx.style.left = e.clientX + 'px'; ctx.style.top = e.clientY + 'px';
+    ctx.innerHTML = '<button type="button">Delete this</button>'; document.body.appendChild(ctx);
+    ctx.querySelector('button').onclick = function (ev) { ev.stopPropagation(); window.mrpHideEl(n); closeCtx(); };
+  }, true);
+  document.addEventListener('click', function (e) { if (ctx && !e.target.closest('#mrpCtx')) closeCtx(); if (e.target.closest && e.target.closest('[data-mrp-restore]')) window.mrpRestoreHidden(); }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCtx(); });
   window.addEventListener('resize', place); window.addEventListener('scroll', place, true);
+  function applyAll() { applyMoves(rd(MKEY, [])); applySizes(rd(SKEY, {})); applyHidden(rd(HKEY, [])); }
+  function pull(path, key, fn) { try { dbHandle.doc(path).get().then(function (d) { if (d && d.exists) { var x = d.data(); if (x && x.data) { try { localStorage.setItem(key, x.data); fn(JSON.parse(x.data)); } catch (e) {} } } }); } catch (e) {} }
   function init() {
     if (!isDesktop()) return;
-    applyAll(load());
+    ensureKeys(); applyAll();
     var tries = 0, t = setInterval(function () {
       tries++;
       if (typeof dbHandle !== 'undefined' && dbHandle) {
         clearInterval(t);
-        try { dbHandle.doc('meta/layout3').get().then(function (d) { if (d && d.exists) { var x = d.data(); if (x && x.data) { try { var parsed = JSON.parse(x.data); localStorage.setItem(KEY, x.data); applyAll(parsed); } catch (e) {} } } }); } catch (e) {}
+        pull('meta/layout5', MKEY, applyMoves); pull('meta/layout3', SKEY, applySizes); pull('meta/layout4', HKEY, applyHidden);
       } else if (tries > 40) clearInterval(t);
     }, 500);
   }
