@@ -149,7 +149,7 @@
       if (!o) {
         o = document.createElement('div'); o.id = 'mrpAuth';
         o.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0b1127;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
-        o.innerHTML = '<div style="width:100%;max-width:360px;background:#111a36;border:1px solid #334155;border-radius:16px;padding:22px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:4px">My Route Pro</div><div style="color:#94a3b8;font-size:13px;margin-bottom:14px">Sign in to load your stops on this device.</div>'
+        o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.18;pointer-events:none"></div><div style="position:relative;width:100%;max-width:360px;background:rgba(17,26,54,.92);border:1px solid #334155;border-radius:16px;padding:22px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:4px">My Route Pro</div><div style="color:#94a3b8;font-size:13px;margin-bottom:14px">Sign in to load your stops on this device.</div>'
           + '<input id="mrpEmail" type="email" autocomplete="username" placeholder="Email" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:8px">'
           + '<input id="mrpPass" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:10px">'
           + '<button id="mrpIn" type="button" style="width:100%;padding:13px;border-radius:10px;background:#00e676;border:2px solid #39ff14;color:#04210f;font-weight:900;font-size:16px">Sign in</button>'
@@ -2402,7 +2402,7 @@ Add New Stop
   </div>
 
   <!-- Background watermark -->
-  <div class="no-print" aria-hidden="true" style="position: fixed; inset: 2.5%; z-index: 20; pointer-events: none; background: url('/_blob/3552279c9dbdc6fb76d2748df0e11f19') center center / contain no-repeat; opacity: 0.12;"></div>
+  <div class="no-print" aria-hidden="true" style="position: fixed; inset: 2.5%; z-index: 20; pointer-events: none; background: url('watermark.png') center center / contain no-repeat; opacity: 0.12;"></div>
 
   <!-- Notification Toast -->
   <div class="no-print mobile-settings-link" style="text-align:center;padding:18px 0 28px"><button type="button" onclick="openSettings()" style="color:#94a3b8;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0">Settings</button></div>
