@@ -8,12 +8,21 @@
   
   <!-- Tailwind CSS CDN (pinned) -->
   <script>
-/* Standalone storage: replaces the Claude page database with data kept on this device. */
+/* MyRoute Pro storage: your stops and photos are saved to your private Supabase database as you work,
+   kept on this device too, and updated live on your other devices. */
 (function () {
-  var KEY = 'mrp_db_v1', listeners = {}, store = {};
-  try { store = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { store = {}; }
-  function persist() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
-  function snapDoc(path) { var d = store[path]; return { id: path.split('/').pop(), exists: d !== undefined, data: function () { return d === undefined ? undefined : JSON.parse(JSON.stringify(d)); }, metadata: { fromCache: false, hasPendingWrites: false } }; }
+  var SB_URL = 'https://rrhmykprzkumixcjsygo.supabase.co';
+  var SB_KEY = 'sb_publishable_-Tc0Yl6WAYnmVAJV-hYRXQ_HwLeW4Dj';
+  var KEY = 'mrp_db_v1', PEND = 'mrp_pending_v1', PBLOB = 'mrp_pending_blobs_v1', SYNCED = 'mrp_synced_uid';
+  var store = {}, pending = {}, pendingBlobs = [], listeners = {}, sb = null, uid = null, online = true;
+  function ls(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  store = ls(KEY, {}); pending = ls(PEND, {}); pendingBlobs = ls(PBLOB, []);
+  function persist() { lsSet(KEY, store); lsSet(PEND, pending); lsSet(PBLOB, pendingBlobs); }
+  function clone(x) { return x === undefined ? undefined : JSON.parse(JSON.stringify(x)); }
+
+  /* ---------- local document store with live listeners ---------- */
+  function snapDoc(path) { var d = store[path]; return { id: path.split('/').pop(), exists: d !== undefined, data: function () { return clone(d); }, metadata: { fromCache: false, hasPendingWrites: false } }; }
   function snapCol(name) {
     var docs = Object.keys(store).filter(function (k) { var p = k.split('/'); return p.length === 2 && p[0] === name; }).map(snapDoc);
     return { docs: docs, size: docs.length, empty: !docs.length, forEach: function (f) { docs.forEach(f); }, metadata: { fromCache: false, hasPendingWrites: false } };
@@ -24,13 +33,19 @@
     (listeners['col:' + p[0]] || []).forEach(function (f) { setTimeout(function () { f(snapCol(p[0])); }, 0); });
   }
   function on(k, f, build) { (listeners[k] = listeners[k] || []).push(f); setTimeout(function () { f(build()); }, 0); return function () { listeners[k] = listeners[k].filter(function (x) { return x !== f; }); }; }
+  function write(path, val) {
+    if (val === null) delete store[path]; else store[path] = clone(val);
+    pending[path] = val === null ? null : clone(val);
+    persist(); notify(path); scheduleFlush();
+    return Promise.resolve();
+  }
   function docRef(path) {
     return {
       id: path.split('/').pop(),
       get: function () { return Promise.resolve(snapDoc(path)); },
-      set: function (v) { store[path] = JSON.parse(JSON.stringify(v)); persist(); notify(path); return Promise.resolve(); },
-      update: function (v) { store[path] = Object.assign({}, store[path] || {}, v); persist(); notify(path); return Promise.resolve(); },
-      delete: function () { delete store[path]; persist(); notify(path); return Promise.resolve(); },
+      set: function (v) { return write(path, v); },
+      update: function (v) { return write(path, Object.assign({}, store[path] || {}, v)); },
+      delete: function () { return write(path, null); },
       onSnapshot: function (f) { return on('doc:' + path, f, function () { return snapDoc(path); }); }
     };
   }
@@ -44,20 +59,151 @@
       };
     }
   };
-  /* Photos: kept in this browser (IndexedDB) and served at /_blob/<id> by sw.js */
-  function idb() { return new Promise(function (res, rej) { var r = indexedDB.open('mrp_blobs', 1); r.onupgradeneeded = function () { r.result.createObjectStore('b'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; }); }
+
+  /* ---------- photos: kept in this browser, copied to the database, fetched on demand by sw.js ---------- */
+  function idb() { return new Promise(function (res, rej) { var r = indexedDB.open('mrp_blobs', 2); r.onupgradeneeded = function () { var d = r.result; if (!d.objectStoreNames.contains('b')) d.createObjectStore('b'); if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; }); }
+  function idbPut(storeName, key, val) { return idb().then(function (d) { return new Promise(function (res, rej) { var t = d.transaction(storeName, 'readwrite'); t.objectStore(storeName).put(val, key); t.oncomplete = res; t.onerror = function () { rej(t.error); }; }); }); }
+  function idbGet(storeName, key) { return idb().then(function (d) { return new Promise(function (res, rej) { var q = d.transaction(storeName).objectStore(storeName).get(key); q.onsuccess = function () { res(q.result); }; q.onerror = function () { rej(q.error); }; }); }); }
+  function idbKeys(storeName) { return idb().then(function (d) { return new Promise(function (res, rej) { var q = d.transaction(storeName).objectStore(storeName).getAllKeys(); q.onsuccess = function () { res(q.result); }; q.onerror = function () { rej(q.error); }; }); }); }
+  function toDataUrl(blob) { return new Promise(function (res, rej) { var f = new FileReader(); f.onload = function () { res(f.result); }; f.onerror = function () { rej(f.error); }; f.readAsDataURL(blob); }); }
+  function newId() { return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+  async function putPhoto(id, blob) {
+    await idbPut('b', id, { blob: blob, type: blob.type });
+    if (pendingBlobs.indexOf(id) < 0) { pendingBlobs.push(id); persist(); }
+    scheduleFlush();
+  }
   var assets = {
     upload: async function (blob) {
-      var id = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
-      var d = await idb();
-      await new Promise(function (res, rej) { var t = d.transaction('b', 'readwrite'); t.objectStore('b').put({ blob: blob, type: blob.type }, id); t.oncomplete = res; t.onerror = function () { rej(t.error); }; });
+      var id = newId(); await putPhoto(id, blob);
       if ('serviceWorker' in navigator) { try { await navigator.serviceWorker.ready; } catch (e) {} }
       return { id: id, url: '/_blob/' + id, sizeBytes: blob.size, contentType: blob.type };
     },
     list: function () { return Promise.resolve({ assets: [], usage: {} }); },
     delete: function () { return Promise.resolve(); }
   };
-  window.claude = { use: function (name) { return Promise.resolve(name === 'db' ? db : name === 'assets' ? assets : null); } };
+  window.__mrpPutPhotoDataUrl = async function (id, dataUrl) { var b = await (await fetch(dataUrl)).blob(); await putPhoto(id, b); };
+
+  /* ---------- sending to the database ---------- */
+  var flushing = false, timer = null;
+  function setStatus(t) { var e = document.getElementById('mrpSyncStatus'); if (e) e.textContent = t; }
+  function scheduleFlush() { clearTimeout(timer); timer = setTimeout(flush, 400); }
+  async function flush() {
+    if (flushing || !sb || !uid) return;
+    flushing = true;
+    try {
+      var paths = Object.keys(pending);
+      while (paths.length) {
+        var chunk = paths.splice(0, 40), up = [], del = [];
+        chunk.forEach(function (p) { if (pending[p] === null) del.push(p); else up.push({ owner: uid, path: p, data: pending[p], updated_at: new Date().toISOString() }); });
+        if (up.length) { var r = await sb.from('docs').upsert(up, { onConflict: 'owner,path' }); if (r.error) throw r.error; }
+        if (del.length) { var r2 = await sb.from('docs').delete().eq('owner', uid).in('path', del); if (r2.error) throw r2.error; }
+        chunk.forEach(function (p) { var sent = up.find(function (x) { return x.path === p; }); if (pending[p] === null || (sent && JSON.stringify(pending[p]) === JSON.stringify(sent.data))) delete pending[p]; });
+        persist();
+      }
+      while (pendingBlobs.length) {
+        var id = pendingBlobs[0], rec = await idbGet('b', id);
+        if (rec) { var du = await toDataUrl(rec.blob); var r3 = await sb.from('blobs').upsert({ owner: uid, id: id, type: rec.type || rec.blob.type, data: du }, { onConflict: 'owner,id' }); if (r3.error) throw r3.error; }
+        pendingBlobs.shift(); persist();
+      }
+      online = true; setStatus('Saved');
+    } catch (e) { online = false; setStatus('Saving when back online'); setTimeout(scheduleFlush, 8000); }
+    flushing = false;
+  }
+  window.__mrpFlush = async function () { for (var i = 0; i < 600; i++) { await flush(); if (!Object.keys(pending).length && !pendingBlobs.length) return true; await new Promise(function (r) { setTimeout(r, 500); }); } return false; };
+  window.addEventListener('online', scheduleFlush);
+
+  /* ---------- receiving from the database ---------- */
+  async function pull() {
+    var rows = [], from = 0;
+    while (true) {
+      var r = await sb.from('docs').select('path,data').eq('owner', uid).range(from, from + 999);
+      if (r.error) throw r.error; rows = rows.concat(r.data || []); if (!r.data || r.data.length < 1000) break; from += 1000;
+    }
+    var remote = {}; rows.forEach(function (x) { remote[x.path] = x.data; });
+    var first = localStorage.getItem(SYNCED) !== uid;
+    var changed = {};
+    Object.keys(remote).forEach(function (p) { if (pending[p] === undefined && JSON.stringify(store[p]) !== JSON.stringify(remote[p])) { store[p] = remote[p]; changed[p] = 1; } });
+    if (first) {
+      Object.keys(store).forEach(function (p) { if (remote[p] === undefined && pending[p] === undefined) pending[p] = clone(store[p]); });
+      try { (await idbKeys('b')).forEach(function (k) { if (pendingBlobs.indexOf(k) < 0) pendingBlobs.push(k); }); } catch (e) {}
+      localStorage.setItem(SYNCED, uid);
+    } else {
+      Object.keys(store).forEach(function (p) { if (remote[p] === undefined && pending[p] === undefined) { delete store[p]; changed[p] = 1; } });
+    }
+    persist(); Object.keys(changed).forEach(notify); scheduleFlush();
+  }
+  function listen() {
+    sb.channel('mrp-docs-' + uid).on('postgres_changes', { event: '*', schema: 'public', table: 'docs', filter: 'owner=eq.' + uid }, function (m) {
+      var rec = m.eventType === 'DELETE' ? m.old : m.new; if (!rec || !rec.path) return;
+      if (pending[rec.path] !== undefined) return;
+      if (m.eventType === 'DELETE') delete store[rec.path]; else store[rec.path] = rec.data;
+      persist(); notify(rec.path);
+    }).subscribe();
+  }
+  function saveAuthForWorker(session) { try { idbPut('kv', 'auth', { url: SB_URL, key: SB_KEY, token: session ? session.access_token : null }); } catch (e) {} }
+
+  /* ---------- sign-in screen ---------- */
+  function showSignIn(msg) {
+    return new Promise(function (resolve) {
+      var o = document.getElementById('mrpAuth');
+      if (!o) {
+        o = document.createElement('div'); o.id = 'mrpAuth';
+        o.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0b1127;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
+        o.innerHTML = '<div style="width:100%;max-width:360px;background:#111a36;border:1px solid #334155;border-radius:16px;padding:22px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:4px">My Route Pro</div><div style="color:#94a3b8;font-size:13px;margin-bottom:14px">Sign in to load your stops on this device.</div>'
+          + '<input id="mrpEmail" type="email" autocomplete="username" placeholder="Email" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:8px">'
+          + '<input id="mrpPass" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:10px">'
+          + '<button id="mrpIn" type="button" style="width:100%;padding:13px;border-radius:10px;background:#00e676;border:2px solid #39ff14;color:#04210f;font-weight:900;font-size:16px">Sign in</button>'
+          + '<button id="mrpNew" type="button" style="width:100%;padding:11px;margin-top:8px;border-radius:10px;background:#0b1127;border:1px solid #475569;color:#fff;font-weight:700;font-size:14px">Create account</button>'
+          + '<button id="mrpForgot" type="button" style="display:block;margin:12px auto 0;background:none;border:0;color:#94a3b8;font-size:12px;text-decoration:underline">Forgot password</button>'
+          + '<div id="mrpMsg" style="margin-top:12px;font-size:13px;color:#fda4af;min-height:18px"></div></div>';
+        document.body.appendChild(o);
+      }
+      var m = document.getElementById('mrpMsg'); m.textContent = msg || '';
+      function val() { return { e: document.getElementById('mrpEmail').value.trim(), p: document.getElementById('mrpPass').value }; }
+      document.getElementById('mrpIn').onclick = async function () {
+        var v = val(); if (!v.e || !v.p) { m.textContent = 'Enter your email and password.'; return; }
+        m.style.color = '#cbd5e1'; m.textContent = 'Signing in...';
+        var r = await sb.auth.signInWithPassword({ email: v.e, password: v.p });
+        if (r.error) { m.style.color = '#fda4af'; m.textContent = r.error.message; return; }
+        o.remove(); resolve(r.data.session);
+      };
+      document.getElementById('mrpNew').onclick = async function () {
+        var v = val(); if (!v.e || v.p.length < 6) { m.textContent = 'Enter an email and a password of at least 6 characters.'; return; }
+        m.style.color = '#cbd5e1'; m.textContent = 'Creating account...';
+        var r = await sb.auth.signUp({ email: v.e, password: v.p });
+        if (r.error) { m.style.color = '#fda4af'; m.textContent = r.error.message; return; }
+        if (r.data.session) { o.remove(); resolve(r.data.session); }
+        else { m.style.color = '#86efac'; m.textContent = 'Account created. Check your email to confirm it, then sign in.'; }
+      };
+      document.getElementById('mrpForgot').onclick = async function () {
+        var v = val(); if (!v.e) { m.textContent = 'Type your email first.'; return; }
+        var r = await sb.auth.resetPasswordForEmail(v.e, { redirectTo: location.origin + location.pathname });
+        m.style.color = r.error ? '#fda4af' : '#86efac'; m.textContent = r.error ? r.error.message : 'Check your email for a reset link.';
+      };
+    });
+  }
+  window.__mrpSignOut = async function () { try { if (sb) await sb.auth.signOut(); } catch (e) {} saveAuthForWorker(null); location.reload(); };
+  window.__mrpWho = function () { return uid; };
+
+  /* ---------- start up ---------- */
+  function loadLib() { return new Promise(function (res) { if (window.supabase && window.supabase.createClient) return res(true); var s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'; s.onload = function () { res(true); }; s.onerror = function () { res(false); }; document.head.appendChild(s); }); }
+  var ready = (async function () {
+    var ok = await loadLib();
+    if (!ok) { uid = localStorage.getItem('mrp_uid'); setStatus('Offline'); return; }
+    sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+    var session = null;
+    try { session = (await sb.auth.getSession()).data.session; } catch (e) {}
+    if (!session) {
+      if (!navigator.onLine && localStorage.getItem('mrp_uid')) { uid = localStorage.getItem('mrp_uid'); return; }
+      session = await showSignIn();
+    }
+    uid = session.user.id; localStorage.setItem('mrp_uid', uid);
+    saveAuthForWorker(session);
+    sb.auth.onAuthStateChange(function (ev, s) { if (s) saveAuthForWorker(s); });
+    try { await pull(); listen(); } catch (e) { online = false; }
+    scheduleFlush();
+  })();
+  window.claude = { use: function (name) { return ready.then(function () { return name === 'db' ? db : name === 'assets' ? assets : null; }); } };
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
 })();
 </script>
@@ -2213,6 +2359,12 @@ Add New Stop
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Administrator</div>
           <div class="text-xs text-slate-200 font-semibold mt-1">Your Name</div>
           <div class="text-[11px] text-slate-400 mt-0.5">Deleting a visit requires the administrator password.</div>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Account</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Everything you do is saved online as you go and shows up on your other devices. <span id="mrpSyncStatus" class="font-bold text-emerald-300"></span></div>
+          <button type="button" onclick="window.__mrpSignOut()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Sign out of this device</button>
         </div>
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
@@ -9081,25 +9233,19 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   try {
     var f = e.target.files[0]; if (!f) return;
     var data = JSON.parse(await f.text());
+    var d = await window.claude.use('db');
     if (data._photos) {
-      var pids = Object.keys(data._photos), db = await new Promise(function (res, rej) { var r = indexedDB.open('mrp_blobs', 1); r.onupgradeneeded = function () { r.result.createObjectStore('b'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; });
-      for (var pi = 0; pi < pids.length; pi++) {
-        st.textContent = 'Saving photo ' + (pi + 1) + ' of ' + pids.length + '...';
-        var blob = await (await fetch(data._photos[pids[pi]])).blob();
-        await new Promise(function (res, rej) { var t = db.transaction('b', 'readwrite'); t.objectStore('b').put({ blob: blob, type: blob.type }, pids[pi]); t.oncomplete = res; t.onerror = function () { rej(t.error); }; });
-      }
+      var pids = Object.keys(data._photos);
+      for (var pi = 0; pi < pids.length; pi++) { st.textContent = 'Saving photo ' + (pi + 1) + ' of ' + pids.length + '...'; await window.__mrpPutPhotoDataUrl(pids[pi], data._photos[pids[pi]]); }
+      st.textContent = 'Uploading photos...'; await window.__mrpFlush();
       st.textContent = 'Imported ' + pids.length + ' photos. Reloading...';
-      setTimeout(function () { location.reload(); }, 900);
-      return;
+      setTimeout(function () { location.reload(); }, 900); return;
     }
     var keys = Object.keys(data);
     if (!keys.length || !keys.every(function (k) { return k.indexOf('/') > 0; })) throw new Error('bad');
-    var cur = {}; try { cur = JSON.parse(localStorage.getItem('mrp_db_v1') || '{}'); } catch (x) {}
-    keys.forEach(function (k) { cur[k] = data[k]; });
-    cur['meta/init'] = { createdAt: new Date().toISOString() };
-    localStorage.setItem('mrp_db_v1', JSON.stringify(cur));
-    var v = {}; keys.filter(function (k) { return k.indexOf('visits/') === 0; }).forEach(function (k) { v[k.slice(7)] = data[k]; });
-    if (Object.keys(v).length) localStorage.setItem('routepulse_sales_records_v6', JSON.stringify(Object.values(v)));
+    for (var ki = 0; ki < keys.length; ki++) { await d.doc(keys[ki]).set(data[keys[ki]]); }
+    st.textContent = 'Saving ' + keys.length + ' items online...';
+    await window.__mrpFlush();
     st.textContent = 'Imported ' + keys.length + ' items. Reloading...';
     setTimeout(function () { location.reload(); }, 900);
   } catch (err) { st.textContent = 'That file could not be read. Choose the .json backup file.'; }
