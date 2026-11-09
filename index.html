@@ -8002,7 +8002,7 @@ Add New Stop
       }
       const more = document.getElementById('fireMoreBar');
       const older = list.length - weekList.length;
-      more.classList.toggle('hidden', !!q || list.length === 0);
+      more.classList.toggle('hidden', !!q);
       document.getElementById('fireMoreBtn').textContent = firesShowAll ? 'Show only this week' : `Show all ${list.length} fire visit${list.length === 1 ? '' : 's'}${older > 0 ? ` (${older} older)` : ''}`;
     }
 
@@ -8435,7 +8435,7 @@ Add New Stop
       }
       const more = document.getElementById('waterMoreBar');
       const older = list.length - weekList.length;
-      more.classList.toggle('hidden', !!q || list.length === 0);
+      more.classList.toggle('hidden', !!q);
       document.getElementById('waterMoreBtn').textContent = watersShowAll ? 'Show only this week' : `Show all ${list.length} water loss visit${list.length === 1 ? '' : 's'}${older > 0 ? ` (${older} older)` : ''}`;
     }
 
@@ -8858,7 +8858,7 @@ Add New Stop
       }
       const more = document.getElementById('pcwMoreBar');
       const older = list.length - weekList.length;
-      more.classList.toggle('hidden', !!q || list.length === 0);
+      more.classList.toggle('hidden', !!q);
       document.getElementById('pcwMoreBtn').textContent = pcwsShowAll ? 'Show only this week' : `Show all ${list.length} Company lead${list.length === 1 ? '' : 's'}${older > 0 ? ` (${older} older)` : ''}`;
     }
 
