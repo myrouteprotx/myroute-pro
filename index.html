@@ -1100,6 +1100,7 @@
           <button type="button" id="addFireVisitBtn" onclick="openFireModal()" class="ml-auto inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-white rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 shadow-lg shadow-red-600/30 hover:from-red-500 transition active:scale-95">
             <i data-lucide="plus" class="w-4 h-4"></i><span>Add fire visit</span>
           </button>
+          <input type="search" id="fireSearch" autocomplete="off" placeholder="Search fire visits: address, name, phone, date" oninput="fireQuery = this.value; renderFires();" class="w-full basis-full text-sm px-4 py-3 rounded-xl bg-slate-900/80 border border-red-500/50 text-white placeholder-red-200/50 focus:outline-none focus:ring-2 focus:ring-red-400" style="font-size:16px">
         </div>
         <div class="overflow-x-auto">
           <table class="stack w-full text-left text-xs border-collapse">
@@ -7857,21 +7858,38 @@ Add New Stop
         </tr>`;
     }
 
+    let fireQuery = '';
+    function fireInThisWeek(f, wk) {
+      return fireWeeks(f).includes(wk) || (!!f.visitDate && fireWeekOf(f.visitDate) === wk);
+    }
+    function fireMatches(f, q) {
+      const hay = [f.streetAddress, f.homeownerName, f.ownerName, f.phone, f.email, f.notes, f.outcome, f.insurance, f.visitDate].join(' ').toLowerCase();
+      return q.split(/\s+/).filter(Boolean).every(w => hay.includes(w));
+    }
     function renderFires() {
       try { renderYesterdayOthers(); } catch (e) {}
       const body = document.getElementById('fireTableBody');
       if (!body) return;
       const wk = getISOWeekString();
       const list = sortFires([...fires]);
-      const shown = firesShowAll ? list : list.slice(0, FIRES_PAGE);
+      const weekList = list.filter(f => fireInThisWeek(f, wk));
+      const q = (fireQuery || '').trim().toLowerCase();
+      const shown = q ? list.filter(f => fireMatches(f, q)) : (firesShowAll ? list : weekList);
       document.getElementById('fireCountBadge').textContent = `${list.length} fire${list.length === 1 ? '' : 's'} visited`;
-      document.getElementById('fireWeekBadge').textContent = `${list.filter(f => fireWeeks(f).includes(wk)).length} in this week's report`;
+      document.getElementById('fireWeekBadge').textContent = `${weekList.length} in this week's report`;
       body.innerHTML = shown.map(fireRowTemplate).join('');
-      body.closest('table').classList.toggle('hidden', list.length === 0);
-      document.getElementById('fireEmptyState').classList.toggle('hidden', list.length > 0);
+      body.closest('table').classList.toggle('hidden', shown.length === 0);
+      const empty = document.getElementById('fireEmptyState');
+      empty.classList.toggle('hidden', shown.length > 0);
+      if (shown.length === 0) {
+        empty.textContent = list.length === 0 ? 'No fire visits logged yet. Tap "Add fire visit" to log the first one.'
+          : q ? 'No fire visits match your search.'
+          : 'No fire visits this week yet. Search above or tap "Show all" to see older ones.';
+      }
       const more = document.getElementById('fireMoreBar');
-      more.classList.toggle('hidden', list.length <= FIRES_PAGE);
-      document.getElementById('fireMoreBtn').textContent = firesShowAll ? 'Show only the 8 most recent' : `Show all ${list.length} fire visits`;
+      const older = list.length - weekList.length;
+      more.classList.toggle('hidden', !!q || older <= 0);
+      document.getElementById('fireMoreBtn').textContent = firesShowAll ? 'Show only this week' : `Show all ${list.length} fire visits (${older} older)`;
     }
 
     function toggleAllFires() { firesShowAll = !firesShowAll; renderFires(); if (window.lucide) lucide.createIcons(); }
