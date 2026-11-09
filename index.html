@@ -650,6 +650,15 @@
     .vdate button:hover, .vdate button:active { color: #ffffff; }
     .vdate:focus-within { box-shadow: 0 0 0 2px #818cf8; }
 
+    /* Phone: in every visit, the Saved / Save note button sits below the Actions */
+    @media screen and (max-width: 767px) {
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr { display: flex !important; flex-direction: column; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) { display: contents !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box { display: contents; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-save { order: 5; align-self: flex-start; margin: 8px 0 4px 0; padding: 8px 16px; font-size: 13px; border-radius: 12px; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(7) { order: 1; }
+    }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
