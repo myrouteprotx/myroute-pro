@@ -2217,7 +2217,7 @@ Add New Stop
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Import a backup</div>
-          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Choose your MyRoute Pro backup file (.json). It is added to this device only and nothing is uploaded.</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Choose your MyRoute Pro backup file or photos file (.json). It is added to this device only and nothing is uploaded.</div>
           <input type="file" id="importBackupInput" accept=".json,application/json" class="hidden">
           <button type="button" onclick="document.getElementById('importBackupInput').click()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Choose backup file</button>
           <p id="importBackupStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
@@ -9081,6 +9081,17 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   try {
     var f = e.target.files[0]; if (!f) return;
     var data = JSON.parse(await f.text());
+    if (data._photos) {
+      var pids = Object.keys(data._photos), db = await new Promise(function (res, rej) { var r = indexedDB.open('mrp_blobs', 1); r.onupgradeneeded = function () { r.result.createObjectStore('b'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; });
+      for (var pi = 0; pi < pids.length; pi++) {
+        st.textContent = 'Saving photo ' + (pi + 1) + ' of ' + pids.length + '...';
+        var blob = await (await fetch(data._photos[pids[pi]])).blob();
+        await new Promise(function (res, rej) { var t = db.transaction('b', 'readwrite'); t.objectStore('b').put({ blob: blob, type: blob.type }, pids[pi]); t.oncomplete = res; t.onerror = function () { rej(t.error); }; });
+      }
+      st.textContent = 'Imported ' + pids.length + ' photos. Reloading...';
+      setTimeout(function () { location.reload(); }, 900);
+      return;
+    }
     var keys = Object.keys(data);
     if (!keys.length || !keys.every(function (k) { return k.indexOf('/') > 0; })) throw new Error('bad');
     var cur = {}; try { cur = JSON.parse(localStorage.getItem('mrp_db_v1') || '{}'); } catch (x) {}
