@@ -580,6 +580,21 @@
       .hdr-row .main-nav { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
     }
 
+    /* Phone header: logo, company name and a second logo across the top, Add New Stop full width, then the three tabs */
+    .hdr-logo-right { display: none; }
+    @media screen and (max-width: 767px) {
+      .hdr-row { flex-direction: column !important; flex-wrap: nowrap !important; align-items: stretch !important; justify-content: flex-start !important; row-gap: 8px; }
+      #brandBlock { order: 1; width: 100%; justify-content: center; }
+      #companyBrand { width: 100%; justify-content: center; gap: 10px; }
+      #companyBrand img { height: 44px; width: auto; max-width: 30%; flex: 0 0 auto; }
+      #companyBrand .hdr-logo-right { display: block; }
+      #companyBrand .hdr-company-name { flex: 1 1 auto; min-width: 0; text-align: center; font-size: 19px; line-height: 1.15; }
+      #hdrActions { order: 2; width: 100%; position: relative; }
+      #hdrActions > button { width: 100%; justify-content: center; padding-top: 13px; padding-bottom: 13px; font-size: 14px; }
+      #hdrActions > #syncBadge { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 2; padding: 0; pointer-events: none; }
+      .hdr-row > .main-nav { order: 3; width: 100%; justify-content: center; }
+    }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
@@ -793,7 +808,7 @@
         </nav>
 
         <!-- Right Quick Action -->
-        <div class="flex items-center gap-3 no-print">
+        <div id="hdrActions" class="flex items-center gap-3 no-print">
           <span id="syncBadge" class="inline-flex items-center justify-center p-2" title="Red dot: not synced yet. Green dot: synced with your other devices." aria-label="Sync status">
             <span id="syncDot" class="w-3.5 h-3.5 rounded-full bg-red-500" style="box-shadow: 0 0 8px 2px rgba(239,68,68,.8);"></span>
             <span id="syncText" class="sr-only">Not synced</span>
@@ -3597,8 +3612,11 @@ Add New Stop
           brand.insertBefore(cb, brand.firstChild);
         }
         cb.style.display = has ? 'flex' : 'none';
+        const emblemEl = brand.querySelector(':scope > img');
+        const emblemSrc = emblemEl ? emblemEl.getAttribute('src') : '';
         cb.innerHTML = (logoId ? `<img src="/_blob/${escapeHtml(logoId)}" alt="${escapeHtml(nm || 'Company logo')}" onerror="this.style.display='none'" class="h-11 w-auto max-w-[140px] object-contain rounded-xl bg-white p-1 shadow-lg">` : '')
-          + (nm ? `<span class="text-xl sm:text-2xl font-black tracking-tight text-white">${escapeHtml(nm)}</span>` : '');
+          + (nm ? `<span class="hdr-company-name text-xl sm:text-2xl font-black tracking-tight text-white">${escapeHtml(nm)}</span>` : '')
+          + (emblemSrc ? `<img src="${emblemSrc}" alt="My Route Pro" aria-hidden="true" class="hdr-logo-right h-11 w-auto max-w-[140px] object-contain rounded-xl shadow-lg">` : '');
         Array.from(brand.children).forEach(ch => {
           if (ch.id !== 'companyBrand') ch.style.display = has ? 'none' : '';
         });
