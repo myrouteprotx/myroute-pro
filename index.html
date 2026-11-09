@@ -2368,6 +2368,12 @@ Add New Stop
         </div>
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Face ID lock</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Ask for Face ID (or this device's fingerprint or passcode) each time you open the app. Set it up once on each device. <span id="mrpLockStatus" class="font-bold text-emerald-300"></span></div>
+          <button type="button" id="mrpLockBtn" onclick="window.__mrpLockToggle()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Turn on Face ID lock</button>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Import a backup</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Choose your MyRoute Pro backup file or photos file (.json). It is added to this device only and nothing is uploaded.</div>
           <input type="file" id="importBackupInput" accept=".json,application/json" class="hidden">
@@ -9250,5 +9256,61 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     setTimeout(function () { location.reload(); }, 900);
   } catch (err) { st.textContent = 'That file could not be read. Choose the .json backup file.'; }
 });
+</script>
+<script>
+/* Face ID lock: a local gate using the device's own biometrics (WebAuthn). */
+(function () {
+  var K = 'mrp_lock_cred', hiddenAt = 0, busy = false;
+  function get() { try { return localStorage.getItem(K) || ''; } catch (e) { return ''; } }
+  function put(v) { try { v ? localStorage.setItem(K, v) : localStorage.removeItem(K); } catch (e) {} }
+  function b64(buf) { var s = ''; new Uint8Array(buf).forEach(function (c) { s += String.fromCharCode(c); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function unb64(t) { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; var s = atob(t), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+  function rnd(n) { return crypto.getRandomValues(new Uint8Array(n)); }
+  function supported() { return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create); }
+  function status(t) { var e = document.getElementById('mrpLockStatus'); if (e) e.textContent = t || ''; var b = document.getElementById('mrpLockBtn'); if (b) b.textContent = get() ? 'Turn off Face ID lock' : 'Turn on Face ID lock'; }
+  async function verify() {
+    var id = get(); if (!id) return true;
+    var r = await navigator.credentials.get({ publicKey: { challenge: rnd(32), allowCredentials: [{ type: 'public-key', id: unb64(id) }], userVerification: 'required', timeout: 60000 } });
+    return !!r;
+  }
+  function overlay() {
+    if (document.getElementById('mrpLock') || !get()) return;
+    var o = document.createElement('div'); o.id = 'mrpLock';
+    o.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#0b1127;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
+    o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.18;pointer-events:none"></div>'
+      + '<div style="position:relative;width:100%;max-width:340px;text-align:center;background:rgba(17,26,54,.92);border:1px solid #334155;border-radius:16px;padding:24px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:6px">My Route Pro</div><div style="color:#94a3b8;font-size:13px;margin-bottom:16px">Locked</div>'
+      + '<button id="mrpUnlock" type="button" style="width:100%;padding:13px;border-radius:10px;background:#00e676;border:2px solid #39ff14;color:#04210f;font-weight:900;font-size:16px">Unlock with Face ID</button>'
+      + '<button id="mrpUsePw" type="button" style="display:block;margin:14px auto 0;background:none;border:0;color:#94a3b8;font-size:12px;text-decoration:underline">Use password instead</button>'
+      + '<div id="mrpLockMsg" style="margin-top:10px;font-size:13px;color:#fda4af;min-height:18px"></div></div>';
+    document.body.appendChild(o);
+    async function go() {
+      if (busy) return; busy = true; var m = document.getElementById('mrpLockMsg'); m.textContent = '';
+      try { if (await verify()) { o.remove(); } } catch (e) { m.textContent = 'Face ID did not work. Try again, or use your password.'; }
+      busy = false;
+    }
+    document.getElementById('mrpUnlock').onclick = go;
+    document.getElementById('mrpUsePw').onclick = function () { put(''); o.remove(); try { window.__mrpSignOut(); } catch (e) { location.reload(); } };
+    setTimeout(go, 250);
+  }
+  window.__mrpLockToggle = async function () {
+    if (get()) { put(''); status('Off.'); return; }
+    if (!supported()) { status('This browser cannot use Face ID here.'); return; }
+    try {
+      var c = await navigator.credentials.create({ publicKey: {
+        challenge: rnd(32), rp: { name: 'My Route Pro', id: location.hostname },
+        user: { id: rnd(16), name: 'myroute-pro', displayName: 'My Route Pro' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
+        timeout: 60000 } });
+      put(b64(c.rawId)); status('On. Face ID is required when you open the app.');
+    } catch (e) { status('Could not turn on: ' + (e && e.name === 'NotAllowedError' ? 'cancelled or not allowed.' : (e && e.message) || 'unknown error.')); }
+  };
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) hiddenAt = Date.now();
+    else if (get() && hiddenAt && Date.now() - hiddenAt > 30000) overlay();
+  });
+  function init() { status(get() ? 'On.' : ''); overlay(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
 </script>
 </body></html>
