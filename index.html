@@ -3639,6 +3639,31 @@ Add New Stop
     }
     function rfRemove(id, date) { const v = visits.find(x => x.id === id); if (v) { delete v.routeDate; saveRecords(); } rfOpen(date); }
     function rfPlan(date) { const list = visits.filter(v => v.routeDate === date); rpClose(); planRoute(list); }
+    // ----- Full-screen reminder when stops are planned for today -----
+    let rmdShown = false;
+    function rmdList() { return visits.filter(v => v.routeDate === todayString).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || '')); }
+    function rmdClose() { const o = document.getElementById('remindOverlay'); if (o) o.remove(); }
+    function rmdShow() {
+      const list = rmdList(); if (!list.length) return;
+      rmdShown = true; rmdClose();
+      const o = document.createElement('div'); o.id = 'remindOverlay';
+      o.style.cssText = 'position:fixed;inset:0;z-index:125;background:linear-gradient(160deg,#1e1b4b,#0f172a 55%,#4a044e);overflow-y:auto;padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));display:flex;align-items:flex-start;justify-content:center;color:#fff';
+      const rows = list.map((v, i) => '<li class="py-2 border-b border-slate-700"><span class="font-black text-pink-300">' + (i + 1) + '.</span> <span class="font-bold text-sm">' + escapeHtml(v.businessName || '') + '</span><div class="text-xs text-slate-400 break-words">' + escapeHtml(v.streetAddress || 'No street address') + '</div></li>').join('');
+      o.innerHTML = '<div style="width:100%;max-width:560px;margin:auto"><div class="text-center mb-4"><div class="text-4xl mb-1">&#128197;</div><div class="text-xl font-black">You have appointments today</div><div class="text-sm text-slate-300 mt-1">' + list.length + ' stop' + (list.length === 1 ? ' is' : 's are') + ' planned for ' + escapeHtml(rfNice(todayString)) + '</div></div>'
+        + '<ol class="mb-4 rounded-2xl bg-slate-800/70 border border-slate-700 px-4 py-2" style="list-style:none">' + rows + '</ol>'
+        + '<button type="button" onclick="rmdPlan()" class="block w-full px-4 py-3 mb-2 text-sm font-black text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-2xl">Plan route and open in Google Maps</button>'
+        + '<button type="button" onclick="rmdCopy()" class="block w-full px-4 py-3 mb-2 text-sm font-black text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl">Copy route list</button>'
+        + '<button type="button" onclick="rmdClose()" class="block w-full px-4 py-3 text-sm font-black text-white bg-slate-700 rounded-2xl">Dismiss</button></div>';
+      document.body.appendChild(o);
+    }
+    function rmdPlan() { const list = rmdList(); rmdClose(); planRoute(list); }
+    function rmdCopy() {
+      const list = rmdList();
+      const txt = list.map((v, i) => `${i + 1}. ${v.businessName || ''}${v.streetAddress ? ' - ' + v.streetAddress : ''}`).join('\n');
+      const done = () => showToast(`Route list copied: ${list.length} stop${list.length === 1 ? '' : 's'}`);
+      try { navigator.clipboard.writeText(txt).then(done, () => { fallbackCopy(txt); done(); }); } catch (e) { fallbackCopy(txt); done(); }
+    }
+    (function () { let tries = 0; const t = setInterval(() => { tries++; if (rmdShown || tries > 90) { clearInterval(t); return; } try { if (typeof visits !== 'undefined' && rmdList().length) { clearInterval(t); rmdShow(); } } catch (e) {} }, 700); })();
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
       rpClose();
