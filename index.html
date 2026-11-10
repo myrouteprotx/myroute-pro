@@ -1127,6 +1127,11 @@
           <p class="text-xs text-slate-400">Accounts scheduled for contact today or overdue for follow-up</p>
         </div>
 
+        <div id="radarRouteBar" style="display:none;position:sticky;top:8px;z-index:15" class="mb-3 flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-slate-900/95 border border-pink-400/60 shadow-xl">
+          <span id="radarSelCount" class="text-xs font-black text-pink-200 mr-auto"></span>
+          <button type="button" onclick="rfOpen()" class="tb-pill-lite px-3 py-2 text-[11px] font-black text-white rounded-xl border border-pink-300/60 bg-gradient-to-r from-pink-500 to-rose-500"><span>Add to future route</span></button>
+          <button type="button" onclick="planRoute()" class="tb-pill-lite px-3 py-2 text-[11px] font-black text-white rounded-xl border border-purple-300/60 bg-gradient-to-r from-purple-500 to-fuchsia-500"><span>Plan route now</span></button>
+        </div>
         <div id="reachBackCardsGrid" style="display:none" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-4">
           <!-- Dynamically populated -->
         </div>
@@ -4940,6 +4945,12 @@ Add New Stop
       badgeCount.textContent = `${queueList.length} delinquent \u2022 tap to ${radarOpen ? 'hide' : 'show'}`;
       badgeCount.setAttribute('aria-expanded', radarOpen ? 'true' : 'false');
       container.style.display = radarOpen ? '' : 'none';
+      const rb = document.getElementById('radarRouteBar');
+      if (rb) {
+        const sel = queueList.filter(isOnRoute).length;
+        rb.style.display = (radarOpen && queueList.length) ? 'flex' : 'none';
+        const sc = document.getElementById('radarSelCount'); if (sc) sc.textContent = sel + ' selected of ' + queueList.length + '. Check the boxes below, then use a button here.';
+      }
 
       if (queueList.length === 0) {
         container.innerHTML = `
