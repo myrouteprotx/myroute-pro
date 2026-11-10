@@ -730,6 +730,8 @@
       .cn-old { display: none !important; }
     }
 
+    #visitsTableBody > tr, #todayTableBody > tr, #yesterdayTableBody > tr, #fireTableBody > tr, #waterTableBody > tr, #pcwTableBody > tr { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    #visitsTableBody textarea, #todayTableBody textarea, #yesterdayTableBody textarea, #fireTableBody textarea, #waterTableBody textarea, #pcwTableBody textarea, #visitsTableBody input, #todayTableBody input, #fireTableBody input, #waterTableBody input, #pcwTableBody input { -webkit-user-select: text; user-select: text; }
     tr.route-on { background: rgba(0,230,118,.30) !important; outline: 3px solid #00e676 !important; outline-offset: -3px; box-shadow: inset 0 0 0 9999px rgba(0,230,118,.10); border-radius: 12px; }
     tr.route-on > td { background: transparent !important; }
     @media (min-width: 700px) { .today-actions > .tb-pill, #addVisitTodayBtn { width: 175px !important; height: 40px !important; } }
@@ -3535,26 +3537,42 @@ Add New Stop
     // A stop is on the route list when it was visited today (and not removed) or when you checked it to be added.
     function isOnToday(v) { return v.visitDate === todayString && v.removedFromToday !== todayString; }
     function isOnRoute(v) { return v.inRoute === true || (v.inRoute !== false && (isOnToday(v) || (v.routeDate === todayString && v.routeSkip !== todayString))); }
+    function routeAll() { return visits.concat(fires, waters, pcws); }
+    function routeName(v) { return String(v.businessName || v.homeownerName || v.ownerName || v.clientName || v.streetAddress || 'Stop'); }
+    function routePersist(list) {
+      let vis = false, fi = false, wa = false, pc = false;
+      (list || []).forEach(v => {
+        if (visits.includes(v)) vis = true;
+        else if (fires.includes(v)) { fi = true; try { writeFire(v); } catch (e) {} }
+        else if (waters.includes(v)) { wa = true; try { writeWater(v); } catch (e) {} }
+        else if (pcws.includes(v)) { pc = true; try { writePcw(v); } catch (e) {} }
+      });
+      if (vis) saveRecords();
+      if (fi) { try { lsSet(FIRES_KEY, JSON.stringify(fires)); afterFireChange(); } catch (e) {} }
+      if (wa) { try { lsSet(WATERS_KEY, JSON.stringify(waters)); afterWaterChange(); } catch (e) {} }
+      if (pc) { try { lsSet(PCWS_KEY, JSON.stringify(pcws)); afterPcwChange(); } catch (e) {} }
+      if (!vis) { try { renderReachBackQueue(); } catch (e) {} }
+    }
     function toggleRoute(id, on) {
-      const item = visits.find(v => v.id === id); if (!item) return;
+      const item = routeAll().find(v => v.id === id); if (!item) return;
       item.inRoute = !!on;
-      saveRecords();
-      showToast(on ? `${item.businessName} checked for your route` : `${item.businessName} unchecked`);
+      routePersist([item]);
+      showToast(on ? `${routeName(item)} checked for your route` : `${routeName(item)} unchecked`);
     }
     function clearPlannedRoute() {
-      let n = 0; visits.forEach(v => { if (v.inRoute === true) { delete v.inRoute; n++; } });
-      saveRecords(); showToast(n ? `Cleared ${n} added stop${n === 1 ? '' : 's'}` : 'No added stops to clear');
+      let n = 0; const hit = []; routeAll().forEach(v => { if (v.inRoute === true) { delete v.inRoute; hit.push(v); n++; } });
+      routePersist(hit); showToast(n ? `Cleared ${n} added stop${n === 1 ? '' : 's'}` : 'No added stops to clear');
     }
     function clearSelectedVisits() {
-      const n = visits.filter(v => v.inRoute === true).length;
+      const n = routeAll().filter(v => v.inRoute === true).length;
       if (!n) { showToast('No selected visits to clear'); return; }
       if (!confirm('Clear all ' + n + ' selected visit' + (n === 1 ? '' : 's') + '? You can undo this once with the Go back button.')) return;
       clearPlannedRoute();
     }
     function copyRouteList() {
-      const list = visits.filter(isOnRoute).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || ''));
+      const list = routeAll().filter(isOnRoute).sort((a, b) => routeName(a).localeCompare(routeName(b)));
       if (!list.length) { showToast('No stops on your route list yet'); return; }
-      const txt = list.map((v, i) => `${i + 1}. ${v.businessName || ''}${v.streetAddress ? ' - ' + v.streetAddress : ''}`).join('\n');
+      const txt = list.map((v, i) => `${i + 1}. ${routeName(v)}${v.streetAddress ? ' - ' + v.streetAddress : ''}`).join('\n');
       const done = () => showToast(`Route list copied: ${list.length} stop${list.length === 1 ? '' : 's'}`);
       try { navigator.clipboard.writeText(txt).then(done, () => { fallbackCopy(txt); done(); }); } catch (e) { fallbackCopy(txt); done(); }
     }
@@ -3645,9 +3663,9 @@ Add New Stop
     function rfNice(d) { return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
     function rfOpen(date) {
       date = date || addDaysToDate(todayString, 1);
-      const list = visits.filter(v => v.routeDate === date).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || ''));
-      const checked = visits.filter(v => v.inRoute === true && v.routeDate !== date).length;
-      const rows = list.map(v => '<li class="flex items-center gap-2 py-1.5 border-b border-slate-700 text-xs"><div class="flex-1 min-w-0"><div class="font-bold">' + escapeHtml(v.businessName || '') + '</div><div class="text-slate-400 break-words">' + escapeHtml(v.streetAddress || 'No street address') + '</div></div><button type="button" onclick="rfRemove(\'' + v.id + '\',\'' + date + '\')" class="px-2 py-1 text-[11px] font-bold text-red-300 bg-slate-800 border border-slate-600 rounded-lg">Remove</button></li>').join('');
+      const list = routeAll().filter(v => v.routeDate === date).sort((a, b) => routeName(a).localeCompare(routeName(b)));
+      const checked = routeAll().filter(v => v.inRoute === true && v.routeDate !== date).length;
+      const rows = list.map(v => '<li class="flex items-center gap-2 py-1.5 border-b border-slate-700 text-xs"><div class="flex-1 min-w-0"><div class="font-bold">' + escapeHtml(routeName(v)) + '</div><div class="text-slate-400 break-words">' + escapeHtml(v.streetAddress || 'No street address') + '</div></div><button type="button" onclick="rfRemove(\'' + v.id + '\',\'' + date + '\')" class="px-2 py-1 text-[11px] font-bold text-red-300 bg-slate-800 border border-slate-600 rounded-lg">Remove</button></li>').join('');
       rpShow('<div class="text-sm font-black mb-2">Future route</div>'
         + '<label class="block text-[11px] text-slate-400 mb-1" for="rfDate">Pick the day</label>'
         + '<input type="date" id="rfDate" value="' + date + '" min="' + todayString + '" onchange="if(this.value)rfOpen(this.value)" class="w-full text-sm px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white mb-1">'
@@ -3660,16 +3678,16 @@ Add New Stop
         + '<button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Go back</button>');
     }
     function rfAddChecked(date) {
-      const picks = visits.filter(v => v.inRoute === true);
+      const picks = routeAll().filter(v => v.inRoute === true);
       if (!picks.length) { showToast('Check some stops on the home screen first'); return; }
       picks.forEach(v => { v.routeDate = date; delete v.inRoute; });
-      saveRecords(); rfOpen(date); showToast(picks.length + ' stop' + (picks.length === 1 ? '' : 's') + ' added to ' + rfNice(date));
+      routePersist(picks); rfOpen(date); showToast(picks.length + ' stop' + (picks.length === 1 ? '' : 's') + ' added to ' + rfNice(date));
     }
-    function rfRemove(id, date) { const v = visits.find(x => x.id === id); if (v) { delete v.routeDate; saveRecords(); } rfOpen(date); }
-    function rfPlan(date) { const list = visits.filter(v => v.routeDate === date); rpClose(); planRoute(list); }
+    function rfRemove(id, date) { const v = routeAll().find(x => x.id === id); if (v) { delete v.routeDate; routePersist([v]); } rfOpen(date); }
+    function rfPlan(date) { const list = routeAll().filter(v => v.routeDate === date); rpClose(); planRoute(list); }
     // ----- Full-screen reminder when stops are planned for today -----
     let rmdShown = false;
-    function rmdList() { return visits.filter(v => v.routeDate === todayString).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || '')); }
+    function rmdList() { return routeAll().filter(v => v.routeDate === todayString).sort((a, b) => routeName(a).localeCompare(routeName(b))); }
     function rmdActive() { return rmdList().filter(v => v.routeSkip !== todayString); }
     function rmdMapsHtml() {
       const act = rmdActive().filter(v => String(v.streetAddress || '').trim());
@@ -3680,9 +3698,9 @@ Add New Stop
         + (noHome ? '<div style="font-size:11px;color:#fcd34d;margin:-2px 0 8px">Add your office address in Settings for a round trip. This link starts at the first stop.</div>' : '');
     }
     function rmdToggle(id, on) {
-      const v = visits.find(x => x.id === id); if (!v) return;
+      const v = routeAll().find(x => x.id === id); if (!v) return;
       if (on) delete v.routeSkip; else v.routeSkip = todayString;
-      saveRecords();
+      routePersist([v]);
       const m = document.getElementById('rmdMaps'); if (m) m.innerHTML = rmdMapsHtml();
       const c = document.getElementById('rmdCount'); if (c) { const n = rmdActive().length; c.textContent = n + ' of ' + rmdList().length + ' stop' + (rmdList().length === 1 ? '' : 's') + ' checked for ' + rfNice(todayString); }
     }
@@ -3695,7 +3713,7 @@ Add New Stop
       try { if (localStorage.getItem('mrp_remind_off') === todayString) { rmdShown = true; return; } } catch (e) {}
       rmdShown = true; const old = document.getElementById('remindOverlay'); if (old) old.remove();
       const em = document.querySelector('#companyBrand > img'); const logo = (em && em.getAttribute('src')) || 'icon-192.png';
-      const rows = list.map((v, i) => '<li style="padding:10px 0;border-bottom:1px solid #334155"><label style="display:flex;align-items:flex-start;gap:12px"><input type="checkbox" ' + (v.routeSkip === todayString ? '' : 'checked ') + 'onchange="rmdToggle(\'' + v.id + '\', this.checked)" style="width:24px;height:24px;min-width:24px;accent-color:#00e676;margin-top:2px"><span><span style="display:block;font-size:16px;font-weight:800;color:#fff"><span style="color:#f9a8d4">' + (i + 1) + '.</span> ' + escapeHtml(v.businessName || '') + '</span><span style="display:block;font-size:14px;color:#cbd5e1;word-break:break-word">' + escapeHtml(v.streetAddress || 'No street address') + '</span></span></label></li>').join('');
+      const rows = list.map((v, i) => '<li style="padding:10px 0;border-bottom:1px solid #334155"><label style="display:flex;align-items:flex-start;gap:12px"><input type="checkbox" ' + (v.routeSkip === todayString ? '' : 'checked ') + 'onchange="rmdToggle(\'' + v.id + '\', this.checked)" style="width:24px;height:24px;min-width:24px;accent-color:#00e676;margin-top:2px"><span><span style="display:block;font-size:16px;font-weight:800;color:#fff"><span style="color:#f9a8d4">' + (i + 1) + '.</span> ' + escapeHtml(routeName(v)) + '</span><span style="display:block;font-size:14px;color:#cbd5e1;word-break:break-word">' + escapeHtml(v.streetAddress || 'No street address') + '</span></span></label></li>').join('');
       const o = document.createElement('div'); o.id = 'remindOverlay';
       o.style.cssText = 'position:fixed;inset:0;z-index:125;background:rgba(2,6,23,.6);display:flex;align-items:flex-end;justify-content:center';
       o.innerHTML = '<div style="width:100%;max-width:560px;height:50vh;height:50dvh;min-height:340px;max-height:100%;display:flex;flex-direction:column;background:#0f172a;border:1px solid #a855f7;border-radius:20px 20px 0 0;color:#fff;padding:14px 16px max(14px,env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.6)">'
@@ -3709,7 +3727,7 @@ Add New Stop
     function rmdPlan() { const list = rmdActive(); rmdClose(); if (!list.length) { showToast('No stops are checked'); return; } planRoute(list); }
     function rmdCopy() {
       const list = rmdList();
-      const txt = list.map((v, i) => `${i + 1}. ${v.businessName || ''}${v.streetAddress ? ' - ' + v.streetAddress : ''}`).join('\n');
+      const txt = list.map((v, i) => `${i + 1}. ${routeName(v)}${v.streetAddress ? ' - ' + v.streetAddress : ''}`).join('\n');
       const done = () => showToast(`Route list copied: ${list.length} stop${list.length === 1 ? '' : 's'}`);
       try { navigator.clipboard.writeText(txt).then(done, () => { fallbackCopy(txt); done(); }); } catch (e) { fallbackCopy(txt); done(); }
     }
@@ -3791,7 +3809,7 @@ Add New Stop
         rpShow('<div class="text-sm font-black mb-2">Add your office address first</div><div class="text-xs text-slate-300 mb-3">Open Settings, scroll to the box named "Route start and finish addresses", type a name such as Office, start typing the address and pick it from the list, then tap Add address. Then tap Plan my route again.</div><button type="button" onclick="rpClose();openSettings && openSettings()" class="px-3 py-2 text-xs font-black bg-purple-600 rounded-xl mr-2">Open Settings</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
         return;
       }
-      const all = Array.isArray(over) ? over : visits.filter(isOnRoute);
+      const all = Array.isArray(over) ? over : routeAll().filter(isOnRoute);
       const stops = all.filter(v => String(v.streetAddress || '').trim());
       const skipped = all.filter(v => !String(v.streetAddress || '').trim());
       if (!stops.length) { showToast('No stops with a street address are checked for your route'); return; }
@@ -3813,7 +3831,7 @@ Add New Stop
           if (!rmHasGeo(v) || v.geoApprox) {
             status('Locating stop ' + (i + 1) + ' of ' + stops.length + '...');
             const pt = await rmGeo(String(v.streetAddress).replace(/\s+/g, ' ').trim()).catch(() => null);
-            if (pt) { v.lat = Math.round(pt[0] * 1e6) / 1e6; v.lng = Math.round(pt[1] * 1e6) / 1e6; v.geoApprox = false; saveRecords(); }
+            if (pt) { v.lat = Math.round(pt[0] * 1e6) / 1e6; v.lng = Math.round(pt[1] * 1e6) / 1e6; v.geoApprox = false; routePersist([v]); }
             await wait();
           }
           pts.push(rmHasGeo(v) ? [v.lat, v.lng] : null);
@@ -3826,14 +3844,14 @@ Add New Stop
         const ordered = order.filter(k => k !== 0).map(k => stops[usable[k].i - 1]);
         const parts = rpLinks(home, ordered);
         const skipAll = skipped.concat(lost);
-        const rows = ordered.map((v, i) => '<li class="py-1.5 border-b border-slate-700 text-xs"><span class="font-black text-purple-300">' + (i + 1) + '.</span> <span class="font-bold">' + escapeHtml(v.businessName || '') + '</span><br><span class="text-slate-400">' + escapeHtml(v.streetAddress || '') + '</span></li>').join('');
+        const rows = ordered.map((v, i) => '<li class="py-1.5 border-b border-slate-700 text-xs"><span class="font-black text-purple-300">' + (i + 1) + '.</span> <span class="font-bold">' + escapeHtml(routeName(v)) + '</span><br><span class="text-slate-400">' + escapeHtml(v.streetAddress || '') + '</span></li>').join('');
         const btns = parts.map((p, i) => '<a href="' + p.url + '" target="_blank" rel="noopener" onclick="return rpOpenMaps(this)" class="block text-center px-3 py-3 mb-2 text-sm font-black text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-xl">Open in Google Maps' + (parts.length > 1 ? ' - part ' + (i + 1) + ' of ' + parts.length + ' (stops ' + p.from + ' to ' + p.to + ')' : '') + '</a>').join('');
-        window.__rpText = 'Start: ' + home + '\n' + ordered.map((v, i) => (i + 1) + '. ' + (v.businessName || '') + ' - ' + (v.streetAddress || '')).join('\n') + '\nFinish: ' + home;
+        window.__rpText = 'Start: ' + home + '\n' + ordered.map((v, i) => (i + 1) + '. ' + (routeName(v)) + ' - ' + (v.streetAddress || '')).join('\n') + '\nFinish: ' + home;
         rpShow('<div class="text-sm font-black mb-1">Your route: ' + ordered.length + ' stop' + (ordered.length === 1 ? '' : 's') + '</div>'
           + '<div class="text-[11px] text-slate-400 mb-3">Leaves from and returns to ' + escapeHtml(home) + '. Ordered with ' + method + '.</div>' + btns
           + (parts.length > 1 ? '<div class="text-[11px] text-slate-400 mb-2">Google Maps takes about 10 stops per link, so open the parts in order; each part starts where the last one ended.</div>' : '')
           + '<ol class="mb-3" style="list-style:none;padding:0">' + rows + '</ol>'
-          + (skipAll.length ? '<div class="text-[11px] text-amber-300 mb-3">Left out (no street address or not found): ' + skipAll.map(v => escapeHtml(v.businessName || '')).join(', ') + '</div>' : '')
+          + (skipAll.length ? '<div class="text-[11px] text-amber-300 mb-3">Left out (no street address or not found): ' + skipAll.map(v => escapeHtml(routeName(v))).join(', ') + '</div>' : '')
           + '<button type="button" onclick="try{navigator.clipboard.writeText(window.__rpText)}catch(e){};showToast(\'Route copied\')" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Copy route</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Go back</button>');
       } catch (e) {
         rpShow('<div class="text-sm font-black mb-2">Could not plan the route</div><div class="text-xs text-slate-300 mb-3">Check your connection and try again.</div><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
@@ -4680,8 +4698,16 @@ Add New Stop
       const kinds = { visitsTableBody: 'visit', todayTableBody: 'visit', yesterdayTableBody: 'visit', fireTableBody: 'fire', waterTableBody: 'water', pcwTableBody: 'pcw' };
       const k = kinds[body];
       if (!k) return;
-      detailOrigin = 'home';
-      openDetail(k, tr.getAttribute(k === 'visit' ? 'data-vid' : 'data-fid'));
+      const rid = tr.getAttribute(k === 'visit' ? 'data-vid' : 'data-fid');
+      // One click opens the visit. A second click right after it checks or unchecks the route box instead.
+      if (window.__rowClick && window.__rowClick.id === rid) {
+        clearTimeout(window.__rowClick.t); window.__rowClick = null;
+        try { window.getSelection().removeAllRanges(); } catch (err) {}
+        const it = routeAll().find(x => x.id === rid);
+        if (it) toggleRoute(rid, !isOnRoute(it));
+        return;
+      }
+      window.__rowClick = { id: rid, t: setTimeout(() => { window.__rowClick = null; detailOrigin = 'home'; openDetail(k, rid); }, 320) };
     });
 
     // Fire, water and Company lead visits from yesterday, shown in the same box
@@ -8337,10 +8363,10 @@ Add New Stop
       if (f.ownerName) names.push(`<div class="text-xs text-white font-extrabold">${escapeHtml(f.ownerName)}<span class="text-[10px] text-red-200/70 font-semibold"> · property owner</span></div>`);
       if (!names.length) names.push('<span class="text-slate-500 italic text-[11px]">No names yet</span>');
       return `
-        <tr class="hover:bg-red-950/20 transition" data-fid="${escapeHtml(f.id)}">
+        <tr class="hover:bg-red-950/20 transition${isOnRoute(f) ? ' route-on' : ''}" data-fid="${escapeHtml(f.id)}">
           <td class="py-3.5 px-4 max-w-[220px]">
             ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="mob-photo block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the fire property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-red-400/40"></a>` : ''}
-            <div class="text-xs font-extrabold text-white break-words">${escapeHtml(f.streetAddress || 'No address')}</div>
+            <div class="text-xs font-extrabold text-white break-words flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(f) ? 'checked' : ''} onchange="toggleRoute('${escapeHtml(f.id)}', this.checked)" aria-label="Add to my planned route" title="Check to include this stop in your planned route"><span>${escapeHtml(f.streetAddress || 'No address')}</span></div>
             ${f.streetAddress ? `<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-[10px] font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-2 py-0.5 rounded-lg"><i data-lucide="navigation-2" class="w-2.5 h-2.5"></i><span>Open in Maps</span></a>` : ''}
             ${f.insurance ? `<div class="text-[10px] text-slate-400 mt-1">Insurance: ${escapeHtml(f.insurance)}</div>` : ''}
           </td>
@@ -8777,10 +8803,10 @@ Add New Stop
       if (f.ownerName) names.push(`<div class="text-xs text-white font-extrabold">${escapeHtml(f.ownerName)}<span class="text-[10px] text-sky-200/70 font-semibold"> · property owner</span></div>`);
       if (!names.length) names.push('<span class="text-slate-500 italic text-[11px]">No names yet</span>');
       return `
-        <tr class="hover:bg-sky-950/20 transition" data-fid="${escapeHtml(f.id)}">
+        <tr class="hover:bg-sky-950/20 transition${isOnRoute(f) ? ' route-on' : ''}" data-fid="${escapeHtml(f.id)}">
           <td class="py-3.5 px-4 max-w-[220px]">
             ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="mob-photo block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the water loss property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-sky-400/40"></a>` : ''}
-            <div class="text-xs font-extrabold text-white break-words">${escapeHtml(f.streetAddress || 'No address')}</div>
+            <div class="text-xs font-extrabold text-white break-words flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(f) ? 'checked' : ''} onchange="toggleRoute('${escapeHtml(f.id)}', this.checked)" aria-label="Add to my planned route" title="Check to include this stop in your planned route"><span>${escapeHtml(f.streetAddress || 'No address')}</span></div>
             ${f.streetAddress ? `<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-[10px] font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-2 py-0.5 rounded-lg"><i data-lucide="navigation-2" class="w-2.5 h-2.5"></i><span>Open in Maps</span></a>` : ''}
             ${f.insurance ? `<div class="text-[10px] text-slate-400 mt-1">Insurance: ${escapeHtml(f.insurance)}</div>` : ''}
           </td>
@@ -9200,10 +9226,10 @@ Add New Stop
       if (f.ownerName) names.push(`<div class="text-xs text-white font-extrabold">${escapeHtml(f.ownerName)}<span class="text-[10px] text-emerald-200/70 font-semibold"> · property owner</span></div>`);
       if (!names.length) names.push('<span class="text-slate-500 italic text-[11px]">No names yet</span>');
       return `
-        <tr class="hover:bg-emerald-950/20 transition" data-fid="${escapeHtml(f.id)}">
+        <tr class="hover:bg-emerald-950/20 transition${isOnRoute(f) ? ' route-on' : ''}" data-fid="${escapeHtml(f.id)}">
           <td class="py-3.5 px-4 max-w-[220px]">
             ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="mob-photo block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-emerald-400/40"></a>` : ''}
-            <div class="text-xs font-extrabold text-white break-words">${escapeHtml(f.streetAddress || 'No address')}</div>
+            <div class="text-xs font-extrabold text-white break-words flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(f) ? 'checked' : ''} onchange="toggleRoute('${escapeHtml(f.id)}', this.checked)" aria-label="Add to my planned route" title="Check to include this stop in your planned route"><span>${escapeHtml(f.streetAddress || 'No address')}</span></div>
             ${f.streetAddress ? `<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-[10px] font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-2 py-0.5 rounded-lg"><i data-lucide="navigation-2" class="w-2.5 h-2.5"></i><span>Open in Maps</span></a>` : ''}
             ${f.insurance ? `<div class="text-[10px] text-slate-400 mt-1">Insurance: ${escapeHtml(f.insurance)}</div>` : ''}
           </td>
