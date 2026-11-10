@@ -943,6 +943,14 @@
     .cpill-email { color: #fbcfe8; background: rgba(157,23,77,.35); border-color: #f472b6; }
     .cpill-bulk { grid-column: 1 / -1; color: #a7f3d0; background: rgba(5,150,105,.25); border-color: #34d399; min-height: 30px; font-size: 12px; font-weight: 800; }
     @media not all and (min-width: 1100px) and (hover: hover) and (pointer: fine) { .cpill-bulk, #bulkEmailSettingsBtn { display: none !important; } }
+    @media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+      table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6) { white-space: nowrap; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) { min-width: 380px; width: 32%; max-width: none !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box textarea { min-height: 120px; font-size: 13px !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .desk-only { width: 100%; align-items: stretch !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) > div:last-child { display: block !important; width: 100%; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) button:not(.note-save) { display: block; width: 100%; box-sizing: border-box; text-align: center !important; font-size: 12px !important; padding: 6px 8px; border: 1px solid rgba(148,163,184,.35); border-radius: 8px; background: rgba(15,23,42,.5); margin-top: 3px; }
+    }
     .cpill-bulk.on { color: #fff; background: #059669; border-color: #6ee7b7; }
     .cpill-email:hover { background: rgba(219,39,119,.5); }
     .cpill-add { border-style: dashed; }
