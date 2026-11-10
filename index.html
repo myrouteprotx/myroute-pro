@@ -6,6 +6,8 @@
 #vpPhotoPick,#vpCardPick,#scanPickBtn{background:#0f172a !important;color:#e2e8f0 !important;border:1px solid #475569 !important;padding:8px 14px !important}
 #vpCardBox + *, #scanWrap{margin-top:12px}
 #scanBlock>div{display:block}
+
+@media (max-width:1099px){#visitModal{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;background:rgba(2,6,23,.94) !important}#visitModal *{-webkit-backdrop-filter:none !important;backdrop-filter:none !important}}
 </style></head><body>
 <!DOCTYPE html>
 <html lang="en">
@@ -8891,9 +8893,7 @@ Add New Stop
       setScanBusy(true);
       setScanStatus('Reading the card...');
       try {
-        let small = await compressImage(file, 1600, 0.85);
-        setScanStatus('Finding the card in the photo...');
-        small = await autoCropCard(small);
+        let small = await compressImage(file, 1400, 0.82);
         const th = document.getElementById('scanThumb');
         if (th.src && th.src.startsWith('blob:')) URL.revokeObjectURL(th.src);
         th.src = URL.createObjectURL(small);
@@ -8908,6 +8908,7 @@ Add New Stop
             usedCloud = true;
           }
         } catch (ce) { if (ce && ce.code === 'cancelled') throw ce; data = null; window.__mrpCloudErr = String((ce && (ce.message || ce.code)) || ce || 'unknown').slice(0, 120); }
+        if (!data) { setScanStatus('Finding the card in the photo...'); await new Promise(r => setTimeout(r, 30)); try { small = await autoCropCard(small); th.src = URL.createObjectURL(small); } catch (e) {} }
         if (!data) data = await Promise.race([
           ocrCard(small, m => { if (m.status === 'recognizing text') setScanStatus('Reading the card... ' + Math.round((m.progress || 0) * 100) + '%'); }),
           new Promise((_, rej) => ctl.signal.addEventListener('abort', () => rej({ code: 'cancelled' })))
