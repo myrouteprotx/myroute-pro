@@ -970,7 +970,7 @@
     @media screen and (min-width: 1100px) {
       table:has(#visitsTableBody) tr, table:has(#todayTableBody) tr, table:has(#yesterdayTableBody) tr { grid-template-columns: minmax(150px,1.3fr) minmax(150px,1.2fr) minmax(150px,1fr) minmax(150px,1fr) minmax(220px,2fr) minmax(150px,.9fr) !important; }
     }
-    #visitsTableBody td:nth-child(3)::before, #todayTableBody td:nth-child(3)::before, #yesterdayTableBody td:nth-child(3)::before { content: "Visited on / Reach back" !important; }
+    @media (max-width: 1099px) { #visitsTableBody td:nth-child(3)::before, #todayTableBody td:nth-child(3)::before, #yesterdayTableBody td:nth-child(3)::before { content: "Visited on / Reach back" !important; text-align: center; } }
 
     .notes-lbl { display: none; }
     @media (max-width: 767px) {
@@ -998,6 +998,19 @@
     #addVisitTodayBtn { background: linear-gradient(90deg, #00e85c, #19ff8c) !important; color: #022c0f !important; border: 3px solid #00ff6a !important; animation: addVisitBlink 1.1s ease-in-out infinite; text-shadow: none !important; }
     #addVisitTodayBtn, #addVisitTodayBtn * { color: #022c0f !important; font-weight: 900 !important; }
     @media (prefers-reduced-motion: reduce) { #addVisitTodayBtn { animation: none; box-shadow: 0 0 0 3px #00ff6a, 0 0 14px 3px rgba(0,255,106,.7); } }
+
+    /* Visit: contact name 16, job title 14, then the call / email pills, then the photos */
+    .cn-line-name { display: block !important; font-size: 16px !important; font-weight: 800; color: #fff; line-height: 1.25; margin-top: 3px; }
+    .cn-line-role { display: block !important; font-size: 14px !important; font-weight: 700; color: #fff; line-height: 1.25; margin-top: 1px; }
+    .mob-only.pill-row { display: grid !important; }
+    .pill-row > .cpill { width: 100%; height: 38px; min-height: 38px; justify-content: center; padding: 0 8px; white-space: nowrap; font-size: 13px; }
+    .pill-row > .cpill > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .pill-row > .cpill > svg, .pill-row > .cpill > i { display: none !important; }
+
+    /* Visited on / Reach back: the title appears once and the two calendars are centered under it */
+    #visitsTableBody td:nth-child(3), #todayTableBody td:nth-child(3), #yesterdayTableBody td:nth-child(3) { text-align: center; }
+    #visitsTableBody td:nth-child(3) .vdate, #todayTableBody td:nth-child(3) .vdate, #yesterdayTableBody td:nth-child(3) .vdate { margin-left: auto !important; margin-right: auto !important; }
+    table:has(#visitsTableBody) th:nth-child(3), table:has(#todayTableBody) th:nth-child(3), table:has(#yesterdayTableBody) th:nth-child(3) { text-align: center; }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -5400,16 +5413,13 @@ Add New Stop
         return `
           <tr data-vid="${escapeHtml(item.id)}" class="hover:bg-slate-700/40 transition${isOnRoute(item) ? ' route-on' : ''}">
             <td class="py-3.5 px-4">
-              <div class="font-extrabold text-white text-xs flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(item) ? 'checked' : ''} onchange="toggleRoute('${item.id}', this.checked)" aria-label="Add to my route list" title="Check to include this stop in your planned route"><span>${escapeHtml(item.businessName)}${item.clientName ? `<span class="cn-inline"> / ${escapeHtml(item.clientName)}</span>` : ''}</span></div>
-              ${item.clientRole ? `<div class="cn-role-inline font-extrabold text-white text-xs">${escapeHtml(item.clientRole)}</div>` : ''}
+              <div class="font-extrabold text-white text-xs flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(item) ? 'checked' : ''} onchange="toggleRoute('${item.id}', this.checked)" aria-label="Add to my route list" title="Check to include this stop in your planned route"><span>${escapeHtml(item.businessName)}</span></div>
+              ${item.clientName ? `<div class="cn-line-name">${escapeHtml(item.clientName)}</div>` : ''}
+              ${item.clientRole ? `<div class="cn-line-role">${escapeHtml(item.clientRole)}</div>` : ''}
               ${groupChipDark(item)}
-              ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="lc-top flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
-              <div class="mob-only mt-1" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;width:100%">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" data-vid-e="${escapeHtml(item.id)}" data-kind="phone" onclick="if (Date.now() < (window.__lpUntil || 0)) { event.preventDefault(); return false; } return startCall(event, '${item.id}')" title="Tap to call. Hold to see the number." class="cpill cpill-phone mob-hold"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>` : `<button type="button" onclick="addPhonePopup('${item.id}')" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`}${item.email ? `<a href="#" data-vid-e="${escapeHtml(item.id)}" data-kind="email" onclick="event.preventDefault(); if (Date.now() < (window.__lpUntil || 0)) return false; openFollowUp('${item.id}')" title="Tap to email. Hold to see the address." class="cpill cpill-email mob-hold"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="addEmailPopup('${item.id}')" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}</div>
+              <div class="mob-only pill-row mt-1.5" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;width:100%">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" data-vid-e="${escapeHtml(item.id)}" data-kind="phone" onclick="if (Date.now() < (window.__lpUntil || 0)) { event.preventDefault(); return false; } return startCall(event, '${item.id}')" title="Tap to call. Hold to see the number." class="cpill cpill-phone mob-hold"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>` : `<button type="button" onclick="addPhonePopup('${item.id}')" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`}${item.email ? `<a href="#" data-vid-e="${escapeHtml(item.id)}" data-kind="email" onclick="event.preventDefault(); if (Date.now() < (window.__lpUntil || 0)) return false; openFollowUp('${item.id}')" title="Tap to email. Hold to see the address." class="cpill cpill-email mob-hold"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="addEmailPopup('${item.id}')" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}</div>
               ${visitPhotoIds(item).length ? `<div class="mob-photo flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
-              <div class="cn-old text-[11px] text-slate-300 font-semibold mt-0.5">
-                ${escapeHtml(item.clientName)}
-                ${item.clientRole ? `<span class="text-slate-400 font-normal"> · ${escapeHtml(item.clientRole)}</span>` : ''}
-              </div>
+              ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="lc-top flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
               ${managedItems(item).length ? `<div class="prop-incell mt-1.5"><div class="text-[11px] text-fuchsia-200 font-black mb-1">Properties:</div>${managedCards(item, 'dark', true)}</div>` : ''}
             </td>
 
@@ -5431,10 +5441,7 @@ Add New Stop
             <td class="vd-gone"></td>
 
             <td class="py-3.5 px-4 max-w-xs">
-              <div class="desk-only mb-2" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;width:100%">
-                ${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" onclick="return startCall(event, '${item.id}')" title="Call ${escapeHtml(item.phone)} and log the time" class="cpill cpill-phone"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add a phone number" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`}
-                ${item.email ? `<a href="#" onclick="event.preventDefault(); openFollowUp('${item.id}')" title="Send an email to ${escapeHtml(item.email)}. Opens the email page for this visit." class="cpill cpill-email"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add an email address" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}
-              </div>
+              
 
               ${notesBox(item)}
               ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="desk-only mt-1.5" style="display:flex;flex-direction:column;align-items:flex-start;gap:3px">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
