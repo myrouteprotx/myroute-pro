@@ -205,7 +205,7 @@
   })();
   window.__mrpScan = async function (b64, mediaType) {
     if (!sb) throw new Error('offline');
-    var r = await sb.functions.invoke('scan-card', { body: { image: b64, mediaType: mediaType || 'image/jpeg' } });
+    var r = await sb.functions.invoke('rapid-task', { body: { image: b64, mediaType: mediaType || 'image/jpeg' } });
     if (r.error) throw r.error;
     if (!r.data || r.data.error) throw new Error((r.data && r.data.error) || 'scan_failed');
     return r.data;
