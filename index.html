@@ -977,6 +977,14 @@
       .notes-lbl { display: block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; margin: 4px 0.5rem 0; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) .note-box textarea { width: calc(100% - 1rem) !important; margin: 0 0.5rem; box-sizing: border-box; min-height: 88px; font-size: 14px !important; border-radius: 0.5rem !important; }
     }
+
+    /* Visit details: every box and field is the same size */
+    #detailBody [data-df]:not(textarea) { height: 48px !important; min-height: 48px !important; box-sizing: border-box !important; -webkit-appearance: none; appearance: none; font-size: 16px !important; padding: 0 12px !important; line-height: 48px; display: block; width: 100% !important; }
+    #detailBody select[data-df] { line-height: normal; padding-right: 28px !important; }
+    #detailBody input[type="date"][data-df] { line-height: normal; display: flex; align-items: center; }
+    #detailBody input[type="date"][data-df]::-webkit-date-and-time-value { text-align: left; min-height: 0; }
+    #detailBody textarea[data-df] { font-size: 16px !important; box-sizing: border-box; width: 100% !important; }
+    #detailBody .grid > div.rounded-2xl { box-sizing: border-box; min-width: 0; }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -2693,7 +2701,7 @@ Add New Stop
         <span id="detailKind" class="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border"></span>
         <button type="button" id="detailSaveBtn" onclick="detailSaveAll()" class="hidden inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-black text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg shadow-emerald-600/40 active:scale-95 transition"><i data-lucide="save" class="w-4 h-4"></i><span>Save changes</span></button>
         <span id="detailWarn" class="hidden text-xs font-black text-amber-300 bg-amber-950/60 border border-amber-500/60 rounded-xl px-3 py-2 flex items-center gap-2"><span>Unsaved changes.</span><button type="button" onclick="detailSaveAll(true)" class="underline text-emerald-300">Save and close</button><button type="button" onclick="closeDetail(true)" class="underline text-rose-300">Discard</button></span>
-        <button type="button" id="detailEditBtn" class="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black text-white bg-gradient-to-r from-indigo-500 to-pink-600 active:scale-95 transition"><i data-lucide="edit-3" class="w-4 h-4"></i><span>Edit</span></button>
+        <button type="button" id="detailEditBtn" style="display:none" class="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black text-white bg-gradient-to-r from-indigo-500 to-pink-600 active:scale-95 transition"><i data-lucide="edit-3" class="w-4 h-4"></i><span>Edit</span></button>
       </div>
       <div id="detailBody"></div>
     </div>
@@ -4797,7 +4805,6 @@ Add New Stop
           + dEdit('Outcome status', kind, id, 'visitStatus', v.visitStatus || 'New Lead', 'select', STATUS_OPTIONS.map(x => [x, x]))
           + dEdit('Result of visit', kind, id, 'visitResult', v.visitResult || '', 'select', RESULT_OPTIONS.map(r => [r.value, r.label]))
           + dEdit('When to reach back', kind, id, 'followUpDate', v.followUpDate, 'date')
-          + dEdit('Priority', kind, id, 'priority', v.priority || 'Medium', 'select', [['High', 'High'], ['Medium', 'Medium'], ['Low', 'Low']])
           + dEdit('Notes', kind, id, 'notes', v.notes, 'textarea')
           + dField('Properties they manage', managedItems(v).length ? managedCards(v, 'dark', true) : '') + detailGroupBox(id) + dField('Building photos', dPhotos(visitPhotoIds(v), 'Building')) + detailPhotoBox(kind, id) + dField('Business card', dPhotos([v.cardPhotoId], 'Business card'))
           + dField('Follow-up email', followUpBox(v))
@@ -4825,6 +4832,7 @@ Add New Stop
       }
       document.getElementById('detailKind').textContent = detailName[kind];
       document.getElementById('detailKind').className = 'text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ' + detailTone[kind];
+      document.getElementById('detailKind').style.display = kind === 'visit' ? 'none' : '';
       document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${kind === 'visit' ? followUpTopBtn(id) : ''}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">${html}</div>`;
       detailDirty = new Set();
       if (kind === 'visit') {
@@ -7540,7 +7548,7 @@ Add New Stop
       const v = visits.find(x => x.id === id); if (!v) return '';
       const sent = Array.isArray(v.emailsSent) ? v.emailsSent : [];
       const last = sent.length ? sent[sent.length - 1].date : '';
-      return `<button type="button" onclick="openFollowUp('${escapeHtml(id)}')" class="px-3.5 py-2 rounded-xl bg-fuchsia-600 text-white font-black text-sm border border-white/60 shrink-0">Follow-up email</button><span style="color:#ff5252;font-weight:900;font-size:24px;line-height:1" title="Details recorded during your visit are filled in automatically. Please confirm they are accurate before sending.">*</span>`
+      return `<button type="button" onclick="openFollowUp('${escapeHtml(id)}')" class="px-3.5 py-2 rounded-xl bg-fuchsia-600 text-white font-black text-sm border border-white/60 shrink-0">Follow-up email</button>`
         + `<span class="text-xs font-bold ${last ? 'text-emerald-300' : 'text-amber-300'}">${last ? 'Last emailed ' + escapeHtml(last) : 'No email sent yet'}</span>`;
     }
     function followUpBox(v) {
