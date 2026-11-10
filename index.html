@@ -2745,8 +2745,8 @@ Add New Stop
     }
 
     // ---- Go back: undo the last saved change (visits, fires, water losses and Company leads) ----
-    const UNDO_MAX = 15;
-    const UNDO_MS = 10 * 60 * 1000;
+    const UNDO_MAX = 40;
+    const UNDO_MS = 2 * 60 * 60 * 1000;
     let undoStack = [];
     let undoLast_ = null;       // state right after the most recent change
     let undoSuppress = false;
