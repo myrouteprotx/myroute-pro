@@ -899,6 +899,17 @@
     @keyframes rmFlash { 0%, 100% { background-color: transparent; } 15%, 70% { background-color: rgba(0, 208, 240, 0.28); } }
     tr.rm-flash { animation: rmFlash 2.6s ease-out; outline: 2px solid #00d0f0; outline-offset: -2px; }
     @media (prefers-reduced-motion: reduce) { tr.rm-flash { animation: none; background-color: rgba(0, 208, 240, 0.22); } }
+
+    /* Phone: Visited on, Outcome, Result of visit, Reach back and Contact preference are all one size, edge to edge */
+    @media (max-width: 640px) {
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) .vbox,
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) select[aria-label="How they prefer to be contacted"] { width: 100% !important; min-width: 0 !important; max-width: 100% !important; height: 44px !important; box-sizing: border-box !important; font-size: 14px !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) select[aria-label="How they prefer to be contacted"] { padding: 0 12px !important; border-radius: 0.5rem; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) td:has(> div > .vbox) > div { align-items: stretch !important; width: 100%; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) td:has(> .vbox), :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) td:has(> div > .vbox) { width: 100% !important; box-sizing: border-box; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) label:has(> select[aria-label="How they prefer to be contacted"]) { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 2px; width: 100%; font-size: 11px !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) .vdate input { font-size: 14px; }
+    }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
