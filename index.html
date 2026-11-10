@@ -5319,7 +5319,7 @@ Add New Stop
             <td class="py-3.5 px-4 max-w-xs">
               <div class="desk-only mb-2" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%">
                 ${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" onclick="return startCall(event, '${item.id}')" title="Call and log the time" class="cpill cpill-phone"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>${escapeHtml(item.phone)}</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add a phone number" class="cpill cpill-phone cpill-add"><span>+ Add phone</span></button>`}
-                ${item.email ? `<a href="#" onclick="event.preventDefault(); openFollowUp('${item.id}')" title="Open the email page for this visit" class="cpill cpill-email"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>${escapeHtml(item.email)}</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add an email address" class="cpill cpill-email cpill-add"><span>+ Add email</span></button>`}
+                ${item.email ? `<a href="#" onclick="event.preventDefault(); openFollowUp('${item.id}')" title="Send an email to ${escapeHtml(item.email)}. Opens the email page for this visit." class="cpill cpill-email"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send email</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add an email address" class="cpill cpill-email cpill-add"><span>+ Add email</span></button>`}
               </div>
 
               <div class="mb-1.5">${preferredSelect(item)}</div>
