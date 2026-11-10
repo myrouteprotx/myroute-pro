@@ -1298,7 +1298,7 @@
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
                 <th scope="col" class="py-3.5 px-4">Outcome Status</th>
                 <th scope="col" class="py-3.5 px-4 vd-gone">When To Reach Back</th>
-                <th scope="col" class="py-3.5 px-4">Notes & Last Contacted</th>
+                <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -1330,7 +1330,7 @@
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
                 <th scope="col" class="py-3.5 px-4">Outcome Status</th>
                 <th scope="col" class="py-3.5 px-4 vd-gone">When To Reach Back</th>
-                <th scope="col" class="py-3.5 px-4">Notes & Last Contacted</th>
+                <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -1530,7 +1530,7 @@
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
                 <th scope="col" class="py-3.5 px-4">Outcome Status</th>
                 <th scope="col" class="py-3.5 px-4 vd-gone">When To Reach Back</th>
-                <th scope="col" class="py-3.5 px-4">Notes & Last Contacted</th>
+                <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -4117,7 +4117,7 @@ Add New Stop
     // Notes can be typed, changed or cleared right on the home screen; the Save note button keeps them
     function notesBox(item, small) {
       return `<div class="note-box mt-1" data-nid="${escapeHtml(item.id)}">`
-        + (small ? '' : '<div class="notes-lbl">Notes & Last Contacted</div>')
+        + (small ? '' : '<div class="notes-lbl">Notes and Last Contacted</div>')
         + `<textarea rows="${small ? 2 : 3}" placeholder="Add a note..." aria-label="Notes for ${escapeHtml(item.businessName || 'this stop')}" oninput="noteTyped(this)" class="w-full text-[11px] leading-snug px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-y">${escapeHtml(item.notes || '')}</textarea>`
         + `<button type="button" onclick="saveNote(this)" data-orig="${escapeHtml(item.notes || '')}" class="note-save note-state-saved mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-black border">Saved</button></div>`;
     }
