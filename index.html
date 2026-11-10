@@ -2002,6 +2002,7 @@ Add New Stop
   <div id="visitModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md hidden">
     <div class="bg-slate-900 rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-slate-700 overflow-y-auto max-h-[92vh]">
       
+      <div id="visitModalTop" style="position:sticky;top:-1.25rem;z-index:30;margin:-1.25rem -1.25rem 0 -1.25rem;padding:1.25rem 1.25rem 0.75rem 1.25rem;background:#0f172a;border-bottom:1px solid #1e293b">
       <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md">
@@ -2015,6 +2016,11 @@ Add New Stop
         <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button type="button" onclick="closeModal()" style="flex:1;padding:11px 12px;font-size:14px;font-weight:800;color:#e2e8f0;border:1px solid #475569;border-radius:12px;background:#1e293b">Cancel</button>
+        <button type="submit" form="visitForm" style="flex:2;padding:11px 12px;font-size:14px;font-weight:900;color:#fff;border-radius:12px;background:linear-gradient(90deg,#10b981,#14b8a6);box-shadow:0 4px 14px rgba(16,185,129,.3)">Save Stop Record</button>
+      </div>
       </div>
 
       <form id="visitForm" class="mt-4 space-y-4">
@@ -2237,15 +2243,6 @@ Add New Stop
           <p id="notesError" class="text-xs text-rose-400 font-semibold mt-1 min-h-[1rem]"></p>
         </div>
 
-        <!-- Actions -->
-        <div class="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-800">
-          <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs font-bold text-slate-300 hover:text-white rounded-xl border border-slate-700 hover:bg-slate-800 transition">
-            Cancel
-          </button>
-          <button type="submit" class="px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 rounded-xl transition shadow-lg shadow-emerald-500/30">
-            Save Stop Record
-          </button>
-        </div>
       </form>
     </div>
   </div>
