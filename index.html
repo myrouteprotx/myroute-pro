@@ -3234,6 +3234,13 @@ Add New Stop
       return `<a href="${escapeHtml(telHref(item.phone))}" target="_top" onclick="return startCall(event, '${item.id}')" title="${escapeHtml(callTitle)}" aria-label="Call and log the time" class="p-1.5 ${hasCalls ? 'text-emerald-400' : 'text-slate-400'} hover:text-emerald-300 hover:bg-slate-700/60 rounded-lg transition inline-flex"><i data-lucide="phone-call" class="w-4 h-4"></i></a>`;
     }
 
+    function lastEmailedHtml(item) {
+      const sent = Array.isArray(item.emailsSent) ? item.emailsSent : [];
+      if (!sent.length || !sent[sent.length - 1].date) return '';
+      const d = sent[sent.length - 1].date; let nice = d;
+      try { nice = new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch (e) {}
+      return `<span class="text-[10px] text-sky-300 font-semibold">Last emailed ${escapeHtml(nice)}</span>`;
+    }
     function getCallSummary(item) {
       const calls = Array.isArray(item.calls) ? item.calls : [];
       if (!calls.length) return '';
@@ -5116,6 +5123,7 @@ Add New Stop
               <div class="font-extrabold text-white text-xs flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(item) ? 'checked' : ''} onchange="toggleRoute('${item.id}', this.checked)" aria-label="Add to my route list" title="Check to include this stop in your planned route"><span>${escapeHtml(item.businessName)}${item.clientName ? `<span class="cn-inline"> / ${escapeHtml(item.clientName)}</span>` : ''}</span></div>
               ${item.clientRole ? `<div class="cn-role-inline font-extrabold text-white text-xs">${escapeHtml(item.clientRole)}</div>` : ''}
               ${groupChipDark(item)}
+              ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
               ${visitPhotoIds(item).length ? `<div class="mob-photo flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
               <div class="cn-old text-[11px] text-slate-300 font-semibold mt-0.5">
                 ${escapeHtml(item.clientName)}
@@ -5149,7 +5157,7 @@ Add New Stop
               </div>
               <div class="mb-1.5">${preferredSelect(item)}</div>
               ${notesBox(item)}
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5">${getCallSummary(item)}${getHistoryLink(item)}</div>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5">${getHistoryLink(item)}</div>
             </td>
 
             <td class="py-3.5 px-4 text-right">
