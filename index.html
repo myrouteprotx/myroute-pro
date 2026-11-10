@@ -2052,7 +2052,7 @@ Add New Stop
             <div id="vpPhotoStatus" class="text-[11px] font-semibold mt-2 min-h-[1rem] text-slate-300" role="status" aria-live="polite"></div>
             <div id="vpPhotoList" class="hidden mt-2 grid grid-cols-3 gap-2"></div>
           </div>
-          <span class="block text-xs font-bold text-slate-300 mt-3 mb-1">Business card photo</span>
+          <div id="vpCardWrap" style="display:none"><span class="block text-xs font-bold text-slate-300 mt-3 mb-1">Business card photo</span>
           <div id="vpCardBox" onmouseenter="vpPasteTarget='card'" onfocusin="vpPasteTarget='card'" onclick="vpPasteTarget='card'" ondragover="event.preventDefault();this.style.boxShadow='0 0 0 3px #22d3ee'" ondragleave="this.style.boxShadow=''" ondrop="vpCardDrop(event)" class="vp-box">
             <div class="text-[11px] font-semibold text-slate-400 mb-1.5">Take a photo, choose one, drag it here, or click this box and paste (Ctrl+V / Cmd+V)</div>
             <div class="flex flex-wrap items-center gap-2">
@@ -2063,7 +2063,7 @@ Add New Stop
             <input type="file" id="vpCardLibrary" accept="image/*" class="hidden">
             <div id="vpCardStatus" class="text-[11px] font-semibold mt-2 min-h-[1rem] text-slate-300" role="status" aria-live="polite"></div>
             <div id="vpCardPreview" class="hidden mt-2 relative inline-block max-w-full"></div>
-          </div>
+          </div></div>
         </div>
 
         <!-- Scan a business card (new stops only) -->
