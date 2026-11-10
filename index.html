@@ -911,6 +911,16 @@
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) label:has(> select[aria-label="How they prefer to be contacted"]) { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 2px; width: 100%; font-size: 11px !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) .vdate input { font-size: 14px; }
     }
+
+    /* Phone: no "Actions" wording, the action buttons are centered on the screen */
+    @media (max-width: 767px) {
+      #visitsTableBody td:nth-child(7)::before, #todayTableBody td:nth-child(7)::before, #yesterdayTableBody td:nth-child(7)::before,
+      #fireTableBody td:nth-child(8)::before, #waterTableBody td:nth-child(8)::before, #pcwTableBody td:nth-child(8)::before { content: none !important; display: none !important; }
+      #visitsTableBody td:nth-child(7), #todayTableBody td:nth-child(7), #yesterdayTableBody td:nth-child(7),
+      #fireTableBody td:nth-child(8), #waterTableBody td:nth-child(8), #pcwTableBody td:nth-child(8) { text-align: center !important; }
+      #visitsTableBody td:nth-child(7) .act-wrap, #todayTableBody td:nth-child(7) .act-wrap, #yesterdayTableBody td:nth-child(7) .act-wrap,
+      #fireTableBody td:nth-child(8) .act-wrap, #waterTableBody td:nth-child(8) .act-wrap, #pcwTableBody td:nth-child(8) .act-wrap { justify-content: center !important; margin-left: auto !important; margin-right: auto !important; width: 100% !important; }
+    }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
