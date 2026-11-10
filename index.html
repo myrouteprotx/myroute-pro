@@ -8664,7 +8664,8 @@ Add New Stop
 
       // business name: biggest remaining text, preferring business words; fall back to the email/website domain
       const rest = lines.map((l, i) => ({ i, t: l.text.replace(/[|_]+/g, ' ').trim(), h: l.h })).filter(c => !used.has(c.i) && c.t.length >= 3 && /[A-Za-z]{3}/.test(c.t) && !phoneRx.test(c.t) && !/\b\d{5}\b/.test(c.t) && !/\b(TX|Texas)\b/i.test(c.t));
-      rest.sort((a, b) => ((CARD_BIZ_RX.test(b.t) ? 1e4 : 0) + b.h) - ((CARD_BIZ_RX.test(a.t) ? 1e4 : 0) + a.h));
+      const bizScore = c => (/^\s*[A-Z][\w&'\-]*(\s+[A-Z][\w&'\-]*)*\s+of\s+[A-Z]/.test(c.t) ? 2e4 : 0) + (CARD_BIZ_RX.test(c.t) ? 1e4 : 0) - (/^\s*the\s/i.test(c.t) || /\b(paramedics?|solutions|your (local|trusted)|since \d{4}|licensed|insured|free estimates?)\b/i.test(c.t) ? 3e4 : 0) + c.h;
+      rest.sort((a, b) => bizScore(b) - bizScore(a));
       if (rest.length) {
         const top = rest[0];
         const near = rest.filter(c => c.i === top.i + 1 && Math.abs(c.h - top.h) < top.h * 0.25 && c.t.length < 30);
