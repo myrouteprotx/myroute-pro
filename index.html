@@ -730,7 +730,7 @@
       .cn-old { display: none !important; }
     }
 
-    #visitsTableBody > tr, #todayTableBody > tr, #yesterdayTableBody > tr, #fireTableBody > tr, #waterTableBody > tr, #pcwTableBody > tr { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    #visitsTableBody > tr, #todayTableBody > tr, #yesterdayTableBody > tr, #fireTableBody > tr, #waterTableBody > tr, #pcwTableBody > tr { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
     #visitsTableBody textarea, #todayTableBody textarea, #yesterdayTableBody textarea, #fireTableBody textarea, #waterTableBody textarea, #pcwTableBody textarea, #visitsTableBody input, #todayTableBody input, #fireTableBody input, #waterTableBody input, #pcwTableBody input { -webkit-user-select: text; user-select: text; }
     tr.route-on { background: rgba(0,230,118,.30) !important; outline: 3px solid #00e676 !important; outline-offset: -3px; box-shadow: inset 0 0 0 9999px rgba(0,230,118,.10); border-radius: 12px; }
     tr.route-on > td { background: transparent !important; }
@@ -3755,6 +3755,30 @@ Add New Stop
       } catch (e) {}
       return true;
     }
+    // Phone: press and hold a visit to check or uncheck its route box
+    (function () {
+      let timer = null, sx = 0, sy = 0;
+      const rowOf = t => t && t.closest && t.closest('#visitsTableBody > tr, #todayTableBody > tr, #yesterdayTableBody > tr, #fireTableBody > tr, #waterTableBody > tr, #pcwTableBody > tr');
+      const stop = () => { clearTimeout(timer); timer = null; };
+      document.addEventListener('touchstart', e => {
+        if (!window.matchMedia('(pointer: coarse)').matches) return;
+        if (e.target.closest('a, button, input, select, textarea, label, summary')) return;
+        const tr = rowOf(e.target); if (!tr) return;
+        const t0 = e.touches[0]; sx = t0.clientX; sy = t0.clientY;
+        const id = tr.getAttribute('data-vid') || tr.getAttribute('data-fid');
+        stop();
+        timer = setTimeout(() => {
+          timer = null; window.__lpUntil = Date.now() + 700;
+          const it = routeAll().find(x => x.id === id); if (!it) return;
+          try { if (navigator.vibrate) navigator.vibrate(30); } catch (err) {}
+          toggleRoute(id, !isOnRoute(it));
+        }, 550);
+      }, { passive: true });
+      document.addEventListener('touchmove', e => { const t0 = e.touches[0]; if (timer && (Math.abs(t0.clientX - sx) > 10 || Math.abs(t0.clientY - sy) > 10)) stop(); }, { passive: true });
+      document.addEventListener('touchend', stop, { passive: true });
+      document.addEventListener('touchcancel', stop, { passive: true });
+      document.addEventListener('contextmenu', e => { if (window.matchMedia('(pointer: coarse)').matches && rowOf(e.target)) e.preventDefault(); });
+    })();
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
       rpClose();
@@ -4699,6 +4723,18 @@ Add New Stop
       const k = kinds[body];
       if (!k) return;
       const rid = tr.getAttribute(k === 'visit' ? 'data-vid' : 'data-fid');
+      if (Date.now() < (window.__lpUntil || 0)) return;
+      // Phone or tablet: double-tap opens the visit (a long press checks the route box, see below)
+      if (window.matchMedia('(pointer: coarse)').matches) {
+        if (window.__rowClick && window.__rowClick.id === rid) {
+          clearTimeout(window.__rowClick.t); window.__rowClick = null;
+          detailOrigin = 'home'; openDetail(k, rid);
+        } else {
+          if (window.__rowClick) clearTimeout(window.__rowClick.t);
+          window.__rowClick = { id: rid, t: setTimeout(() => { window.__rowClick = null; }, 380) };
+        }
+        return;
+      }
       // One click opens the visit. A second click right after it checks or unchecks the route box instead.
       if (window.__rowClick && window.__rowClick.id === rid) {
         clearTimeout(window.__rowClick.t); window.__rowClick = null;
