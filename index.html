@@ -8862,14 +8862,14 @@ Add New Stop
         th.classList.remove('hidden');
 
         setScanStatus('Reading the card...');
-        let data = null, usedCloud = false;
+        let data = null, usedCloud = false; window.__mrpCloudErr = '';
         try {
           if (window.__mrpScan && navigator.onLine !== false) {
             const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej; fr.readAsDataURL(small); });
             data = await Promise.race([window.__mrpScan(b64, 'image/jpeg'), new Promise((_, rej) => ctl.signal.addEventListener('abort', () => rej({ code: 'cancelled' })))]);
             usedCloud = true;
           }
-        } catch (ce) { if (ce && ce.code === 'cancelled') throw ce; data = null; }
+        } catch (ce) { if (ce && ce.code === 'cancelled') throw ce; data = null; window.__mrpCloudErr = String((ce && (ce.message || ce.code)) || ce || 'unknown').slice(0, 120); }
         if (!data) data = await Promise.race([
           ocrCard(small, m => { if (m.status === 'recognizing text') setScanStatus('Reading the card... ' + Math.round((m.progress || 0) * 100) + '%'); }),
           new Promise((_, rej) => ctl.signal.addEventListener('abort', () => rej({ code: 'cancelled' })))
@@ -8918,7 +8918,8 @@ Add New Stop
 
         const flags = Array.isArray(data.check) ? data.check.map(x => String(x).trim()).filter(Boolean) : [];
         if (flags.length) setScanStatus('Filled in. Please check: ' + flags.join('; ') + '. Then tap Save.' + photoNote, 'warn');
-        else setScanStatus('Filled in from the card. Check the details and the note, then tap Save.' + photoNote, photoNote ? 'warn' : 'ok');
+        else if (!usedCloud) setScanStatus('Filled in by the basic reader (Claude was not reached: ' + (window.__mrpCloudErr || 'no cloud connection') + '). Check every field.' + photoNote, 'warn');
+        else setScanStatus('Filled in by Claude. Check the details and the note, then tap Save.' + photoNote, photoNote ? 'warn' : 'ok');
         document.getElementById('notes').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       } catch (e) {
         if (e && e.code === 'cancelled') setScanStatus('Scan stopped.');
