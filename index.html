@@ -945,6 +945,11 @@
 
     #fireTableBody .cpill, #waterTableBody .cpill, #pcwTableBody .cpill { width: 100%; height: 34px; min-height: 34px; justify-content: center; padding: 0 8px; white-space: nowrap; }
     #fireTableBody .cpill > span, #waterTableBody .cpill > span, #pcwTableBody .cpill > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+    /* Phone: no "Notes & contact" wording and no Contact preference box; the notes come first */
+    @media (max-width: 767px) {
+      #visitsTableBody td:nth-child(6)::before, #todayTableBody td:nth-child(6)::before, #yesterdayTableBody td:nth-child(6)::before { content: none !important; display: none !important; }
+    }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -5364,7 +5369,7 @@ Add New Stop
                 ${item.email ? `<a href="#" onclick="event.preventDefault(); openFollowUp('${item.id}')" title="Send an email to ${escapeHtml(item.email)}. Opens the email page for this visit." class="cpill cpill-email"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add an email address" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}
               </div>
 
-              <div class="mb-1.5">${preferredSelect(item)}</div>
+              <div class="mb-1.5 desk-only">${preferredSelect(item)}</div>
               ${notesBox(item)}
               <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5">${getHistoryLink(item)}</div>
             </td>
