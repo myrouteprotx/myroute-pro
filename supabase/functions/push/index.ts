@@ -1,5 +1,5 @@
 // Supabase Edge Function: push
-// Sends the "Today's route" phone notification at 8:30 AM Central.
+// Sends the "Today's route" phone notification at 9:00 AM Central.
 // Deploy with "Verify JWT" OFF. The function checks the user itself for subscribe/test, and a private key for the schedule.
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       if (req.headers.get("x-cron") !== (await cfg("cron"))) return json({ error: "forbidden" }, 403);
       await vapid();
       const n = chicagoNow();
-      if (!(n.hour === 8 && n.minute >= 30 && n.minute < 45)) return json({ ok: true, skipped: "not the time" });
+      if (!(n.hour === 9 && n.minute < 15)) return json({ ok: true, skipped: "not the time" });
       if ((await cfg("last_sent")) === n.date) return json({ ok: true, skipped: "already sent" });
       await setCfg("last_sent", n.date);
       const { data: owners } = await sb.from("push_subs").select("owner");

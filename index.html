@@ -2743,7 +2743,7 @@ Add New Stop
             <button type="button" onclick="mrpItemsStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Move and resize pills and tiles</button>
             <div class="text-[11px] text-slate-400 mt-2.5 mb-1.5">Move and resize the columns of the visit lists, and reorder the boxes inside the Notes column (notes box, last call, last emailed, previous notes).</div>
             <button type="button" onclick="mrpVisitLayoutStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-600 border border-emerald-400 rounded-xl transition">Move and resize the visit lists</button>
-            <button type="button" onclick="mrpEnablePush()" class="px-3 py-1.5 text-xs font-bold text-white bg-sky-700 hover:bg-sky-600 border border-sky-400 rounded-xl transition">Turn on 8:30 AM route notification</button>
+            <button type="button" onclick="mrpEnablePush()" class="px-3 py-1.5 text-xs font-bold text-white bg-sky-700 hover:bg-sky-600 border border-sky-400 rounded-xl transition">Turn on 9:00 AM route notification</button>
             <button type="button" onclick="mrpTestPush()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-700 hover:bg-slate-600 border border-slate-400 rounded-xl transition">Send a test notification</button>
             <div id="pushStatus" class="w-full text-[11px] font-semibold text-slate-300" role="status"></div>
           </div>
@@ -11175,11 +11175,11 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
       var sub = await reg.pushManager.getSubscription();
       if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(k.key) });
       await window.__mrpFn(FN, { action: 'subscribe', sub: sub.toJSON() });
-      say('On. This device will get the route notification at 8:30 AM Central. Tap Send a test notification to check it.');
+      say('On. This device will get the route notification at 9:00 AM Central. Tap Send a test notification to check it.');
     } catch (e) { say('Could not turn on notifications: ' + String((e && e.message) || e).slice(0, 140), true); }
   };
   window.mrpTestPush = async function () {
-    try { say('Sending a test...'); var r = await window.__mrpFn(FN, { action: 'test' }); say(r && r.sent ? 'Test sent. It should arrive in a few seconds.' : 'Nothing was sent. Tap Turn on 8:30 AM route notification on this device first.', !(r && r.sent)); }
+    try { say('Sending a test...'); var r = await window.__mrpFn(FN, { action: 'test' }); say(r && r.sent ? 'Test sent. It should arrive in a few seconds.' : 'Nothing was sent. Tap Turn on 9:00 AM route notification on this device first.', !(r && r.sent)); }
     catch (e) { say('Test failed: ' + String((e && e.message) || e).slice(0, 140), true); }
   };
   /* keep a small summary of today's route in the database so the server can build the notification */
