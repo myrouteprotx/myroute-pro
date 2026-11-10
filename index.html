@@ -365,19 +365,19 @@
       #visitsTableBody td:nth-child(2)::before { content: "Address"; }
       #visitsTableBody td:nth-child(3)::before { content: "Visited on"; }
       #visitsTableBody td:nth-child(4)::before { content: "Outcome"; }
-      #visitsTableBody td:nth-child(5)::before { content: "Reach back"; }
+      #visitsTableBody td:nth-child(5)::before { content: "Current status"; }
       #visitsTableBody td:nth-child(6)::before { content: "Notes & contact"; }
 
       #todayTableBody td:nth-child(2)::before { content: "Address"; }
       #todayTableBody td:nth-child(3)::before { content: "Visited on"; }
       #todayTableBody td:nth-child(4)::before { content: "Outcome"; }
-      #todayTableBody td:nth-child(5)::before { content: "Reach back"; }
+      #todayTableBody td:nth-child(5)::before { content: "Current status"; }
       #todayTableBody td:nth-child(6)::before { content: "Notes & contact"; }
 
       #yesterdayTableBody td:nth-child(2)::before { content: "Address"; }
       #yesterdayTableBody td:nth-child(3)::before { content: "Visited on"; }
       #yesterdayTableBody td:nth-child(4)::before { content: "Outcome"; }
-      #yesterdayTableBody td:nth-child(5)::before { content: "Reach back"; }
+      #yesterdayTableBody td:nth-child(5)::before { content: "Current status"; }
       #yesterdayTableBody td:nth-child(6)::before { content: "Notes & contact"; }
 
       #visitsTableBody td:nth-child(7)::before, #todayTableBody td:nth-child(7)::before, #yesterdayTableBody td:nth-child(7)::before { content: "Actions"; }
@@ -412,17 +412,17 @@
       #visitsTableBody td:nth-child(2)::before { content: "Address"; }
       #visitsTableBody td:nth-child(3)::before { content: "Visited on"; }
       #visitsTableBody td:nth-child(4)::before { content: "Outcome"; }
-      #visitsTableBody td:nth-child(5)::before { content: "Reach back"; }
+      #visitsTableBody td:nth-child(5)::before { content: "Current status"; }
       #visitsTableBody td:nth-child(6)::before { content: "Notes & contact"; }
       #todayTableBody td:nth-child(2)::before { content: "Address"; }
       #todayTableBody td:nth-child(3)::before { content: "Visited on"; }
       #todayTableBody td:nth-child(4)::before { content: "Outcome"; }
-      #todayTableBody td:nth-child(5)::before { content: "Reach back"; }
+      #todayTableBody td:nth-child(5)::before { content: "Current status"; }
       #todayTableBody td:nth-child(6)::before { content: "Notes & contact"; }
       #yesterdayTableBody td:nth-child(2)::before { content: "Address"; }
       #yesterdayTableBody td:nth-child(3)::before { content: "Visited on"; }
       #yesterdayTableBody td:nth-child(4)::before { content: "Outcome"; }
-      #yesterdayTableBody td:nth-child(5)::before { content: "Reach back"; }
+      #yesterdayTableBody td:nth-child(5)::before { content: "Current status"; }
       #yesterdayTableBody td:nth-child(6)::before { content: "Notes & contact"; }
       #visitsTableBody td:nth-child(7)::before, #todayTableBody td:nth-child(7)::before, #yesterdayTableBody td:nth-child(7)::before { content: "Actions"; }
       .stack td .act-wrap { width: 100%; min-width: 0; max-width: none; justify-content: flex-start; }
@@ -1313,7 +1313,7 @@
                 <th scope="col" class="py-3.5 px-4">Address / Navigation</th>
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
                 <th scope="col" class="py-3.5 px-4">Outcome Status</th>
-                <th scope="col" class="py-3.5 px-4 vd-gone">When To Reach Back</th>
+                <th scope="col" class="py-3.5 px-4">Current Status</th>
                 <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -1345,7 +1345,7 @@
                 <th scope="col" class="py-3.5 px-4">Address / Navigation</th>
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
                 <th scope="col" class="py-3.5 px-4">Outcome Status</th>
-                <th scope="col" class="py-3.5 px-4 vd-gone">When To Reach Back</th>
+                <th scope="col" class="py-3.5 px-4">Current Status</th>
                 <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -1545,7 +1545,7 @@
                 <th scope="col" class="py-3.5 px-4">Address / Navigation</th>
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
                 <th scope="col" class="py-3.5 px-4">Outcome Status</th>
-                <th scope="col" class="py-3.5 px-4 vd-gone">When To Reach Back</th>
+                <th scope="col" class="py-3.5 px-4">Current Status</th>
                 <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -3259,6 +3259,17 @@ Add New Stop
       return `<select onchange="changeStatus('${item.id}', this.value)" aria-label="Outcome status" class="vbox text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 ${getStatusSelectClass(item.visitStatus)}">${options}</select>`;
     }
 
+    const CURRENT_STATUS_OPTIONS = ['Not contacted yet', 'Contacted', 'Meeting scheduled', 'Proposal sent', 'Active client', 'On hold', 'Closed - not a fit'];
+    function getCurrentStatusSelect(item) {
+      const cur = item.currentStatus || '';
+      const opts = '<option value="" style="background:#1e293b;color:#ffffff;"' + (cur ? '' : ' selected') + '>Select status</option>' + CURRENT_STATUS_OPTIONS.map(x => `<option value="${escapeHtml(x)}" style="background:#1e293b;color:#ffffff;" ${cur === x ? 'selected' : ''}>${escapeHtml(x)}</option>`).join('');
+      return `<select onchange="changeCurrentStatus('${item.id}', this.value)" aria-label="Current status" class="vbox text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-800 text-white border border-slate-600">${opts}</select>`;
+    }
+    function changeCurrentStatus(id, val) {
+      const v = visits.find(x => x.id === id); if (!v) return;
+      v.currentStatus = val; if (!val) delete v.currentStatus;
+      saveRecords(); showToast(val ? 'Current status: ' + val : 'Current status cleared');
+    }
     function changeStatus(id, newStatus) {
       const item = visits.find(v => v.id === id);
       if (!item || !newStatus || item.visitStatus === newStatus) return;
@@ -5489,7 +5500,7 @@ Add New Stop
               <div class="flex flex-col items-start gap-1.5">${getStatusSelect(item)}${getResultSelect(item)}</div>
             </td>
 
-            <td class="vd-gone"></td>
+            <td class="py-3.5 px-4 whitespace-nowrap">${getCurrentStatusSelect(item)}</td>
 
             <td class="py-3.5 px-4 max-w-xs">
               
