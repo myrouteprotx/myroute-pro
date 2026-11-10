@@ -203,6 +203,13 @@
     try { await pull(); listen(); } catch (e) { online = false; }
     scheduleFlush();
   })();
+  window.__mrpScan = async function (b64, mediaType) {
+    if (!sb) throw new Error('offline');
+    var r = await sb.functions.invoke('scan-card', { body: { image: b64, mediaType: mediaType || 'image/jpeg' } });
+    if (r.error) throw r.error;
+    if (!r.data || r.data.error) throw new Error((r.data && r.data.error) || 'scan_failed');
+    return r.data;
+  };
   window.claude = { use: function (name) { return ready.then(function () { return name === 'db' ? db : name === 'assets' ? assets : null; }); } };
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
 })();
@@ -8582,8 +8589,16 @@ Add New Stop
         th.src = URL.createObjectURL(small);
         th.classList.remove('hidden');
 
-        setScanStatus('Reading the card (the first scan takes about 20 seconds)...');
-        const data = await Promise.race([
+        setScanStatus('Reading the card...');
+        let data = null, usedCloud = false;
+        try {
+          if (window.__mrpScan && navigator.onLine !== false) {
+            const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej; fr.readAsDataURL(small); });
+            data = await Promise.race([window.__mrpScan(b64, 'image/jpeg'), new Promise((_, rej) => ctl.signal.addEventListener('abort', () => rej({ code: 'cancelled' })))]);
+            usedCloud = true;
+          }
+        } catch (ce) { if (ce && ce.code === 'cancelled') throw ce; data = null; }
+        if (!data) data = await Promise.race([
           ocrCard(small, m => { if (m.status === 'recognizing text') setScanStatus('Reading the card... ' + Math.round((m.progress || 0) * 100) + '%'); }),
           new Promise((_, rej) => ctl.signal.addEventListener('abort', () => rej({ code: 'cancelled' })))
         ]);
