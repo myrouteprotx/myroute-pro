@@ -224,6 +224,23 @@
   
   <!-- Lucide Icons CDN (pinned) -->
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <script>
+    /* Icons are drawn once per screen refresh instead of once per call (the page used to rescan itself dozens of times per save, which slowed phones down) */
+    (function () {
+      function patch() {
+        if (!(window.lucide && typeof window.lucide.createIcons === 'function') || window.lucide.__batched) return !!(window.lucide && window.lucide.__batched);
+        var real = window.lucide.createIcons.bind(window.lucide), pending = false;
+        window.lucide.__batched = true;
+        window.lucide.createIcons = function (opts) {
+          if (opts) return real(opts);
+          if (pending) return; pending = true;
+          (window.requestAnimationFrame || setTimeout)(function () { pending = false; try { real(); } catch (e) {} });
+        };
+        return true;
+      }
+      if (!patch()) { var tries = 0, t = setInterval(function () { if (patch() || ++tries > 100) clearInterval(t); }, 20); }
+    })();
+  </script>
   
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
