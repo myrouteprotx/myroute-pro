@@ -2219,9 +2219,9 @@ Add New Stop
         </div>
 
         <!-- Properties this contact manages (for a management company, owner or bank card) -->
-        <div class="rounded-2xl border border-fuchsia-500/40 bg-fuchsia-500/5 p-3.5">
+        <div id="managedBox" tabindex="0" onmouseenter="vpPasteTarget='managed'" onfocusin="vpPasteTarget='managed'" onclick="vpPasteTarget='managed'" ondragover="event.preventDefault();this.style.boxShadow='0 0 0 3px #e879f9'" ondragleave="this.style.boxShadow=''" ondrop="managedDrop(event)" class="rounded-2xl border border-fuchsia-500/40 bg-fuchsia-500/5 p-3.5">
           <span class="block text-xs font-bold text-fuchsia-200 mb-0.5">Properties this contact manages</span>
-          <div class="text-[11px] text-slate-400 mb-2">For a management company or owner with several hotels, banks or buildings. Pick one from your list or type a new one, then tap Add.</div>
+          <div class="text-[11px] text-slate-400 mb-2">For a management company or owner with several hotels, banks or buildings. Pick one from your list or type a new one, then tap Add. To read names from a picture, take a photo, choose one, drag it into this box, or click this box and paste it (Ctrl+V / Cmd+V).</div>
           <div class="flex gap-2">
             <input type="text" id="managedInput" list="managedPropertyList" autocomplete="off" placeholder="Property name" class="flex-1 min-w-0 text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-fuchsia-400 focus:outline-none" style="font-size:16px">
             <button type="button" onclick="addManagedProperty()" class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-fuchsia-600 to-pink-600 active:scale-95 transition">Add</button>
@@ -7093,8 +7093,14 @@ Add New Stop
       const files = items.filter(i => i.kind === 'file' && /^image\//.test(i.type)).map(i => i.getAsFile()).filter(Boolean);
       if (!files.length) return;
       e.preventDefault();
-      if (vpPasteTarget === 'scan') scanCardFile(files[0]); else if (vpPasteTarget === 'card') handleVpCardFiles(files); else handleVpPhotos(files);
+      if (vpPasteTarget === 'managed') scanManagedFiles(files); else if (vpPasteTarget === 'scan') scanCardFile(files[0]); else if (vpPasteTarget === 'card') handleVpCardFiles(files); else handleVpPhotos(files);
     });
+    function managedDrop(e) {
+      e.preventDefault(); e.currentTarget.style.boxShadow = '';
+      const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []).filter(f => /^image\//.test(f.type));
+      if (!files.length) { setManagedScan('Drop a picture file here.', 'error'); return; }
+      scanManagedFiles(files);
+    }
     function scanDrop(e) {
       e.preventDefault(); e.currentTarget.style.boxShadow = '';
       const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []).filter(f => /^image\//.test(f.type));
