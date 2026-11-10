@@ -2724,6 +2724,7 @@ Add New Stop
           <div class="grid grid-cols-2 gap-2">
             <button type="button" onclick="closeSettings(); fuVisitId = null; openLibrary('manage')" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">My Files</button>
             <button type="button" onclick="closeSettings(); fuVisitId = null; openTemplateFolder()" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">Email Templates</button>
+            <button type="button" onclick="closeSettings(); bmOpen()" class="px-3 py-2.5 text-xs font-black text-white bg-gradient-to-r from-emerald-500 to-teal-500 border border-white/50 rounded-xl">Bulk email</button>
           </div>
         </div>
 
@@ -8001,6 +8002,72 @@ Add New Stop
       log('mail link'); closeFollowUp(); showToast('Opening your Mail app. Logged on this visit.'); reopen();
       window.location.href = mailHref(to, subject, body);
     }
+
+    // ----- Bulk email: paste a list of addresses, get one personalized email each, send them from Outlook on the web -----
+    let bmRows = [], bmRaw = '', bmTpl = '';
+    function bmParse(text) {
+      const seen = {}, out = [];
+      String(text || '').split(/\r?\n/).forEach(line => {
+        const m = line.match(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/); if (!m) return;
+        const email = m[0], key = email.toLowerCase(); if (seen[key]) return; seen[key] = 1;
+        const rest = line.replace(email, '').split(/[,\t;|]+/).map(x => x.trim()).filter(Boolean);
+        const hit = visits.find(v => (v.email || '').toLowerCase() === key);
+        out.push({ email, name: rest[0] || (hit && hit.clientName !== 'Contact TBD' ? hit.clientName : '') || '', biz: rest[1] || (hit && hit.businessName) || '', role: (hit && hit.clientRole) || '', visitId: hit ? hit.id : '', visitDate: hit ? hit.visitDate : '', followUpDate: hit ? hit.followUpDate : '', address: hit ? hit.streetAddress : '', opened: false });
+      });
+      return out;
+    }
+    function bmBuild(r, tpl) {
+      const v = { clientName: r.name, businessName: r.biz, clientRole: r.role, visitDate: r.visitDate, followUpDate: r.followUpDate, streetAddress: r.address };
+      r.subject = mergeFields(tpl.subject, v);
+      r.body = String(mergeFields(tpl.body, v) || '').replace(/\s+$/, '');
+      r.flags = [];
+      if (!r.name) r.flags.push('no name');
+      if (!r.biz) r.flags.push('no business');
+    }
+    function bmOpen() {
+      if (!emailTemplates.length) { showToast('Make an email template first (Settings, Email Templates)'); return; }
+      bmTpl = bmTpl || emailTemplates[0].id;
+      rpShow('<div class="text-sm font-black mb-1">Bulk email</div>'
+        + '<div class="text-[11px] text-slate-300 mb-2">Paste one person per line: <b>email, name, business</b>. The name and business are optional. If an address is already one of your visits, I fill them in from that visit.</div>'
+        + '<textarea id="bmText" rows="8" placeholder="jane@example.com, Jane Smith, Oak Park Apartments" class="w-full text-sm px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white mb-2">' + escapeHtml(bmRaw) + '</textarea>'
+        + '<label class="block text-[11px] text-slate-400 mb-1" for="bmTplSel">Email template</label>'
+        + '<select id="bmTplSel" class="w-full text-sm px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white mb-3">' + emailTemplates.map(t => '<option value="' + escapeHtml(t.id) + '"' + (t.id === bmTpl ? ' selected' : '') + '>' + escapeHtml(t.name || 'Template') + '</option>').join('') + '</select>'
+        + '<button type="button" onclick="bmMake()" class="px-3 py-2 text-xs font-black bg-emerald-600 rounded-xl mr-2">Make the emails</button>'
+        + '<button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
+    }
+    function bmMake() {
+      bmRaw = document.getElementById('bmText').value; bmTpl = document.getElementById('bmTplSel').value;
+      const tpl = emailTemplates.find(t => t.id === bmTpl) || emailTemplates[0];
+      bmRows = bmParse(bmRaw);
+      if (!bmRows.length) { showToast('No email addresses found'); return; }
+      bmRows.forEach(r => bmBuild(r, tpl));
+      bmShow();
+    }
+    function bmShow() {
+      const left = bmRows.filter(r => !r.opened).length;
+      const rows = bmRows.map((r, i) => '<div class="border border-slate-700 rounded-xl p-2.5 mb-2" style="background:' + (r.opened ? 'rgba(16,185,129,.12)' : 'rgba(15,23,42,.6)') + '">'
+        + '<div class="flex items-center gap-2 mb-1.5"><div class="flex-1 min-w-0"><div class="text-xs font-black break-all">' + escapeHtml(r.email) + '</div><div class="text-[11px] text-slate-400">' + escapeHtml([r.name, r.biz].filter(Boolean).join(' · ') || 'No name or business') + '</div>'
+        + (r.flags.length ? '<div class="text-[11px] font-bold text-rose-300">Missing: ' + escapeHtml(r.flags.join(', ')) + '</div>' : '') + '</div>'
+        + '<button type="button" onclick="bmSend(' + i + ')" class="px-2.5 py-1.5 text-[11px] font-black text-white rounded-lg ' + (r.opened ? 'bg-emerald-700' : 'bg-fuchsia-600') + '">' + (r.opened ? 'Opened ✓ Again' : 'Open in Outlook') + '</button></div>'
+        + '<input id="bmS' + i + '" value="' + escapeHtml(r.subject) + '" class="w-full text-xs px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-white mb-1.5">'
+        + '<textarea id="bmB' + i + '" rows="5" class="w-full text-xs px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-white">' + escapeHtml(r.body) + '</textarea></div>').join('');
+      rpShow('<div class="text-sm font-black mb-1">' + bmRows.length + ' emails ready</div>'
+        + '<div class="text-[11px] text-slate-300 mb-2">Each one is written for that person. Change anything you like. Tap <b>Open in Outlook</b>, read it there, then press Send. ' + left + ' left to open.</div>'
+        + '<button type="button" onclick="bmNext()" class="w-full px-3 py-2.5 mb-3 text-xs font-black text-white bg-gradient-to-r from-fuchsia-500 to-pink-500 rounded-xl"' + (left ? '' : ' disabled') + '>' + (left ? 'Open the next one in Outlook' : 'All opened') + '</button>'
+        + rows
+        + '<button type="button" onclick="bmOpen()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Back to the list</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
+    }
+    function bmSync() { bmRows.forEach((r, i) => { const s = document.getElementById('bmS' + i), b = document.getElementById('bmB' + i); if (s) r.subject = s.value; if (b) r.body = b.value; }); }
+    function bmSend(i) {
+      bmSync(); const r = bmRows[i]; if (!r) return;
+      const url = 'https://outlook.office.com/mail/deeplink/compose?to=' + encodeURIComponent(r.email) + '&subject=' + encodeURIComponent(r.subject) + '&body=' + encodeURIComponent(r.body);
+      const w = window.open(url, '_blank', 'noopener'); if (!w) { showToast('Allow pop-ups for this site, then tap again'); return; }
+      r.opened = true;
+      const v = r.visitId && visits.find(x => x.id === r.visitId);
+      if (v) { v.emailsSent = (Array.isArray(v.emailsSent) ? v.emailsSent : []).concat([{ date: todayString, subject: r.subject, template: 'Bulk email', files: [], via: 'outlook compose' }]); saveRecords(); }
+      const sc = document.getElementById('routeOverlay'); const top = sc ? sc.scrollTop : 0; bmShow(); const sc2 = document.getElementById('routeOverlay'); if (sc2) sc2.scrollTop = top;
+    }
+    function bmNext() { const i = bmRows.findIndex(r => !r.opened); if (i >= 0) bmSend(i); }
     // Tap an email address: go straight to Outlook with the suggested template filled in. No edit screen in between.
     function emailNow(vid) {
       const v = visits.find(x => x.id === vid); if (!v || !v.email) return;
