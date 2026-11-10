@@ -1134,6 +1134,7 @@
               <span>Add visit today</span>
             </button>
             <button type="button" onclick="copyRouteList()" title="Copy the route list: numbered names and addresses" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition active:scale-95"><span>Copy route list</span></button>
+            <button type="button" onclick="planRoute()" title="Put the stops in the shortest driving order and open it in Google Maps" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 border border-purple-300/60 rounded-xl transition active:scale-95"><span>Plan my route</span></button>
             <button type="button" onclick="clearPlannedRoute()" title="Take off every stop you added with a check mark" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition active:scale-95"><span>Clear added stops</span></button>
           </div>
         </div>
@@ -2534,6 +2535,13 @@ Add New Stop
         </div>
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Route start and finish address</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Your office or home. "Plan my route" leaves from here and comes back here. Type the full address, then tap Save address. <span id="homeAddrStatus" class="font-bold text-emerald-300"></span></div>
+          <input type="text" id="homeAddrInput" placeholder="Street, city, state, zip" autocomplete="street-address" class="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white mb-2">
+          <button type="button" onclick="saveHomeAddr()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Save address</button>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Import a backup</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Choose your MyRoute Pro backup file or photos file (.json). It is added to this device only and nothing is uploaded.</div>
           <input type="file" id="importBackupInput" accept=".json,application/json" class="hidden">
@@ -3501,6 +3509,126 @@ Add New Stop
       const txt = list.map((v, i) => `${i + 1}. ${v.businessName || ''}${v.streetAddress ? ' - ' + v.streetAddress : ''}`).join('\n');
       const done = () => showToast(`Route list copied: ${list.length} stop${list.length === 1 ? '' : 's'}`);
       try { navigator.clipboard.writeText(txt).then(done, () => { fallbackCopy(txt); done(); }); } catch (e) { fallbackCopy(txt); done(); }
+    }
+    // ----- Plan my route: shortest driving order, leaving from and returning to the saved address -----
+    const HOME_KEY = 'mrp_home_v1';
+    function homeAddr() { try { return (JSON.parse(localStorage.getItem(HOME_KEY) || 'null') || {}).addr || ''; } catch (e) { return ''; } }
+    function fillHomeInput() {
+      const i = document.getElementById('homeAddrInput'); if (!i) return;
+      if (homeAddr()) { i.value = homeAddr(); return; }
+      try { dbHandle.doc('meta/home').get().then(d => { if (d && d.exists) { const x = d.data(); if (x && x.data) { localStorage.setItem(HOME_KEY, x.data); i.value = homeAddr(); } } }); } catch (e) {}
+    }
+    function saveHomeAddr() {
+      const i = document.getElementById('homeAddrInput'); const addr = (i && i.value || '').replace(/\s+/g, ' ').trim();
+      const v = { addr, lat: null, lng: null };
+      try { localStorage.setItem(HOME_KEY, JSON.stringify(v)); } catch (e) {}
+      try { dbHandle.doc('meta/home').set({ data: JSON.stringify(v), at: new Date().toISOString() }); } catch (e) {}
+      const st = document.getElementById('homeAddrStatus'); if (st) st.textContent = addr ? 'Saved.' : 'Cleared.';
+      showToast(addr ? 'Start and finish address saved' : 'Start and finish address cleared');
+    }
+    document.addEventListener('DOMContentLoaded', () => { setTimeout(fillHomeInput, 1500); });
+    function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
+    function rpShow(inner) {
+      rpClose();
+      const o = document.createElement('div'); o.id = 'routeOverlay';
+      o.style.cssText = 'position:fixed;inset:0;z-index:120;background:rgba(2,6,23,.88);overflow-y:auto;padding:16px;display:flex;align-items:flex-start;justify-content:center';
+      o.innerHTML = '<div style="background:#1e293b;border:1px solid #a855f7;border-radius:16px;padding:16px;width:100%;max-width:640px;margin:auto;color:#fff">' + inner + '</div>';
+      document.body.appendChild(o);
+    }
+    function rpDist(a, b) { return rmMiles({ lat: a[0], lng: a[1] }, { lat: b[0], lng: b[1] }); }
+    // Nearest neighbor from the start, then 2-opt, as a round trip (index 0 is home)
+    function rpLocalOrder(pts) {
+      const n = pts.length; const order = [0]; const left = new Set(); for (let i = 1; i < n; i++) left.add(i);
+      while (left.size) { const last = order[order.length - 1]; let best = -1, bd = 1e9; left.forEach(i => { const d = rpDist(pts[last], pts[i]); if (d < bd) { bd = d; best = i; } }); order.push(best); left.delete(best); }
+      const len = o => { let t = 0; for (let i = 0; i < o.length; i++) t += rpDist(pts[o[i]], pts[o[(i + 1) % o.length]]); return t; };
+      let improved = true, guard = 0;
+      while (improved && guard++ < 50) {
+        improved = false;
+        for (let i = 1; i < n - 1; i++) for (let j = i + 1; j < n; j++) {
+          const cand = order.slice(0, i).concat(order.slice(i, j + 1).reverse(), order.slice(j + 1));
+          if (len(cand) + 1e-9 < len(order)) { order.splice(0, n, ...cand); improved = true; }
+        }
+      }
+      return order;
+    }
+    async function rpOsrmOrder(pts) {
+      const co = pts.map(p => p[1] + ',' + p[0]).join(';');
+      const r = await fetch('https://router.project-osrm.org/trip/v1/driving/' + co + '?roundtrip=true&source=first&overview=false');
+      const j = await r.json();
+      if (!j || j.code !== 'Ok' || !j.waypoints || j.waypoints.length !== pts.length) throw new Error('osrm');
+      const order = new Array(pts.length);
+      j.waypoints.forEach((w, i) => { order[w.waypoint_index] = i; });
+      return order;
+    }
+    function rpLinks(home, stops) {
+      const parts = []; const q = encodeURIComponent;
+      for (let i = 0; i < stops.length; i += 9) {
+        const seg = stops.slice(i, i + 9); const last = i + 9 >= stops.length;
+        const origin = i === 0 ? home : stops[i - 1].streetAddress;
+        const dest = last ? home : seg[seg.length - 1].streetAddress;
+        const way = last ? seg : seg.slice(0, -1);
+        let url = 'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=' + q(origin) + '&destination=' + q(dest);
+        if (way.length) url += '&waypoints=' + way.map(v => q(v.streetAddress)).join('%7C');
+        parts.push({ url, from: i + 1, to: i + seg.length });
+      }
+      return parts;
+    }
+    let rpBusy = false;
+    async function planRoute() {
+      if (rpBusy) return;
+      const home = homeAddr();
+      if (!home) {
+        rpShow('<div class="text-sm font-black mb-2">Add your start and finish address first</div><div class="text-xs text-slate-300 mb-3">Open Settings, scroll to the box named "Route start and finish address", type your address, and tap Save address. Then tap Plan my route again.</div><button type="button" onclick="rpClose();openSettings && openSettings()" class="px-3 py-2 text-xs font-black bg-purple-600 rounded-xl mr-2">Open Settings</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
+        return;
+      }
+      const all = visits.filter(isOnRoute);
+      const stops = all.filter(v => String(v.streetAddress || '').trim());
+      const skipped = all.filter(v => !String(v.streetAddress || '').trim());
+      if (!stops.length) { showToast('No stops with a street address are checked for your route'); return; }
+      rpBusy = true;
+      const status = t => rpShow('<div class="text-sm font-black mb-1">Planning your route</div><div class="text-xs text-slate-300">' + escapeHtml(t) + '</div>');
+      try {
+        const wait = () => new Promise(r => setTimeout(r, 1100));
+        let hp = null; try { hp = JSON.parse(localStorage.getItem(HOME_KEY) || 'null'); } catch (e) {}
+        if (!hp || hp.addr !== home || hp.lat == null) {
+          status('Finding your start address...');
+          const pt = await rmGeo(home).catch(() => null);
+          hp = { addr: home, lat: pt ? pt[0] : null, lng: pt ? pt[1] : null };
+          if (pt) { try { localStorage.setItem(HOME_KEY, JSON.stringify(hp)); } catch (e) {} }
+          await wait();
+        }
+        const pts = [hp.lat != null ? [hp.lat, hp.lng] : [29.544, -95.023]];
+        for (let i = 0; i < stops.length; i++) {
+          const v = stops[i];
+          if (!rmHasGeo(v) || v.geoApprox) {
+            status('Locating stop ' + (i + 1) + ' of ' + stops.length + '...');
+            const pt = await rmGeo(String(v.streetAddress).replace(/\s+/g, ' ').trim()).catch(() => null);
+            if (pt) { v.lat = Math.round(pt[0] * 1e6) / 1e6; v.lng = Math.round(pt[1] * 1e6) / 1e6; v.geoApprox = false; saveRecords(); }
+            await wait();
+          }
+          pts.push(rmHasGeo(v) ? [v.lat, v.lng] : null);
+        }
+        const usable = []; const lost = [];
+        pts.forEach((p, i) => { if (i === 0) usable.push({ i, p }); else if (p) usable.push({ i, p }); else lost.push(stops[i - 1]); });
+        status('Finding the shortest driving order...');
+        const P = usable.map(u => u.p); let order, method = 'online road routing';
+        try { order = await rpOsrmOrder(P); } catch (e) { order = rpLocalOrder(P); method = 'straight-line distance (road routing was not reachable)'; }
+        const ordered = order.filter(k => k !== 0).map(k => stops[usable[k].i - 1]);
+        const parts = rpLinks(home, ordered);
+        const skipAll = skipped.concat(lost);
+        const rows = ordered.map((v, i) => '<li class="py-1.5 border-b border-slate-700 text-xs"><span class="font-black text-purple-300">' + (i + 1) + '.</span> <span class="font-bold">' + escapeHtml(v.businessName || '') + '</span><br><span class="text-slate-400">' + escapeHtml(v.streetAddress || '') + '</span></li>').join('');
+        const btns = parts.map((p, i) => '<a href="' + p.url + '" target="_blank" rel="noopener" class="block text-center px-3 py-3 mb-2 text-sm font-black text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-xl">Open in Google Maps' + (parts.length > 1 ? ' - part ' + (i + 1) + ' of ' + parts.length + ' (stops ' + p.from + ' to ' + p.to + ')' : '') + '</a>').join('');
+        window.__rpText = 'Start: ' + home + '\n' + ordered.map((v, i) => (i + 1) + '. ' + (v.businessName || '') + ' - ' + (v.streetAddress || '')).join('\n') + '\nFinish: ' + home;
+        rpShow('<div class="text-sm font-black mb-1">Your route: ' + ordered.length + ' stop' + (ordered.length === 1 ? '' : 's') + '</div>'
+          + '<div class="text-[11px] text-slate-400 mb-3">Leaves from and returns to ' + escapeHtml(home) + '. Ordered with ' + method + '.</div>' + btns
+          + (parts.length > 1 ? '<div class="text-[11px] text-slate-400 mb-2">Google Maps takes about 10 stops per link, so open the parts in order; each part starts where the last one ended.</div>' : '')
+          + '<ol class="mb-3" style="list-style:none;padding:0">' + rows + '</ol>'
+          + (skipAll.length ? '<div class="text-[11px] text-amber-300 mb-3">Left out (no street address or not found): ' + skipAll.map(v => escapeHtml(v.businessName || '')).join(', ') + '</div>' : '')
+          + '<button type="button" onclick="try{navigator.clipboard.writeText(window.__rpText)}catch(e){};showToast(\'Route copied\')" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Copy route</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
+      } catch (e) {
+        rpShow('<div class="text-sm font-black mb-2">Could not plan the route</div><div class="text-xs text-slate-300 mb-3">Check your connection and try again.</div><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
+      }
+      rpBusy = false;
     }
     function toggleTodayList(id) {
       const item = visits.find(v => v.id === id);
@@ -9196,6 +9324,7 @@ Add New Stop
     };
 
     function openSettings() {
+      try { fillHomeInput(); } catch (e) {}
       Object.keys(SETTING_FIELDS).forEach(id => {
         document.getElementById(id).value = document.getElementById(SETTING_FIELDS[id]).value;
       });
