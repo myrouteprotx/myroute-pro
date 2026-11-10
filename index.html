@@ -1011,6 +1011,9 @@
     @media screen and (min-width: 1100px) {
       #visitsTableBody > tr, #todayTableBody > tr, #yesterdayTableBody > tr { position: relative; padding-bottom: 46px; }
       #visitsTableBody > tr .note-save, #todayTableBody > tr .note-save, #yesterdayTableBody > tr .note-save { position: absolute !important; right: 14px; bottom: 10px; margin: 0 !important; z-index: 2; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(7) { display: block !important; position: absolute !important; right: 104px; bottom: 6px; padding: 0 !important; width: auto !important; min-width: 0 !important; z-index: 2; background: transparent; text-align: right !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(7) .act-wrap { flex-wrap: nowrap !important; justify-content: flex-end !important; margin: 0 !important; }
+      table:has(#visitsTableBody) th:nth-child(7), table:has(#todayTableBody) th:nth-child(7), table:has(#yesterdayTableBody) th:nth-child(7) { display: none !important; }
     }
 
     /* Add visit today: bright green with a blinking green border so it stands out */
