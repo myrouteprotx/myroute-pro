@@ -4596,7 +4596,7 @@ Add New Stop
 
       container.innerHTML = queueList.map(item => {
         const isOverdue = item.followUpDate < todayString;
-        const mapsQuery = encodeURIComponent(`${item.businessName} ${item.streetAddress || ''}`);
+        const mapsQuery = encodeURIComponent(String(item.streetAddress || ''));
 
         return `
           <div class="p-4 rounded-2xl border ${isOverdue ? 'border-rose-500/40 bg-gradient-to-br from-rose-950/40 via-slate-900 to-slate-900' : 'border-amber-500/40 bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-900'} shadow-xl flex flex-col justify-between">
@@ -4774,7 +4774,7 @@ Add New Stop
       renderYesterdayOthers();
 
       const rowTemplate = (item) => {
-        const mapsQuery = encodeURIComponent(`${item.businessName} ${item.streetAddress || ''}`);
+        const mapsQuery = encodeURIComponent(String(item.streetAddress || ''));
 
         return `
           <tr data-vid="${escapeHtml(item.id)}" class="hover:bg-slate-700/40 transition">
