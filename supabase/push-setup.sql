@@ -17,7 +17,7 @@ insert into public.push_config (key, value) values ('cron', gen_random_uuid()::t
 -- Checks every 15 minutes; the function only sends between 8:30 and 8:44 AM Central, once a day.
 select cron.schedule('route-push', '*/15 * * * *', $$
   select net.http_post(
-    url := 'https://rrhmykprzkumixcjsygo.supabase.co/functions/v1/push',
+    url := 'https://rrhmykprzkumixcjsygo.supabase.co/functions/v1/hyper-handler',
     headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron', (select value from public.push_config where key = 'cron')),
     body := '{"action":"run"}'::jsonb
   );

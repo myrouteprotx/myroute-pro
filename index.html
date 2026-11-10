@@ -11161,7 +11161,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 
 /* Phone notification setup */
 (function () {
-  var FN = 'push';
+  var FN = 'hyper-handler';
   function say(t, bad) { var el = document.getElementById('pushStatus'); if (el) { el.textContent = t; el.style.color = bad ? '#fda4af' : '#86efac'; } try { showToast(t); } catch (e) {} }
   function b64(k) { var p = '='.repeat((4 - k.length % 4) % 4), r = (k + p).replace(/-/g, '+').replace(/_/g, '/'), raw = atob(r), a = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i); return a; }
   window.mrpEnablePush = async function () {
