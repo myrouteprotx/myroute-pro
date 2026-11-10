@@ -985,6 +985,13 @@
     #detailBody input[type="date"][data-df]::-webkit-date-and-time-value { text-align: left; min-height: 0; }
     #detailBody textarea[data-df] { font-size: 16px !important; box-sizing: border-box; width: 100% !important; }
     #detailBody .grid > div.rounded-2xl { box-sizing: border-box; min-width: 0; }
+
+    /* Desktop: Last call and Last emailed sit under the notes; the Saved button stays in the bottom right corner of each visit */
+    @media screen and (min-width: 641px) { .lc-top { display: none !important; } }
+    @media screen and (min-width: 1100px) {
+      #visitsTableBody > tr, #todayTableBody > tr, #yesterdayTableBody > tr { position: relative; padding-bottom: 46px; }
+      #visitsTableBody > tr .note-save, #todayTableBody > tr .note-save, #yesterdayTableBody > tr .note-save { position: absolute !important; right: 14px; bottom: 10px; margin: 0 !important; z-index: 2; }
+    }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -3334,7 +3341,7 @@ Add New Stop
       if (!sent.length || !sent[sent.length - 1].date) return '';
       const d = sent[sent.length - 1].date; let nice = d;
       try { nice = new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch (e) {}
-      return `<span class="text-[10px] text-sky-300 font-semibold">Last emailed ${escapeHtml(nice)}</span>`;
+      return `<button type="button" onclick="openFollowUp('${escapeHtml(item.id)}')" title="Open the email page for this visit" class="text-[10px] text-sky-300 font-semibold underline decoration-dotted text-left">Last emailed ${escapeHtml(nice)}</button>`;
     }
     function getCallSummary(item) {
       const calls = Array.isArray(item.calls) ? item.calls : [];
@@ -5390,7 +5397,7 @@ Add New Stop
               <div class="font-extrabold text-white text-xs flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(item) ? 'checked' : ''} onchange="toggleRoute('${item.id}', this.checked)" aria-label="Add to my route list" title="Check to include this stop in your planned route"><span>${escapeHtml(item.businessName)}${item.clientName ? `<span class="cn-inline"> / ${escapeHtml(item.clientName)}</span>` : ''}</span></div>
               ${item.clientRole ? `<div class="cn-role-inline font-extrabold text-white text-xs">${escapeHtml(item.clientRole)}</div>` : ''}
               ${groupChipDark(item)}
-              ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
+              ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="lc-top flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
               <div class="mob-only mt-1" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;width:100%">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" data-vid-e="${escapeHtml(item.id)}" data-kind="phone" onclick="if (Date.now() < (window.__lpUntil || 0)) { event.preventDefault(); return false; } return startCall(event, '${item.id}')" title="Tap to call. Hold to see the number." class="cpill cpill-phone mob-hold"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>` : `<button type="button" onclick="addPhonePopup('${item.id}')" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`}${item.email ? `<a href="#" data-vid-e="${escapeHtml(item.id)}" data-kind="email" onclick="event.preventDefault(); if (Date.now() < (window.__lpUntil || 0)) return false; openFollowUp('${item.id}')" title="Tap to email. Hold to see the address." class="cpill cpill-email mob-hold"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="addEmailPopup('${item.id}')" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}</div>
               ${visitPhotoIds(item).length ? `<div class="mob-photo flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
               <div class="cn-old text-[11px] text-slate-300 font-semibold mt-0.5">
@@ -5424,6 +5431,7 @@ Add New Stop
               </div>
 
               ${notesBox(item)}
+              ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="desk-only mt-1.5" style="display:flex;flex-direction:column;align-items:flex-start;gap:3px">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
               <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5">${getHistoryLink(item)}</div>
             </td>
 
