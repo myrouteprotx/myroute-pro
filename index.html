@@ -543,7 +543,7 @@
     [role="button"][class*="from-emerald-500 via-teal-600"] { border: 3px solid #27e67a !important; box-shadow: 0 0 7px #27e67a, 0 0 16px rgba(39,230,122,.55), inset 0 0 9px rgba(39,230,122,.25) !important; }
 
     /* "Saved" note button: blue with a vibrant border */
-    .note-state-saved { background: linear-gradient(90deg, #1e3a8a, #1e40af) !important; color: #dbeafe !important; border: 2px solid #3b82c4 !important; box-shadow: 0 0 4px rgba(59,130,196,.6), 0 0 8px rgba(59,130,196,.25); }
+    .note-state-saved { background: linear-gradient(90deg, #15803d, #16a34a) !important; color: #ffffff !important; border: 2px solid #4ade80 !important; box-shadow: 0 0 4px rgba(74,222,128,.6), 0 0 10px rgba(74,222,128,.35) !important; }
 
     /* Hide the "N records" badge (kept in place so jump links still work) */
     #resultsCountBadge { display: inline-block; width: 0; height: 0; padding: 0 !important; margin: 0 !important; overflow: hidden; font-size: 0 !important; visibility: hidden; border: 0 !important; }
@@ -920,6 +920,10 @@
       #fireTableBody td:nth-child(8), #waterTableBody td:nth-child(8), #pcwTableBody td:nth-child(8) { text-align: center !important; }
       #visitsTableBody td:nth-child(7) .act-wrap, #todayTableBody td:nth-child(7) .act-wrap, #yesterdayTableBody td:nth-child(7) .act-wrap,
       #fireTableBody td:nth-child(8) .act-wrap, #waterTableBody td:nth-child(8) .act-wrap, #pcwTableBody td:nth-child(8) .act-wrap { justify-content: center !important; margin-left: auto !important; margin-right: auto !important; width: 100% !important; }
+    }
+
+    @media (max-width: 767px) {
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-save { align-self: center !important; margin: 8px auto 4px auto !important; }
     }
   </style>
 </head>
@@ -3968,7 +3972,7 @@ Add New Stop
       const btn = ta.parentNode.querySelector('.note-save');
       const dirty = ta.value.trim() !== (btn.dataset.orig || '');
       btn.textContent = dirty ? 'Save note' : 'Saved';
-      btn.className = 'note-save mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-black border ' + (dirty ? 'bg-emerald-600 text-white border-emerald-400 shadow' : 'note-state-saved');
+      btn.className = 'note-save mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-black border ' + (dirty ? 'bg-amber-500 text-slate-950 border-amber-300 shadow' : 'note-state-saved');
     }
     function saveNote(btn) {
       const box = btn.closest('.note-box');
