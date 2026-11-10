@@ -942,6 +942,9 @@
     .mob-only > .cpill { width: 100%; height: 40px; min-height: 40px; justify-content: center; padding: 0 8px; white-space: nowrap; font-size: 14px; }
     .mob-only > .cpill > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
     .mob-hold { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+    #fireTableBody .cpill, #waterTableBody .cpill, #pcwTableBody .cpill { width: 100%; height: 34px; min-height: 34px; justify-content: center; padding: 0 8px; white-space: nowrap; }
+    #fireTableBody .cpill > span, #waterTableBody .cpill > span, #pcwTableBody .cpill > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -3883,6 +3886,17 @@ Add New Stop
       document.addEventListener('touchcancel', stop, { passive: true });
       document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.mob-hold')) e.preventDefault(); });
     })();
+    // Phone and email for fire, water and lead visits: two matching pills
+    function leadPillsHtml(f, kind) {
+      const id = escapeHtml(f.id);
+      const open = "detailOrigin = 'home'; openDetail('" + kind + "', '" + id + "')";
+      return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;min-width:150px">'
+        + (f.phone ? `<a href="${escapeHtml(telHref(f.phone))}" target="_top" title="Call ${escapeHtml(f.phone)}" class="cpill cpill-phone"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>`
+                   : `<button type="button" onclick="${open}" title="Open the visit to add a phone number" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`)
+        + (f.email ? `<a href="mailto:${escapeHtml(f.email)}" title="Email ${escapeHtml(f.email)}" class="cpill cpill-email"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>`
+                   : `<button type="button" onclick="${open}" title="Open the visit to add an email address" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`)
+        + '</div>';
+    }
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
       rpClose();
@@ -8514,9 +8528,7 @@ Add New Stop
           </td>
           <td class="py-3.5 px-4">${names.join('')}</td>
           <td class="py-3.5 px-4">
-            ${f.phone ? `<a href="${escapeHtml(telHref(f.phone))}" target="_top" class="text-blue-300 font-semibold hover:underline text-[11px] flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${escapeHtml(f.phone)}</a>` : ''}
-            ${f.email ? `<a href="mailto:${escapeHtml(f.email)}" class="text-pink-300 font-semibold hover:underline text-[11px] flex items-center gap-1 mt-0.5 break-all"><i data-lucide="mail" class="w-3 h-3"></i> ${escapeHtml(f.email)}</a>` : ''}
-            ${(!f.phone && !f.email) ? '<span class="text-slate-500 italic text-[11px]">None yet</span>' : ''}
+            ${leadPillsHtml(f, 'fire')}
           </td>
           <td class="py-3.5 px-4 whitespace-nowrap">
             <div class="flex items-center gap-1.5">
@@ -8954,9 +8966,7 @@ Add New Stop
           </td>
           <td class="py-3.5 px-4">${names.join('')}</td>
           <td class="py-3.5 px-4">
-            ${f.phone ? `<a href="${escapeHtml(telHref(f.phone))}" target="_top" class="text-blue-300 font-semibold hover:underline text-[11px] flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${escapeHtml(f.phone)}</a>` : ''}
-            ${f.email ? `<a href="mailto:${escapeHtml(f.email)}" class="text-pink-300 font-semibold hover:underline text-[11px] flex items-center gap-1 mt-0.5 break-all"><i data-lucide="mail" class="w-3 h-3"></i> ${escapeHtml(f.email)}</a>` : ''}
-            ${(!f.phone && !f.email) ? '<span class="text-slate-500 italic text-[11px]">None yet</span>' : ''}
+            ${leadPillsHtml(f, 'water')}
           </td>
           <td class="py-3.5 px-4 whitespace-nowrap">
             <div class="flex items-center gap-1.5">
@@ -9377,9 +9387,7 @@ Add New Stop
           </td>
           <td class="py-3.5 px-4">${names.join('')}</td>
           <td class="py-3.5 px-4">
-            ${f.phone ? `<a href="${escapeHtml(telHref(f.phone))}" target="_top" class="text-green-300 font-semibold hover:underline text-[11px] flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${escapeHtml(f.phone)}</a>` : ''}
-            ${f.email ? `<a href="mailto:${escapeHtml(f.email)}" class="text-pink-300 font-semibold hover:underline text-[11px] flex items-center gap-1 mt-0.5 break-all"><i data-lucide="mail" class="w-3 h-3"></i> ${escapeHtml(f.email)}</a>` : ''}
-            ${(!f.phone && !f.email) ? '<span class="text-slate-500 italic text-[11px]">None yet</span>' : ''}
+            ${leadPillsHtml(f, 'pcw')}
           </td>
           <td class="py-3.5 px-4 whitespace-nowrap">
             <div class="flex items-center gap-1.5">
