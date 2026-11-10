@@ -3511,7 +3511,7 @@ Add New Stop
 
     // A stop is on the route list when it was visited today (and not removed) or when you checked it to be added.
     function isOnToday(v) { return v.visitDate === todayString && v.removedFromToday !== todayString; }
-    function isOnRoute(v) { return v.inRoute === true || (v.inRoute !== false && (isOnToday(v) || v.routeDate === todayString)); }
+    function isOnRoute(v) { return v.inRoute === true || (v.inRoute !== false && (isOnToday(v) || (v.routeDate === todayString && v.routeSkip !== todayString))); }
     function toggleRoute(id, on) {
       const item = visits.find(v => v.id === id); if (!item) return;
       item.inRoute = !!on;
@@ -3642,6 +3642,22 @@ Add New Stop
     // ----- Full-screen reminder when stops are planned for today -----
     let rmdShown = false;
     function rmdList() { return visits.filter(v => v.routeDate === todayString).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || '')); }
+    function rmdActive() { return rmdList().filter(v => v.routeSkip !== todayString); }
+    function rmdMapsHtml() {
+      const act = rmdActive().filter(v => String(v.streetAddress || '').trim());
+      let home = homeAddr(); const noHome = !home; if (noHome && act.length) home = act[0].streetAddress;
+      if (!act.length) return '<div style="font-size:13px;color:#fcd34d;margin-bottom:8px">No stops are checked. Check a stop to get a Google Maps link.</div>';
+      const links = rpLinks(home, act);
+      return links.map((l, i) => '<a href="' + l.url + '" target="_blank" rel="noopener" style="display:block;text-align:center;padding:13px;margin-bottom:8px;border-radius:14px;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(90deg,#10b981,#06b6d4);text-decoration:none">Open in Google Maps' + (links.length > 1 ? ' - part ' + (i + 1) + ' of ' + links.length : '') + '</a>').join('')
+        + (noHome ? '<div style="font-size:11px;color:#fcd34d;margin:-2px 0 8px">Add your office address in Settings for a round trip. This link starts at the first stop.</div>' : '');
+    }
+    function rmdToggle(id, on) {
+      const v = visits.find(x => x.id === id); if (!v) return;
+      if (on) delete v.routeSkip; else v.routeSkip = todayString;
+      saveRecords();
+      const m = document.getElementById('rmdMaps'); if (m) m.innerHTML = rmdMapsHtml();
+      const c = document.getElementById('rmdCount'); if (c) { const n = rmdActive().length; c.textContent = n + ' of ' + rmdList().length + ' stop' + (rmdList().length === 1 ? '' : 's') + ' checked for ' + rfNice(todayString); }
+    }
     function rmdClose() {
       const c = document.getElementById('rmdOff'); if (c && c.checked) { try { localStorage.setItem('mrp_remind_off', todayString); } catch (e) {} }
       const o = document.getElementById('remindOverlay'); if (o) o.remove();
@@ -3651,23 +3667,18 @@ Add New Stop
       try { if (localStorage.getItem('mrp_remind_off') === todayString) { rmdShown = true; return; } } catch (e) {}
       rmdShown = true; const old = document.getElementById('remindOverlay'); if (old) old.remove();
       const em = document.querySelector('#companyBrand > img'); const logo = (em && em.getAttribute('src')) || 'icon-192.png';
-      let home = homeAddr(); const noHome = !home; if (noHome) home = list.find(v => String(v.streetAddress || '').trim()) ? list.find(v => String(v.streetAddress || '').trim()).streetAddress : '';
-      const withAddr = list.filter(v => String(v.streetAddress || '').trim());
-      const links = home && withAddr.length ? rpLinks(home, withAddr) : [];
-      const rows = list.map((v, i) => '<li style="padding:10px 0;border-bottom:1px solid #334155"><div style="font-size:16px;font-weight:800;color:#fff"><span style="color:#f9a8d4">' + (i + 1) + '.</span> ' + escapeHtml(v.businessName || '') + '</div><div style="font-size:14px;color:#cbd5e1;word-break:break-word">' + escapeHtml(v.streetAddress || 'No street address') + '</div></li>').join('');
-      const maps = links.map((l, i) => '<a href="' + l.url + '" target="_blank" rel="noopener" style="display:block;text-align:center;padding:13px;margin-bottom:8px;border-radius:14px;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(90deg,#10b981,#06b6d4);text-decoration:none">Open in Google Maps' + (links.length > 1 ? ' - part ' + (i + 1) + ' of ' + links.length : '') + '</a>').join('');
+      const rows = list.map((v, i) => '<li style="padding:10px 0;border-bottom:1px solid #334155"><label style="display:flex;align-items:flex-start;gap:12px"><input type="checkbox" ' + (v.routeSkip === todayString ? '' : 'checked ') + 'onchange="rmdToggle(\'' + v.id + '\', this.checked)" style="width:24px;height:24px;min-width:24px;accent-color:#00e676;margin-top:2px"><span><span style="display:block;font-size:16px;font-weight:800;color:#fff"><span style="color:#f9a8d4">' + (i + 1) + '.</span> ' + escapeHtml(v.businessName || '') + '</span><span style="display:block;font-size:14px;color:#cbd5e1;word-break:break-word">' + escapeHtml(v.streetAddress || 'No street address') + '</span></span></label></li>').join('');
       const o = document.createElement('div'); o.id = 'remindOverlay';
       o.style.cssText = 'position:fixed;inset:0;z-index:125;background:rgba(2,6,23,.6);display:flex;align-items:flex-end;justify-content:center';
       o.innerHTML = '<div style="width:100%;max-width:560px;height:50vh;height:50dvh;min-height:340px;max-height:100%;display:flex;flex-direction:column;background:#0f172a;border:1px solid #a855f7;border-radius:20px 20px 0 0;color:#fff;padding:14px 16px max(14px,env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.6)">'
-        + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><img src="' + logo + '" alt="My Route Pro" style="height:44px;width:auto;max-width:120px;object-fit:contain;border-radius:10px"><div><div style="font-size:18px;font-weight:900">You have appointments today</div><div style="font-size:13px;color:#cbd5e1">' + list.length + ' stop' + (list.length === 1 ? '' : 's') + ' planned for ' + escapeHtml(rfNice(todayString)) + '</div></div></div>'
+        + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><img src="' + logo + '" alt="My Route Pro" style="height:44px;width:auto;max-width:120px;object-fit:contain;border-radius:10px"><div><div style="font-size:18px;font-weight:900">You have appointments today</div><div id="rmdCount" style="font-size:13px;color:#cbd5e1">' + rmdActive().length + ' of ' + list.length + ' stop' + (list.length === 1 ? '' : 's') + ' checked for ' + escapeHtml(rfNice(todayString)) + '</div></div></div>'
         + '<ol style="list-style:none;padding:0 4px;margin:0 0 10px;flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;border-top:1px solid #334155">' + rows + '</ol>'
-        + (maps || '<div style="font-size:12px;color:#fcd34d;margin-bottom:8px">Add an address in Settings to get a Google Maps link.</div>')
-        + (noHome && maps ? '<div style="font-size:11px;color:#fcd34d;margin:-2px 0 8px">Add your office address in Settings for a round trip. This link starts at the first stop.</div>' : '')
+        + '<div id="rmdMaps">' + rmdMapsHtml() + '</div>'
         + '<div style="display:flex;gap:8px;margin-bottom:8px"><button type="button" onclick="rmdPlan()" style="flex:1;padding:11px;border-radius:12px;font-size:13px;font-weight:900;color:#fff;background:linear-gradient(90deg,#a855f7,#d946ef)">Shortest order</button><button type="button" onclick="rmdClose()" style="flex:1;padding:11px;border-radius:12px;font-size:13px;font-weight:900;color:#fff;background:#334155">Dismiss</button></div>'
         + '<label style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#e2e8f0"><input type="checkbox" id="rmdOff" style="width:22px;height:22px;accent-color:#00e676">Do not remind again for today</label></div>';
       document.body.appendChild(o);
     }
-    function rmdPlan() { const list = rmdList(); rmdClose(); planRoute(list); }
+    function rmdPlan() { const list = rmdActive(); rmdClose(); if (!list.length) { showToast('No stops are checked'); return; } planRoute(list); }
     function rmdCopy() {
       const list = rmdList();
       const txt = list.map((v, i) => `${i + 1}. ${v.businessName || ''}${v.streetAddress ? ' - ' + v.streetAddress : ''}`).join('\n');
