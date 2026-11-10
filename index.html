@@ -553,7 +553,14 @@
     /* Hide the "in this week's report" count badges on the fire, water and lead boxes */
     #fireWeekBadge, #waterWeekBadge, #pcwWeekBadge { display: none !important; }
 
-    @media (max-width: 640px) { #undoDock { display: none !important; } .mobile-settings-link { display: block !important; } }
+    @media (max-width: 640px) {
+      .mobile-settings-link { display: block !important; }
+      #undoDock { display: block !important; left: max(12px, env(safe-area-inset-left, 0px)) !important; bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important; }
+      #undoDock #settingsDockBtn { display: none !important; }
+      #undoDock #undoBtn { padding: 7px 14px !important; font-size: 11px !important; border-width: 2px !important; border-radius: 14px !important; }
+      #undoDock #undoBtn svg, #undoDock #undoBtn i { width: 14px !important; height: 14px !important; }
+      #undoDock #undoLabel { display: none !important; }
+    }
     .mobile-settings-link { display: none; }
     /* Go back and Settings buttons: same amber color, vibrant border */
     .dock-btn { border: 3px solid #ffb300 !important; box-shadow: 0 0 10px #ffb300, 0 0 22px rgba(255,179,0,.65), inset 0 0 10px rgba(255,179,0,.35); }
