@@ -999,8 +999,11 @@
     #addVisitTodayBtn, #addVisitTodayBtn * { color: #022c0f !important; font-weight: 900 !important; }
     @media (prefers-reduced-motion: reduce) { #addVisitTodayBtn { animation: none; box-shadow: 0 0 0 3px #00ff6a, 0 0 14px 3px rgba(0,255,106,.7); } }
     @keyframes visitCountBlink { 0%, 100% { box-shadow: 0 0 0 3px #ff2d2d, 0 0 18px 4px rgba(255,45,45,.85); border-color: #ff2d2d; } 50% { box-shadow: 0 0 0 3px rgba(255,45,45,.15), 0 0 4px 0 rgba(255,45,45,.2); border-color: rgba(255,45,45,.25); } }
-    #todayCountBadge { display: inline-flex !important; align-items: center; justify-content: center; width: 175px; height: 40px; padding: 0 10px !important; border-radius: 12px !important; font-size: 12px !important; font-weight: 900 !important; white-space: nowrap; background: linear-gradient(90deg, #e11d1d, #ff3b3b) !important; color: #fff !important; border: 3px solid #ff2d2d !important; animation: visitCountBlink 1.1s ease-in-out infinite; }
-    @media (prefers-reduced-motion: reduce) { #todayCountBadge { animation: none; box-shadow: 0 0 0 3px #ff2d2d, 0 0 14px 3px rgba(255,45,45,.7); } }
+    #todayCountBadge { display: inline-flex !important; align-items: center; justify-content: center; width: 175px; height: 40px; padding: 0 10px !important; border-radius: 12px !important; font-size: 12px !important; font-weight: 900 !important; white-space: nowrap; background: linear-gradient(90deg, #e11d1d, #ff3b3b) !important; color: #fff !important; border: 3px solid #ff2d2d !important; }
+    #todayCountBadge[data-zero="1"] { animation: visitCountBlink 1.1s ease-in-out infinite; }
+    #todayCountBadge[data-state="busy"] { background: linear-gradient(90deg, #f97316, #fb923c) !important; border-color: #fdba74 !important; }
+    #todayCountBadge[data-state="done"] { background: linear-gradient(90deg, #1d4ed8, #3b82f6) !important; border-color: #93c5fd !important; white-space: normal; line-height: 1.1; text-align: center; }
+    @media (prefers-reduced-motion: reduce) { #todayCountBadge[data-zero="1"] { animation: none; box-shadow: 0 0 0 3px #ff2d2d, 0 0 14px 3px rgba(255,45,45,.7); } }
 
     /* Visit: contact name 16, job title 14, then the call / email pills, then the photos */
     .cn-line-name { display: block !important; font-size: 16px !important; font-weight: 800; color: #fff; line-height: 1.25; margin-top: 3px; }
@@ -1274,7 +1277,7 @@
             <h2 class="text-sm sm:text-base font-bold text-white">Today's Visits</h2>
             <p id="todayDateLabel" class="text-[11px] text-slate-400"></p>
           </div>
-          <span id="todayCountBadge" class="text-xs bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-bold">0 visits</span>
+          <span id="todayCountBadge" role="button" tabindex="0" onclick="toggleDoneToday()" title="Tap to mark yourself done for the day (turns blue). Tap again to undo." class="cursor-pointer text-xs bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-bold">0 visits</span>
           <button type="button" id="addVisitTodayBtn" onclick="openModal()" class="tb-pill bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 border-emerald-300/60 text-white border transition active:scale-95">
               <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
               <span>Add visit today</span>
@@ -2787,6 +2790,16 @@ Add New Stop
     }
 
     const todayString = centralDate();
+    function doneKey() { return 'mrp_done_' + todayString; }
+    function isDoneToday() { try { return localStorage.getItem(doneKey()) === '1'; } catch (e) { return false; } }
+    function toggleDoneToday() { try { if (isDoneToday()) localStorage.removeItem(doneKey()); else localStorage.setItem(doneKey(), '1'); } catch (e) {} updateTodayBadge(); }
+    function updateTodayBadge() {
+      const el = document.getElementById('todayCountBadge'); if (!el) return;
+      const n = window.__todayN || 0, done = isDoneToday();
+      el.dataset.state = done ? 'done' : (n >= 4 ? 'busy' : 'low');
+      el.dataset.zero = (!done && n === 0) ? '1' : '0';
+      el.textContent = done ? `Done for the day · ${n} visit${n === 1 ? '' : 's'}` : `${n} visit${n === 1 ? '' : 's'}`;
+    }
     // If the page stays open past midnight Central, refresh it so a new day starts clean
     function checkNewDay() { if (centralDate() !== todayString) location.reload(); }
     setInterval(checkNewDay, 60000);
@@ -5403,7 +5416,7 @@ Add New Stop
       const mainList = isFiltering ? filtered : filtered.filter(v => !isOnToday(v));
 
       document.getElementById('resultsCountBadge').textContent = `${mainList.length} records`;
-      document.getElementById('todayCountBadge').textContent = `${todayList.length} visit${todayList.length === 1 ? '' : 's'}`;
+      window.__todayN = todayList.length; updateTodayBadge();
       document.getElementById('todayDateLabel').textContent = new Date(todayString + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
       document.getElementById('todayEmptyState').classList.toggle('hidden', todayList.length > 0);
       todayBody.closest('table').classList.toggle('hidden', todayList.length === 0);
