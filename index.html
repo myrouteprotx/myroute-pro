@@ -4019,7 +4019,7 @@ Add New Stop
       const a = String(addr || '').trim();
       if (!a) return '';
       if (!/\d/.test(a) || a.length < 6) return escapeHtml(a);
-      const u = escapeHtml('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(((extra || '') + ' ' + a).trim()));
+      const u = escapeHtml('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(a));
       return `<a href="${u}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open this address in Maps" style="color:#60a5fa;text-decoration:underline;text-underline-offset:2px;font-weight:700">${escapeHtml(a)}</a>`;
     }
     function dMap(addr, extra) { return addr ? addrLinkHtml(addr, extra) : ''; }
