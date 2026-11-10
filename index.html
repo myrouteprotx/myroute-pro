@@ -2712,6 +2712,8 @@ Add New Stop
             <button type="button" onclick="mrpArrangeStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Rearrange the page</button>
             <div class="text-[11px] text-slate-400 mt-2.5 mb-1.5">Move and resize the small pills and tiles near the top (the week summary pills and the four dashboard tiles).</div>
             <button type="button" onclick="mrpItemsStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Move and resize pills and tiles</button>
+            <div class="text-[11px] text-slate-400 mt-2.5 mb-1.5">Move and resize the columns of the visit lists, and reorder the boxes inside the Notes column (notes box, last call, last emailed, previous notes).</div>
+            <button type="button" onclick="mrpVisitLayoutStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-600 border border-emerald-400 rounded-xl transition">Move and resize the visit lists</button>
           </div>
         </div>
 
@@ -10798,6 +10800,149 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
       } else if (tries > 40) clearInterval(t);
     }, 500);
   }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+/* Visit layout editor (administrator only, desktop only): move and resize the columns of the visit lists, and reorder the boxes inside the Notes column. */
+(function () {
+  var KEY = 'mrp_vlayout_v1', PATH = 'meta/layout6';
+  var TABLES = ['visitsTableBody', 'todayTableBody', 'yesterdayTableBody'];
+  var DEFW = [25, 14, 11, 13, 12, 25];
+  var L = null, editing = false, dragCol = 0, dragKey = '', styleEl = null;
+  function el(id) { return document.getElementById(id); }
+  function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches; } catch (e) { return false; } }
+  function S(tail) { return TABLES.map(function (t) { return 'table:has(#' + t + ') ' + tail; }).join(','); }
+  function load() { try { var v = JSON.parse(localStorage.getItem(KEY) || 'null'); return v && v.order && v.order.length === 6 && v.w && v.w.length === 6 ? v : null; } catch (e) { return null; } }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(L || {})); } catch (e) {}
+    try { if (typeof dbHandle !== 'undefined' && dbHandle) dbHandle.doc(PATH).set({ data: JSON.stringify(L || {}), at: new Date().toISOString() }); } catch (e) {}
+  }
+  function fresh() { return { order: [1, 2, 3, 4, 5, 6], w: DEFW.slice(), blocks: {}, noteH: 0 }; }
+  function keyOf(n) { var k = (n.classList && n.classList[0]) || n.tagName.toLowerCase(); return /^[A-Za-z_][\w-]*$/.test(k) ? k : ''; }
+  function seenKeys() {
+    var ks = [];
+    TABLES.forEach(function (t) { var b = el(t); if (!b) return; b.querySelectorAll(':scope > tr:not(.prop-row) > td:nth-child(6) > *').forEach(function (c) { var k = keyOf(c); if (k && ks.indexOf(k) < 0) ks.push(k); }); });
+    return ks;
+  }
+  function blockOrder() {
+    var ks = seenKeys(), saved = (L && L.blocks && L.blocks['6']) || [];
+    var out = saved.filter(function (k) { return ks.indexOf(k) >= 0; });
+    ks.forEach(function (k) { if (out.indexOf(k) < 0) out.push(k); });
+    return out;
+  }
+  function build() {
+    if (!L) return '';
+    var cols = L.order.map(function (k) { return 'minmax(0,' + L.w[k - 1] + 'fr)'; }).join(' ');
+    var c = '@media (min-width: 1100px) {';
+    c += S('') + '{display:block !important;width:100% !important;min-width:0 !important;table-layout:auto !important}';
+    c += S('thead') + ',' + S('tbody') + '{display:block !important;width:100%}';
+    c += S('thead > tr') + ',' + S('tbody > tr:not(.prop-row)') + '{display:grid !important;grid-template-columns:' + cols + ';align-items:start}';
+    c += S('tbody > tr.prop-row') + '{display:block !important}' + S('tbody > tr.prop-row > td') + '{display:block !important;width:100% !important}';
+    c += S('thead > tr > th:nth-child(n)') + ',' + S('tbody > tr:not(.prop-row) > td:nth-child(n)') + '{width:auto !important;min-width:0 !important;max-width:none !important;box-sizing:border-box}';
+    c += S('tbody > tr:not(.prop-row) > td:nth-child(7)') + '{position:absolute !important}';
+    c += S('thead > tr > th:nth-child(7)') + '{display:none !important}';
+    L.order.forEach(function (k, i) { c += S('tr:not(.prop-row) > :nth-child(' + k + ')') + '{order:' + (i + 1) + '}'; });
+    c += S('tbody > tr:not(.prop-row) > td:nth-child(6)') + '{display:flex !important;flex-direction:column}';
+    blockOrder().forEach(function (k, i) { c += S('tbody > tr:not(.prop-row) > td:nth-child(6) > .' + k) + '{order:' + (i + 1) + '}'; });
+    if (L.noteH) c += S('tbody > tr > td:nth-child(6) .note-box textarea') + '{height:' + L.noteH + 'px !important;min-height:' + L.noteH + 'px !important}';
+    return c + '}';
+  }
+  function apply() {
+    if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'mrpVLayoutStyle'; document.head.appendChild(styleEl); }
+    styleEl.textContent = build();
+  }
+  function colOf(th) { return Array.prototype.indexOf.call(th.parentNode.children, th) + 1; }
+  function bar() {
+    var b = el('mrpVLBar'); if (b) return b;
+    b = document.createElement('div'); b.id = 'mrpVLBar';
+    b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:150;display:none;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;background:#0f172a;border-top:2px solid #34d399;color:#fff;font-size:12px';
+    b.innerHTML = '<div><b>Editing the visit lists.</b> Drag a column title to move that column. Drag the edge of a title to make the column wider or narrower. In the Notes column, drag the boxes up or down to reorder them, and drag the corner of the notes box to make it taller. Then press Done.</div><div style="display:flex;gap:8px"><button type="button" id="mrpVLReset" style="padding:8px 14px;border-radius:10px;background:#334155;color:#fff;font-weight:800;font-size:12px">Back to original</button><button type="button" id="mrpVLDone" style="padding:8px 18px;border-radius:10px;background:#059669;color:#fff;font-weight:900;font-size:12px">Done</button></div>';
+    document.body.appendChild(b);
+    el('mrpVLDone').onclick = stop;
+    el('mrpVLReset').onclick = function () { L = null; try { localStorage.removeItem(KEY); } catch (e) {} save(); apply(); document.body.classList.remove('mrp-vl-on'); if (styleEl) styleEl.textContent = ''; stop(); };
+    var st = document.createElement('style');
+    st.textContent = 'body.mrp-vedit table:has(#visitsTableBody) thead th,body.mrp-vedit table:has(#todayTableBody) thead th,body.mrp-vedit table:has(#yesterdayTableBody) thead th{position:relative;cursor:grab;outline:2px dashed #34d399;outline-offset:-3px}'
+      + 'body.mrp-vedit #visitsTableBody td:nth-child(6)>*:not(.note-save),body.mrp-vedit #todayTableBody td:nth-child(6)>*:not(.note-save),body.mrp-vedit #yesterdayTableBody td:nth-child(6)>*:not(.note-save){outline:2px dashed #818cf8;outline-offset:1px;cursor:grab}'
+      + '.mrp-colgrip{position:absolute;right:0;top:0;bottom:0;width:10px;cursor:col-resize;background:rgba(52,211,153,.55);z-index:5}';
+    document.head.appendChild(st);
+    return b;
+  }
+  function start() {
+    if (editing || !isDesktop()) return;
+    try { if (typeof switchMainTab === 'function') switchMainTab('tracker'); } catch (e) {}
+    try { closeSettings(); } catch (e) {}
+    if (!L) L = fresh();
+    editing = true; document.body.classList.add('mrp-vedit', 'mrp-vl-on'); bar().style.display = 'flex'; apply();
+    TABLES.forEach(function (t) {
+      var th = document.querySelectorAll('table:has(#' + t + ') thead th');
+      th.forEach(function (h) {
+        var k = colOf(h); if (k > 6) return;
+        h.draggable = true;
+        if (!h.querySelector('.mrp-colgrip')) {
+          var g = document.createElement('span'); g.className = 'mrp-colgrip'; g.draggable = false; h.appendChild(g);
+          g.addEventListener('mousedown', function (e) { e.stopPropagation(); h.draggable = false; });
+          g.addEventListener('pointerdown', function (e) {
+            e.preventDefault(); e.stopPropagation(); h.draggable = false;
+            var tw = h.closest('table').getBoundingClientRect().width, w0 = L.w.slice(), sum = w0.reduce(function (a, b) { return a + b; }, 0), x0 = e.clientX;
+            function mv(ev) { L.w[k - 1] = Math.max(4, Math.round((w0[k - 1] + (ev.clientX - x0) / tw * sum) * 10) / 10); apply(); }
+            function up() { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); h.draggable = true; save(); }
+            document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+          });
+        }
+        h.ondragstart = function (e) { dragCol = k; try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'col' + k); } catch (x) {} };
+        h.ondragover = function (e) { if (dragCol) e.preventDefault(); };
+        h.ondrop = function (e) {
+          e.preventDefault(); if (!dragCol || dragCol === k) { dragCol = 0; return; }
+          var o = L.order.filter(function (c) { return c !== dragCol; }), at = o.indexOf(k);
+          var from = L.order.indexOf(dragCol), to = L.order.indexOf(k);
+          o.splice(from < to ? at + 1 : at, 0, dragCol); L.order = o; dragCol = 0; apply(); save();
+        };
+      });
+    });
+  }
+  function stop() {
+    if (!editing) return; editing = false; document.body.classList.remove('mrp-vedit');
+    var b = el('mrpVLBar'); if (b) b.style.display = 'none';
+    document.querySelectorAll('.mrp-colgrip').forEach(function (g) { g.remove(); });
+    document.querySelectorAll('thead th[draggable]').forEach(function (h) { h.draggable = false; h.ondragstart = h.ondragover = h.ondrop = null; });
+    save();
+  }
+  // Boxes inside the Notes column (works on every row at once, even after the list redraws)
+  document.addEventListener('mousedown', function (e) {
+    if (!editing) return;
+    var c = e.target.closest && e.target.closest('td:nth-child(6) > *'); if (!c || !c.closest('#visitsTableBody, #todayTableBody, #yesterdayTableBody')) return;
+    if (e.target.tagName === 'TEXTAREA' && (e.target.offsetWidth - e.offsetX < 18 && e.target.offsetHeight - e.offsetY < 18)) return;
+    c.draggable = true;
+  }, true);
+  document.addEventListener('dragstart', function (e) {
+    if (!editing) return; var c = e.target.closest && e.target.closest('td:nth-child(6) > *'); if (!c || e.target !== c) return;
+    dragKey = keyOf(c); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'blk' + dragKey); } catch (x) {}
+  }, true);
+  document.addEventListener('dragover', function (e) {
+    if (!editing || !dragKey) return; var c = e.target.closest && e.target.closest('td:nth-child(6) > *'); if (!c) return;
+    var k = keyOf(c); if (!k || k === dragKey) { e.preventDefault(); return; }
+    e.preventDefault();
+    var r = c.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2;
+    var o = blockOrder().filter(function (x) { return x !== dragKey; }), at = o.indexOf(k);
+    o.splice(after ? at + 1 : at, 0, dragKey); L.blocks = L.blocks || {}; L.blocks['6'] = o; apply();
+  }, true);
+  document.addEventListener('dragend', function (e) { if (!editing) return; if (dragKey) { dragKey = ''; save(); } document.querySelectorAll('td:nth-child(6) > [draggable="true"]').forEach(function (n) { n.draggable = false; }); }, true);
+  document.addEventListener('pointerup', function (e) {
+    if (!editing || !e.target || e.target.tagName !== 'TEXTAREA' || !e.target.closest('td:nth-child(6)')) return;
+    var h = Math.round(e.target.offsetHeight); if (h > 40 && h !== L.noteH) { L.noteH = h; apply(); save(); }
+  }, true);
+  window.mrpVisitLayoutStart = function () { openAdminGate('arrange', start); };
+  function init() {
+    if (!isDesktop()) return;
+    L = load(); if (L) { document.body.classList.add('mrp-vl-on'); apply(); }
+    var tries = 0, t = setInterval(function () {
+      tries++;
+      if (typeof dbHandle !== 'undefined' && dbHandle) {
+        clearInterval(t);
+        try { dbHandle.doc(PATH).get().then(function (d) { if (d && d.exists && !editing) { var x = d.data(); if (x && x.data) { try { var p = JSON.parse(x.data); if (p && p.order) { localStorage.setItem(KEY, x.data); L = p; apply(); } } catch (e) {} } } }); } catch (e) {}
+      } else if (tries > 40) clearInterval(t);
+    }, 500);
+  }
+  window.mrpVLTest = { get L() { return L; }, set L(v) { L = v; }, apply: apply, build: build, start: start, stop: stop, blockOrder: blockOrder };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
 </script>
