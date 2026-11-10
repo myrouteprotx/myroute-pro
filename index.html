@@ -1011,6 +1011,14 @@
     #visitsTableBody td:nth-child(3), #todayTableBody td:nth-child(3), #yesterdayTableBody td:nth-child(3) { text-align: center; }
     #visitsTableBody td:nth-child(3) .vdate, #todayTableBody td:nth-child(3) .vdate, #yesterdayTableBody td:nth-child(3) .vdate { margin-left: auto !important; margin-right: auto !important; }
     table:has(#visitsTableBody) th:nth-child(3), table:has(#todayTableBody) th:nth-child(3), table:has(#yesterdayTableBody) th:nth-child(3) { text-align: center; }
+
+    /* Desktop: the Notes & Contact Info and Actions headings sit centered over their columns */
+    @media screen and (min-width: 1100px) {
+      table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6),
+      table:has(#visitsTableBody) th:nth-child(7), table:has(#todayTableBody) th:nth-child(7), table:has(#yesterdayTableBody) th:nth-child(7) { text-align: center !important; }
+      #visitsTableBody td:nth-child(7), #todayTableBody td:nth-child(7), #yesterdayTableBody td:nth-child(7) { text-align: center !important; }
+      #visitsTableBody td:nth-child(7) .act-wrap, #todayTableBody td:nth-child(7) .act-wrap, #yesterdayTableBody td:nth-child(7) .act-wrap { justify-content: center !important; margin-left: auto !important; margin-right: auto !important; width: 100% !important; }
+    }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
