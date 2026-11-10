@@ -726,7 +726,6 @@
     tr.route-on > td { background: transparent !important; }
     @media (min-width: 700px) { .today-actions > .tb-pill, #addVisitTodayBtn { width: 175px !important; height: 40px !important; } }
     #addVisitTodayBtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; min-height: 40px; font-weight: 900 !important; border-radius: 12px; white-space: nowrap; }
-    @media (max-width: 699px) { .today-actions > .tb-pill:last-child { grid-column: 1 / -1; } }
     .today-actions > .tb-pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; font-size: 11px; font-weight: 900; border-radius: 12px; text-align: center; line-height: 1.1; white-space: nowrap; }
     .today-actions > .tb-pill, .today-actions > .tb-pill * { font-size: 12px !important; font-weight: 900 !important; }
     .today-actions > .tb-pill > span { text-shadow: 0 1px 1px rgba(0,0,0,.25); }
@@ -1139,6 +1138,10 @@
           <div class="today-actions ml-auto flex flex-wrap items-center gap-2">
             <button type="button" onclick="planRoute()" title="Put the stops in the shortest driving order and open it in Google Maps" class="tb-pill bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 border-purple-300/60 text-white border transition active:scale-95"><span>Plan my route</span></button>
             <button type="button" onclick="copyRouteList()" title="Copy the route list: numbered names and addresses" class="tb-pill bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border-amber-300/60 text-white border transition active:scale-95"><span>Copy route list</span></button>
+            <button type="button" id="futureRouteBtn" onclick="rfOpen()" title="Plan a route for a future day" class="tb-pill bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 border-pink-300/60 text-white border transition active:scale-95">
+              <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+              <span>Future route</span>
+            </button>
             <button type="button" id="yesterdayToggleBtn" onclick="toggleYesterday()" class="tb-pill bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-400 hover:to-blue-400 border-indigo-300/60 text-white border transition active:scale-95">
               <i data-lucide="calendar-clock" class="w-3.5 h-3.5"></i>
               <span id="yesterdayToggleText">Yesterday's Visits</span>
@@ -3508,7 +3511,7 @@ Add New Stop
 
     // A stop is on the route list when it was visited today (and not removed) or when you checked it to be added.
     function isOnToday(v) { return v.visitDate === todayString && v.removedFromToday !== todayString; }
-    function isOnRoute(v) { return v.inRoute === true || (v.inRoute !== false && isOnToday(v)); }
+    function isOnRoute(v) { return v.inRoute === true || (v.inRoute !== false && (isOnToday(v) || v.routeDate === todayString)); }
     function toggleRoute(id, on) {
       const item = visits.find(v => v.id === id); if (!item) return;
       item.inRoute = !!on;
@@ -3610,6 +3613,32 @@ Add New Stop
       if (document.body.classList.contains('mrp-arranging') || document.body.classList.contains('mrp-items-on')) return;
       if (visits.some(v => v.inRoute === true)) clearPlannedRoute();
     });
+    // ----- Future route: save checked stops to a date, then plan that day's route -----
+    function rfNice(d) { return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
+    function rfOpen(date) {
+      date = date || addDaysToDate(todayString, 1);
+      const list = visits.filter(v => v.routeDate === date).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || ''));
+      const checked = visits.filter(v => v.inRoute === true && v.routeDate !== date).length;
+      const rows = list.map(v => '<li class="flex items-center gap-2 py-1.5 border-b border-slate-700 text-xs"><div class="flex-1 min-w-0"><div class="font-bold">' + escapeHtml(v.businessName || '') + '</div><div class="text-slate-400 break-words">' + escapeHtml(v.streetAddress || 'No street address') + '</div></div><button type="button" onclick="rfRemove(\'' + v.id + '\',\'' + date + '\')" class="px-2 py-1 text-[11px] font-bold text-red-300 bg-slate-800 border border-slate-600 rounded-lg">Remove</button></li>').join('');
+      rpShow('<div class="text-sm font-black mb-2">Future route</div>'
+        + '<label class="block text-[11px] text-slate-400 mb-1" for="rfDate">Pick the day</label>'
+        + '<input type="date" id="rfDate" value="' + date + '" min="' + todayString + '" onchange="if(this.value)rfOpen(this.value)" class="w-full text-sm px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white mb-1">'
+        + '<div class="text-xs text-purple-300 font-bold mb-3">' + escapeHtml(rfNice(date)) + '</div>'
+        + '<button type="button" onclick="rfAddChecked(\'' + date + '\')" class="w-full px-3 py-2 mb-3 text-xs font-black text-white bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl">Add my ' + checked + ' checked stop' + (checked === 1 ? '' : 's') + ' to this day</button>'
+        + '<div class="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Stops planned for this day (' + list.length + ')</div>'
+        + (list.length ? '<ul class="mb-3" style="list-style:none;padding:0">' + rows + '</ul>' : '<div class="text-[11px] text-slate-500 mb-3">Nothing planned for this day yet. Check boxes beside visits on the home screen, come back here and tap the pink button above.</div>')
+        + '<div class="text-[10px] text-slate-500 mb-3">On the day itself, these stops are checked for you automatically.</div>'
+        + (list.length ? '<button type="button" onclick="rfPlan(\'' + date + '\')" class="px-3 py-2 text-xs font-black bg-purple-600 rounded-xl mr-2">Plan route for this day</button>' : '')
+        + '<button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Go back</button>');
+    }
+    function rfAddChecked(date) {
+      const picks = visits.filter(v => v.inRoute === true);
+      if (!picks.length) { showToast('Check some stops on the home screen first'); return; }
+      picks.forEach(v => { v.routeDate = date; delete v.inRoute; });
+      saveRecords(); rfOpen(date); showToast(picks.length + ' stop' + (picks.length === 1 ? '' : 's') + ' added to ' + rfNice(date));
+    }
+    function rfRemove(id, date) { const v = visits.find(x => x.id === id); if (v) { delete v.routeDate; saveRecords(); } rfOpen(date); }
+    function rfPlan(date) { const list = visits.filter(v => v.routeDate === date); rpClose(); planRoute(list); }
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
       rpClose();
@@ -3657,14 +3686,14 @@ Add New Stop
       return parts;
     }
     let rpBusy = false;
-    async function planRoute() {
+    async function planRoute(over) {
       if (rpBusy) return;
       const home = homeAddr();
       if (!home) {
         rpShow('<div class="text-sm font-black mb-2">Add your office address first</div><div class="text-xs text-slate-300 mb-3">Open Settings, scroll to the box named "Route start and finish addresses", type a name such as Office, start typing the address and pick it from the list, then tap Add address. Then tap Plan my route again.</div><button type="button" onclick="rpClose();openSettings && openSettings()" class="px-3 py-2 text-xs font-black bg-purple-600 rounded-xl mr-2">Open Settings</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
         return;
       }
-      const all = visits.filter(isOnRoute);
+      const all = Array.isArray(over) ? over : visits.filter(isOnRoute);
       const stops = all.filter(v => String(v.streetAddress || '').trim());
       const skipped = all.filter(v => !String(v.streetAddress || '').trim());
       if (!stops.length) { showToast('No stops with a street address are checked for your route'); return; }
