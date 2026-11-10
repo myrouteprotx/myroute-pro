@@ -11117,6 +11117,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   window.dismissRouteBanner = function () { var b = document.getElementById('routeBanner'); if (b) b.remove(); setDismissed(); };
   window.closeTodayRoute = function () { var m = document.getElementById('todayRouteModal'); if (m) m.remove(); };
   window.openTodayRoute = function () {
+    try { markRouteSeen(); } catch (e) {}
     closeTodayRoute();
     var list = stops();
     var rows = list.map(function (v, i) {
@@ -11138,18 +11139,34 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     document.body.appendChild(m);
   };
 
+  function chiHour() { try { var p = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hour: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()); for (var i = 0; i < p.length; i++) if (p[i].type === 'hour') return Number(p[i].value); } catch (e) {} return new Date().getHours(); }
+  function seenKey() { try { return 'mrp_rbs_' + todayString; } catch (e) { return 'mrp_rbs'; } }
+  function seen() { try { return localStorage.getItem(seenKey()) === '1'; } catch (e) { return false; } }
+  window.markRouteSeen = function () { try { localStorage.setItem(seenKey(), '1'); } catch (e) {} var b = document.getElementById('routeBanner'); if (b) b.classList.remove('mrpBlink'); };
+  if (!document.getElementById('mrpBannerCss')) {
+    var st = document.createElement('style'); st.id = 'mrpBannerCss';
+    st.textContent = '@keyframes mrpBannerBlinkG{0%,100%{background:#00ff2a;box-shadow:0 0 22px 6px #00ff2a}50%{background:#008f1a;box-shadow:0 0 6px 1px #008f1a}}@keyframes mrpBannerBlinkR{0%,100%{background:#ff0000;box-shadow:0 0 22px 6px #ff0000}50%{background:#7a0000;box-shadow:0 0 6px 1px #7a0000}}#routeBanner.mrpBlink.mrpG{animation:mrpBannerBlinkG 1s ease-in-out infinite}#routeBanner.mrpBlink.mrpR{animation:mrpBannerBlinkR 1s ease-in-out infinite}';
+    document.head.appendChild(st);
+  }
   window.updateRouteBanner = function () {
     var list = stops();
     var lab = document.getElementById('todayRouteBtnLabel');
     if (lab) lab.textContent = list.length ? "Today's route (" + list.length + ')' : "Today's route";
+    var h = chiHour();
+    var mode = list.length ? 'g' : (h >= 9 && h < 11 ? 'r' : '');
     var b = document.getElementById('routeBanner');
-    if (!list.length || dismissed()) { if (b) b.remove(); return; }
-    if (b) { var t = b.querySelector('[data-t]'); if (t) t.textContent = "Today's route: " + list.length + ' stop' + (list.length === 1 ? '' : 's') + '. First: ' + routeName(list[0]); return; }
+    if (!mode || dismissed()) { if (b) b.remove(); return; }
+    var text = list.length ? "Today's route: " + list.length + ' stop' + (list.length === 1 ? '' : 's') + '. First: ' + routeName(list[0]) : "Today's route: 0 stops. No stops today.";
+    if (b && b.getAttribute('data-mode') === mode) { var t = b.querySelector('[data-t]'); if (t) t.textContent = text; return; }
+    if (b) b.remove();
     b = document.createElement('div');
     b.id = 'routeBanner';
-    b.setAttribute('style', 'position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top,0px));background:linear-gradient(90deg,#059669,#0d9488);color:#fff;font-weight:800;font-size:13px;box-shadow:0 4px 18px rgba(0,0,0,.35)');
-    b.innerHTML = '<div data-t style="flex:1;min-width:0"></div><button type="button" onclick="openTodayRoute()" style="flex:0 0 auto;padding:7px 12px;border:0;border-radius:10px;background:#fff;color:#065f46;font-weight:900;font-size:12px;cursor:pointer">View route</button><button type="button" aria-label="Dismiss" onclick="dismissRouteBanner()" style="flex:0 0 auto;background:none;border:0;color:#fff;font-size:22px;line-height:1;cursor:pointer">&times;</button>';
-    b.querySelector('[data-t]').textContent = "Today's route: " + list.length + ' stop' + (list.length === 1 ? '' : 's') + '. First: ' + routeName(list[0]);
+    b.setAttribute('data-mode', mode);
+    b.className = (seen() ? '' : 'mrpBlink ') + (mode === 'g' ? 'mrpG' : 'mrpR');
+    b.setAttribute('style', 'position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:10px;padding:12px 14px;padding-top:max(12px,env(safe-area-inset-top,0px));cursor:pointer;background:' + (mode === 'g' ? '#00ff2a' : '#ff0000') + ';color:' + (mode === 'g' ? '#022c0a' : '#ffffff') + ';font-weight:900;font-size:14px;box-shadow:0 4px 18px rgba(0,0,0,.35)');
+    b.onclick = function (e) { if (e.target && e.target.getAttribute && e.target.getAttribute('data-x')) return; markRouteSeen(); };
+    b.innerHTML = '<div data-t style="flex:1;min-width:0"></div><button type="button" onclick="markRouteSeen();openTodayRoute()" style="flex:0 0 auto;padding:8px 14px;border:0;border-radius:10px;background:' + (mode === 'g' ? '#022c0a' : '#fff') + ';color:' + (mode === 'g' ? '#00ff2a' : '#b00000') + ';font-weight:900;font-size:12px;cursor:pointer">View route</button><button type="button" data-x="1" aria-label="Dismiss" onclick="dismissRouteBanner()" style="flex:0 0 auto;background:none;border:0;color:inherit;font-size:24px;line-height:1;cursor:pointer">&times;</button>';
+    b.querySelector('[data-t]').textContent = text;
     document.body.insertBefore(b, document.body.firstChild);
   };
 
