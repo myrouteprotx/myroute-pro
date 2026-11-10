@@ -3665,7 +3665,7 @@ Add New Stop
       let home = homeAddr(); const noHome = !home; if (noHome && act.length) home = act[0].streetAddress;
       if (!act.length) return '<div style="font-size:13px;color:#fcd34d;margin-bottom:8px">No stops are checked. Check a stop to get a Google Maps link.</div>';
       const links = rpLinks(home, act);
-      return links.map((l, i) => '<a href="' + l.url + '" target="_blank" rel="noopener" style="display:block;text-align:center;padding:13px;margin-bottom:8px;border-radius:14px;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(90deg,#10b981,#06b6d4);text-decoration:none">Open in Google Maps' + (links.length > 1 ? ' - part ' + (i + 1) + ' of ' + links.length : '') + '</a>').join('')
+      return links.map((l, i) => '<a href="' + l.url + '" target="_blank" rel="noopener" onclick="return rpOpenMaps(this)" style="display:block;text-align:center;padding:13px;margin-bottom:8px;border-radius:14px;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(90deg,#10b981,#06b6d4);text-decoration:none">Open in Google Maps' + (links.length > 1 ? ' - part ' + (i + 1) + ' of ' + links.length : '') + '</a>').join('')
         + (noHome ? '<div style="font-size:11px;color:#fcd34d;margin:-2px 0 8px">Add your office address in Settings for a round trip. This link starts at the first stop.</div>' : '');
     }
     function rmdToggle(id, on) {
@@ -3716,6 +3716,16 @@ Add New Stop
       if (!card || e.target.closest('a,button,input,select,textarea,label')) return;
       goToVisit(card.dataset.rid);
     });
+    // On a computer, open Google Maps in its own new browser window so this page stays open
+    function rpOpenMaps(a) {
+      try {
+        if (window.matchMedia('(min-width: 1100px) and (hover: hover) and (pointer: fine)').matches) {
+          const w = window.open(a.href, '_blank', 'width=1300,height=900,left=80,top=60,resizable=yes,scrollbars=yes');
+          if (w) { try { w.opener = null; } catch (e) {} return false; }
+        }
+      } catch (e) {}
+      return true;
+    }
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
       rpClose();
@@ -3806,7 +3816,7 @@ Add New Stop
         const parts = rpLinks(home, ordered);
         const skipAll = skipped.concat(lost);
         const rows = ordered.map((v, i) => '<li class="py-1.5 border-b border-slate-700 text-xs"><span class="font-black text-purple-300">' + (i + 1) + '.</span> <span class="font-bold">' + escapeHtml(v.businessName || '') + '</span><br><span class="text-slate-400">' + escapeHtml(v.streetAddress || '') + '</span></li>').join('');
-        const btns = parts.map((p, i) => '<a href="' + p.url + '" target="_blank" rel="noopener" class="block text-center px-3 py-3 mb-2 text-sm font-black text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-xl">Open in Google Maps' + (parts.length > 1 ? ' - part ' + (i + 1) + ' of ' + parts.length + ' (stops ' + p.from + ' to ' + p.to + ')' : '') + '</a>').join('');
+        const btns = parts.map((p, i) => '<a href="' + p.url + '" target="_blank" rel="noopener" onclick="return rpOpenMaps(this)" class="block text-center px-3 py-3 mb-2 text-sm font-black text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-xl">Open in Google Maps' + (parts.length > 1 ? ' - part ' + (i + 1) + ' of ' + parts.length + ' (stops ' + p.from + ' to ' + p.to + ')' : '') + '</a>').join('');
         window.__rpText = 'Start: ' + home + '\n' + ordered.map((v, i) => (i + 1) + '. ' + (v.businessName || '') + ' - ' + (v.streetAddress || '')).join('\n') + '\nFinish: ' + home;
         rpShow('<div class="text-sm font-black mb-1">Your route: ' + ordered.length + ' stop' + (ordered.length === 1 ? '' : 's') + '</div>'
           + '<div class="text-[11px] text-slate-400 mb-3">Leaves from and returns to ' + escapeHtml(home) + '. Ordered with ' + method + '.</div>' + btns
