@@ -2846,10 +2846,10 @@ Add New Stop
     setInterval(checkNewDay, 60000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) checkNewDay(); });
 
-    // Report weeks run Friday through the next Thursday (reports are due Friday). The week number is the ISO week number of that Friday.
+    // Report weeks run Friday through the next Thursday (reports are due Friday). The week number is the calendar (ISO) week number of that Thursday, so Oct 30 to Nov 5, 2026 is week 45.
     function getISOWeekString(dateObj = new Date(centralDate() + 'T00:00:00')) {
       const d = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()));
-      d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() - 5 + 7) % 7));
+      d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() - 5 + 7) % 7) + 6);
       const dayNum = d.getUTCDay() || 7;
       d.setUTCDate(d.getUTCDate() + 4 - dayNum);
       const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
@@ -2870,9 +2870,9 @@ Add New Stop
       } else {
         isoWeekStart.setUTCDate(simple.getUTCDate() + 8 - simple.getUTCDay());
       }
-      // Monday of the ISO week + 4 days = that week's Friday; the report week is that Friday through the following Thursday
+      // Monday of the ISO week minus 3 days = the Friday before it; the report week is that Friday through the following Thursday
       const isoWeekFri = new Date(isoWeekStart);
-      isoWeekFri.setUTCDate(isoWeekStart.getUTCDate() + 4);
+      isoWeekFri.setUTCDate(isoWeekStart.getUTCDate() - 3);
       const isoWeekEnd = new Date(isoWeekFri);
       isoWeekEnd.setUTCDate(isoWeekFri.getUTCDate() + 6);
 
