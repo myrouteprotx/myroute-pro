@@ -948,6 +948,17 @@
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) { min-width: 270px; width: auto; max-width: none !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(5), table:has(#visitsTableBody) th:nth-child(5), table:has(#todayTableBody) th:nth-child(5), table:has(#yesterdayTableBody) th:nth-child(5) { width: 1% !important; white-space: nowrap; }
       table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6) { text-align: center !important; }
+      /* Fixed column widths so the table always fits the window: no sideways scrolling, no big gap before Notes */
+      table:has(#visitsTableBody), table:has(#todayTableBody), table:has(#yesterdayTableBody) { table-layout: fixed !important; width: 100% !important; min-width: 0 !important; }
+      table:has(#visitsTableBody) th:nth-child(1), table:has(#todayTableBody) th:nth-child(1), table:has(#yesterdayTableBody) th:nth-child(1) { width: 25% !important; }
+      table:has(#visitsTableBody) th:nth-child(2), table:has(#todayTableBody) th:nth-child(2), table:has(#yesterdayTableBody) th:nth-child(2) { width: 14% !important; }
+      table:has(#visitsTableBody) th:nth-child(3), table:has(#todayTableBody) th:nth-child(3), table:has(#yesterdayTableBody) th:nth-child(3) { width: 11% !important; }
+      table:has(#visitsTableBody) th:nth-child(4), table:has(#todayTableBody) th:nth-child(4), table:has(#yesterdayTableBody) th:nth-child(4) { width: 13% !important; }
+      table:has(#visitsTableBody) th:nth-child(5), table:has(#todayTableBody) th:nth-child(5), table:has(#yesterdayTableBody) th:nth-child(5) { width: 12% !important; white-space: normal; }
+      table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6) { width: 25% !important; white-space: normal !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td { overflow-wrap: anywhere; white-space: normal !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) { min-width: 0 !important; width: auto !important; }
+
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box, :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box textarea { width: 100% !important; box-sizing: border-box; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box textarea { min-height: 120px; font-size: 13px !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .desk-only { width: 100%; align-items: stretch !important; }
