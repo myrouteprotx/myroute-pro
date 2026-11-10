@@ -3937,6 +3937,29 @@ Add New Stop
                    : `<button type="button" onclick="${open}" title="Open the visit to add an email address" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`)
         + '</div>';
     }
+    // Refresh (F5) starts at the top of the page, and the browser must not drop a saved email into the search boxes
+    try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+    (function () {
+      const ids = ['searchInput', 'fireSearch', 'waterSearch', 'pcwSearch', 'repSearch', 'pastWeeksSearch'];
+      const desktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      function guard() {
+        ids.forEach(id => {
+          const el = document.getElementById(id); if (!el) return;
+          el.setAttribute('name', 'mrp-find-' + id); el.setAttribute('autocomplete', 'off'); el.setAttribute('data-lpignore', 'true'); el.setAttribute('data-1p-ignore', 'true');
+          if (desktop && !el.dataset.rg) { el.dataset.rg = '1'; el.setAttribute('readonly', ''); el.addEventListener('focus', () => el.removeAttribute('readonly')); el.addEventListener('mousedown', () => el.removeAttribute('readonly')); }
+        });
+      }
+      function scrub() {
+        ids.forEach(id => {
+          const el = document.getElementById(id);
+          if (el && document.activeElement !== el && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value || '')) { el.value = ''; try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {} }
+        });
+      }
+      function top() { try { window.scrollTo(0, 0); } catch (e) {} }
+      guard(); top();
+      window.addEventListener('load', () => { guard(); top(); [300, 1200, 3000].forEach(t => setTimeout(() => { scrub(); guard(); }, t)); setTimeout(top, 50); setTimeout(top, 600); });
+      window.addEventListener('pageshow', () => { top(); scrub(); });
+    })();
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
       rpClose();
