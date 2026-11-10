@@ -7158,6 +7158,7 @@ Add New Stop
         + (m.contactEmail ? `<div style="color:${t2};font-size:11px;overflow-wrap:anywhere">${escapeHtml(m.contactEmail)}</div>` : '')
         + (m.notes ? `<div style="color:${t2};font-size:11px;white-space:pre-line">${escapeHtml(m.notes)}</div>` : '')
         + (m.visitDate ? `<div style="color:${ac};font-size:11px;font-weight:800">Visited ${escapeHtml(mpDate(m.visitDate))}</div>` : (vid ? `<div style="color:${ac};font-size:10px;font-weight:700">Tap to open and add info</div>` : ''))
+        + ((vid && idx !== undefined) ? `<button type="button" onclick="event.stopPropagation(); deleteProp('${escapeHtml(vid)}', ${idx})" style="display:block;width:100%;margin:8px 0 0 0;padding:6px 8px;border-radius:8px;background:rgba(190,18,60,.25);border:1px solid #fb7185;color:#fecdd3;font-size:11px;font-weight:900;cursor:pointer">Delete this property</button>` : '')
         + `</div>`;
     }
     function managedCards(v, mode, clickable) { const fb = (v.clientName && v.clientName !== 'Contact TBD') ? v.clientName : ''; return '<div class="prop-grid">' + managedItems(v).map((m, i) => propCardHtml(propShown(v, m, fb), mode, clickable ? v.id : '', clickable ? i : undefined)).join('') + '</div>'; }
@@ -7180,6 +7181,15 @@ Add New Stop
       openDetail('visit', id);
     }
     // "Log a new visit" on a property tile: a real visit for today, opened so you can add your notes
+    function deleteProp(pid, idx) {
+      const par = visits.find(x => x.id === pid); if (!par) return;
+      const list = managedItems(par), m = list[idx]; if (!m) return;
+      if (!confirm('Delete ' + m.name + ' from this visit\'s properties? You can undo this once with the Go back button.')) return;
+      list.splice(idx, 1);
+      par.managedProperties = list;
+      saveRecords();
+      try { showToast(m.name + ' deleted'); } catch (e) {}
+    }
     function logPropVisit(pid, idx) {
       const par = visits.find(x => x.id === pid); if (!par) return;
       const m = managedItems(par)[idx]; if (!m) return;
