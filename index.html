@@ -726,6 +726,7 @@
     tr.route-on > td { background: transparent !important; }
     @media (min-width: 700px) { .today-actions > .tb-pill { width: 175px !important; height: 40px !important; } }
     .today-actions > .tb-pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; font-size: 11px; font-weight: 900; border-radius: 12px; text-align: center; line-height: 1.1; white-space: nowrap; }
+    .today-actions > .tb-pill, .today-actions > .tb-pill * { font-size: 12px !important; font-weight: 900 !important; }
     .today-actions > .tb-pill > span { text-shadow: 0 1px 1px rgba(0,0,0,.25); }
     .route-check { appearance: auto; width: 20px; height: 20px; min-width: 20px; margin-top: -2px; accent-color: #00e676; cursor: pointer; }
 
@@ -1140,7 +1141,6 @@
             </button>
             <button type="button" onclick="copyRouteList()" title="Copy the route list: numbered names and addresses" class="tb-pill bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border-amber-300/60 text-white border transition active:scale-95"><span>Copy route list</span></button>
             <button type="button" onclick="planRoute()" title="Put the stops in the shortest driving order and open it in Google Maps" class="tb-pill bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 border-purple-300/60 text-white border transition active:scale-95"><span>Plan my route</span></button>
-            <button type="button" onclick="clearPlannedRoute()" title="Uncheck every stop you checked for the route" class="tb-pill bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-400 hover:to-red-400 border-rose-300/60 text-white border transition active:scale-95"><span>Uncheck all stops</span></button>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -3598,6 +3598,13 @@ Add New Stop
       }, 450);
     }
     document.addEventListener('DOMContentLoaded', () => { setTimeout(fillHomeInput, 1500); });
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('routeOverlay')) { rpClose(); return; }
+      const t = e.target; if (t && t !== document.body && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return;
+      if (document.body.classList.contains('mrp-arranging') || document.body.classList.contains('mrp-items-on')) return;
+      if (visits.some(v => v.inRoute === true)) clearPlannedRoute();
+    });
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
       rpClose();
@@ -3695,7 +3702,7 @@ Add New Stop
           + (parts.length > 1 ? '<div class="text-[11px] text-slate-400 mb-2">Google Maps takes about 10 stops per link, so open the parts in order; each part starts where the last one ended.</div>' : '')
           + '<ol class="mb-3" style="list-style:none;padding:0">' + rows + '</ol>'
           + (skipAll.length ? '<div class="text-[11px] text-amber-300 mb-3">Left out (no street address or not found): ' + skipAll.map(v => escapeHtml(v.businessName || '')).join(', ') + '</div>' : '')
-          + '<button type="button" onclick="try{navigator.clipboard.writeText(window.__rpText)}catch(e){};showToast(\'Route copied\')" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Copy route</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
+          + '<button type="button" onclick="try{navigator.clipboard.writeText(window.__rpText)}catch(e){};showToast(\'Route copied\')" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Copy route</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Go back</button><button type="button" onclick="rpClose();clearPlannedRoute()" class="px-3 py-2 text-xs font-black bg-rose-700 rounded-xl">Go back and uncheck all stops</button>');
       } catch (e) {
         rpShow('<div class="text-sm font-black mb-2">Could not plan the route</div><div class="text-xs text-slate-300 mb-3">Check your connection and try again.</div><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
       }
