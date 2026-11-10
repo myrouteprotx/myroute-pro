@@ -10289,7 +10289,7 @@ Add New Stop
       if (e.target === document.getElementById('callDialModal')) closeCallDial();
       if (e.target === historyModal) closeHistory();
       if (e.target === document.getElementById('adminModal')) closeAdminModal();
-      if (e.target === visitModal) closeModal();
+      /* The visit form stays open when you click outside it; only Save, Cancel or the X close it */
       if (e.target === rescheduleModal) closeRescheduleModal();
     });
 
