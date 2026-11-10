@@ -222,6 +222,20 @@
     if (!r.data || r.data.error) throw new Error((r.data && r.data.error) || 'scan_failed');
     return r.data;
   };
+  window.__mrpBlobData = async function (id) {
+    try { var rec = await idbGet('b', id); if (rec && rec.blob) return URL.createObjectURL(rec.blob); } catch (e) {}
+    if (!sb) return null;
+    var r = await sb.from('blobs').select('type,data').eq('id', id).limit(1);
+    if (r.error || !r.data || !r.data.length) return null;
+    return r.data[0].data;
+  };
+  /* If a picture cannot be loaded through the service worker (for example after a hard refresh), fetch it directly */
+  document.addEventListener('error', function (e) {
+    var el = e.target; if (!el || el.tagName !== 'IMG' || el.__mrpTried) return;
+    var m = String(el.getAttribute('src') || '').match(/\/_blob\/([0-9a-f]+)$/); if (!m) return;
+    el.__mrpTried = true;
+    window.__mrpBlobData(m[1]).then(function (u) { if (u) el.src = u; }).catch(function () {});
+  }, true);
   window.__mrpFn = async function (name, body) { if (!sb) throw new Error('offline'); var r = await sb.functions.invoke(name, { body: body }); if (r.error) { var d = ''; try { var c = r.error.context; if (c && c.status) { d = 'HTTP ' + c.status + ' '; var j = await c.clone().json(); d += (j.error || '') + ' ' + (j.detail || ''); } } catch (x) {} throw new Error((d || r.error.message || 'function_error').trim().slice(0, 140)); } return r.data; };
   window.claude = { use: function (name) { return ready.then(function () { return name === 'db' ? db : name === 'assets' ? assets : null; }); } };
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
