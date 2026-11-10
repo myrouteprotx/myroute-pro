@@ -2788,7 +2788,6 @@ Add New Stop
       renderUndoBtn();
       let e = undoStack.pop();
       if (!e) {
-        if (visits.some(v => v.inRoute === true)) { clearPlannedRoute(); return; }
         showToast('Nothing to go back to'); return;
       }
       undoSuppress = true;
@@ -3611,7 +3610,6 @@ Add New Stop
       if (document.getElementById('routeOverlay')) { rpClose(); return; }
       const t = e.target; if (t && t !== document.body && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return;
       if (document.body.classList.contains('mrp-arranging') || document.body.classList.contains('mrp-items-on')) return;
-      if (visits.some(v => v.inRoute === true)) clearPlannedRoute();
     });
     // ----- Future route: save checked stops to a date, then plan that day's route -----
     function rfNice(d) { return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
@@ -3783,7 +3781,7 @@ Add New Stop
           + (parts.length > 1 ? '<div class="text-[11px] text-slate-400 mb-2">Google Maps takes about 10 stops per link, so open the parts in order; each part starts where the last one ended.</div>' : '')
           + '<ol class="mb-3" style="list-style:none;padding:0">' + rows + '</ol>'
           + (skipAll.length ? '<div class="text-[11px] text-amber-300 mb-3">Left out (no street address or not found): ' + skipAll.map(v => escapeHtml(v.businessName || '')).join(', ') + '</div>' : '')
-          + '<button type="button" onclick="try{navigator.clipboard.writeText(window.__rpText)}catch(e){};showToast(\'Route copied\')" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Copy route</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Go back</button><button type="button" onclick="rpClose();clearPlannedRoute()" class="px-3 py-2 text-xs font-black bg-rose-700 rounded-xl">Go back and uncheck all stops</button>');
+          + '<button type="button" onclick="try{navigator.clipboard.writeText(window.__rpText)}catch(e){};showToast(\'Route copied\')" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Copy route</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Go back</button>');
       } catch (e) {
         rpShow('<div class="text-sm font-black mb-2">Could not plan the route</div><div class="text-xs text-slate-300 mb-3">Check your connection and try again.</div><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
       }
