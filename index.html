@@ -938,6 +938,10 @@
     .desk-only > .cpill { width: 100%; height: 34px; min-height: 34px; justify-content: center; padding: 0 10px; white-space: nowrap; }
     .desk-only > .cpill > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; overflow-wrap: normal; }
     .desk-only > .cpill > svg, .desk-only > .cpill > i { flex: 0 0 auto; }
+
+    .mob-only > .cpill { width: 100%; height: 40px; min-height: 40px; justify-content: center; padding: 0 8px; white-space: nowrap; font-size: 14px; }
+    .mob-only > .cpill > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .mob-hold { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -3860,16 +3864,16 @@ Add New Stop
       let t = null;
       const stop = () => { clearTimeout(t); t = null; };
       document.addEventListener('touchstart', e => {
-        const a = e.target.closest && e.target.closest('.mob-email'); if (!a) return;
-        const id = a.getAttribute('data-vid-e'); stop();
+        const a = e.target.closest && e.target.closest('.mob-hold'); if (!a) return;
+        const id = a.getAttribute('data-vid-e'), kind = a.getAttribute('data-kind'); stop();
         t = setTimeout(() => {
           t = null; window.__lpUntil = Date.now() + 800;
           try { if (navigator.vibrate) navigator.vibrate(30); } catch (err) {}
-          const v = routeAll().find(x => x.id === id); if (!v || !v.email) return;
+          const v = routeAll().find(x => x.id === id); const val = v && (kind === 'phone' ? v.phone : v.email); if (!val) return;
           const old = document.getElementById('emailShowOverlay'); if (old) old.remove();
           const o = document.createElement('div'); o.id = 'emailShowOverlay';
           o.style.cssText = 'position:fixed;inset:0;z-index:130;background:rgba(2,6,23,.6);display:flex;align-items:center;justify-content:center;padding:16px';
-          o.innerHTML = '<div style="width:100%;max-width:420px;background:#1e293b;border:1px solid #f472b6;border-radius:16px;padding:16px;color:#fff;text-align:center"><div style="font-size:13px;color:#cbd5e1;margin-bottom:6px">' + escapeHtml(routeName(v)) + '</div><div style="font-size:18px;font-weight:900;word-break:break-all;user-select:text;-webkit-user-select:text;margin-bottom:12px">' + escapeHtml(v.email) + '</div><button type="button" onclick="document.getElementById(\'emailShowOverlay\').remove()" style="width:100%;padding:12px;border-radius:12px;font-size:14px;font-weight:900;color:#fff;background:#334155">Close</button></div>';
+          o.innerHTML = '<div style="width:100%;max-width:420px;background:#1e293b;border:1px solid #f472b6;border-radius:16px;padding:16px;color:#fff;text-align:center"><div style="font-size:13px;color:#cbd5e1;margin-bottom:6px">' + escapeHtml(routeName(v)) + '</div><div style="font-size:18px;font-weight:900;word-break:break-all;user-select:text;-webkit-user-select:text;margin-bottom:12px">' + escapeHtml(val) + '</div><button type="button" onclick="document.getElementById(\'emailShowOverlay\').remove()" style="width:100%;padding:12px;border-radius:12px;font-size:14px;font-weight:900;color:#fff;background:#334155">Close</button></div>';
           o.addEventListener('click', ev => { if (ev.target === o) o.remove(); });
           document.body.appendChild(o);
         }, 500);
@@ -3877,7 +3881,7 @@ Add New Stop
       document.addEventListener('touchmove', stop, { passive: true });
       document.addEventListener('touchend', stop, { passive: true });
       document.addEventListener('touchcancel', stop, { passive: true });
-      document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.mob-email')) e.preventDefault(); });
+      document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.mob-hold')) e.preventDefault(); });
     })();
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
@@ -5313,7 +5317,7 @@ Add New Stop
               ${item.clientRole ? `<div class="cn-role-inline font-extrabold text-white text-xs">${escapeHtml(item.clientRole)}</div>` : ''}
               ${groupChipDark(item)}
               ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
-              <div class="mob-only mt-1" style="font-size:14px"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" onclick="return startCall(event, '${item.id}')" class="text-blue-400 font-bold hover:underline inline-flex items-center gap-1" style="font-size:14px"><i data-lucide="phone" class="w-3.5 h-3.5"></i> ${escapeHtml(item.phone)}</a>` : `<a href="#" onclick="event.preventDefault(); addPhonePopup('${item.id}')" title="Add a phone number" class="text-blue-400 font-bold hover:underline" style="font-size:14px;text-decoration:underline dotted;text-underline-offset:3px">Add phone</a>`}${item.email ? `<a href="#" data-vid-e="${escapeHtml(item.id)}" onclick="event.preventDefault(); if (Date.now() < (window.__lpUntil || 0)) return false; openFollowUp('${item.id}')" title="Tap to email. Hold to see the address." class="mob-email text-pink-300 font-bold hover:underline" style="font-size:14px;text-decoration:underline dotted;text-underline-offset:3px;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none">Send email</a>` : `<a href="#" onclick="event.preventDefault(); addEmailPopup('${item.id}')" title="Add an email address" class="text-pink-300 font-bold hover:underline" style="font-size:14px;text-decoration:underline dotted;text-underline-offset:3px">Add email</a>`}</div></div>
+              <div class="mob-only mt-1" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" data-vid-e="${escapeHtml(item.id)}" data-kind="phone" onclick="if (Date.now() < (window.__lpUntil || 0)) { event.preventDefault(); return false; } return startCall(event, '${item.id}')" title="Tap to call. Hold to see the number." class="cpill cpill-phone mob-hold"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>` : `<button type="button" onclick="addPhonePopup('${item.id}')" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`}${item.email ? `<a href="#" data-vid-e="${escapeHtml(item.id)}" data-kind="email" onclick="event.preventDefault(); if (Date.now() < (window.__lpUntil || 0)) return false; openFollowUp('${item.id}')" title="Tap to email. Hold to see the address." class="cpill cpill-email mob-hold"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="addEmailPopup('${item.id}')" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}</div>
               ${visitPhotoIds(item).length ? `<div class="mob-photo flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
               <div class="cn-old text-[11px] text-slate-300 font-semibold mt-0.5">
                 ${escapeHtml(item.clientName)}
@@ -5342,8 +5346,8 @@ Add New Stop
 
             <td class="py-3.5 px-4 max-w-xs">
               <div class="desk-only mb-2" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%">
-                ${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" onclick="return startCall(event, '${item.id}')" title="Call and log the time" class="cpill cpill-phone"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>${escapeHtml(item.phone)}</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add a phone number" class="cpill cpill-phone cpill-add"><span>+ Add phone</span></button>`}
-                ${item.email ? `<a href="#" onclick="event.preventDefault(); openFollowUp('${item.id}')" title="Send an email to ${escapeHtml(item.email)}. Opens the email page for this visit." class="cpill cpill-email"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send email</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add an email address" class="cpill cpill-email cpill-add"><span>+ Add email</span></button>`}
+                ${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" onclick="return startCall(event, '${item.id}')" title="Call ${escapeHtml(item.phone)} and log the time" class="cpill cpill-phone"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add a phone number" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`}
+                ${item.email ? `<a href="#" onclick="event.preventDefault(); openFollowUp('${item.id}')" title="Send an email to ${escapeHtml(item.email)}. Opens the email page for this visit." class="cpill cpill-email"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="editVisit('${item.id}')" title="Open the edit page to add an email address" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}
               </div>
 
               <div class="mb-1.5">${preferredSelect(item)}</div>
