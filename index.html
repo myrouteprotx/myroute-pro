@@ -3148,9 +3148,9 @@ Add New Stop
       try {
         const snap = await dbHandle.collection('visits').get();
         if (syncInflight === 0 && snap && snap.docs) {
-          const before = JSON.stringify(visits.map(v => [v.id, v.visitStatus, v.visitResult, v.followUpDate, v.notes, v.preferredContact, v.visitDate]));
+          const before = JSON.stringify(visits.map(v => [v.id, v.visitStatus, v.visitResult, v.followUpDate, v.notes, v.preferredContact, v.visitDate, v.cardPhotoId, v.propertyPhotoId, v.propertyPhotoIds, v.currentStatus]));
           const remote = snap.docs.map(d => ({ ...d.data() }));
-          const after = JSON.stringify(sortVisits(remote.slice()).map(v => [v.id, v.visitStatus, v.visitResult, v.followUpDate, v.notes, v.preferredContact, v.visitDate]));
+          const after = JSON.stringify(sortVisits(remote.slice()).map(v => [v.id, v.visitStatus, v.visitResult, v.followUpDate, v.notes, v.preferredContact, v.visitDate, v.cardPhotoId, v.propertyPhotoId, v.propertyPhotoIds, v.currentStatus]));
           if (before !== after) applyRemoteVisits(snap);
         }
       } catch (e) { /* the live listener keeps trying */ }
