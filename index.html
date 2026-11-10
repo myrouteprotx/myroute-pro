@@ -942,6 +942,7 @@
     .cpill-phone:hover { background: rgba(37,99,235,.55); }
     .cpill-email { color: #fbcfe8; background: rgba(157,23,77,.35); border-color: #f472b6; }
     .cpill-bulk { grid-column: 1 / -1; color: #a7f3d0; background: rgba(5,150,105,.25); border-color: #34d399; min-height: 30px; font-size: 12px; font-weight: 800; }
+    @media not all and (min-width: 1100px) and (hover: hover) and (pointer: fine) { .cpill-bulk, #bulkEmailSettingsBtn { display: none !important; } }
     .cpill-bulk.on { color: #fff; background: #059669; border-color: #6ee7b7; }
     .cpill-email:hover { background: rgba(219,39,119,.5); }
     .cpill-add { border-style: dashed; }
@@ -2728,7 +2729,7 @@ Add New Stop
           <div class="grid grid-cols-2 gap-2">
             <button type="button" onclick="closeSettings(); fuVisitId = null; openLibrary('manage')" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">My Files</button>
             <button type="button" onclick="closeSettings(); fuVisitId = null; openTemplateFolder()" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">Email Templates</button>
-            <button type="button" onclick="closeSettings(); bmOpen()" class="px-3 py-2.5 text-xs font-black text-white bg-gradient-to-r from-emerald-500 to-teal-500 border border-white/50 rounded-xl">Bulk email</button>
+            <button type="button" id="bulkEmailSettingsBtn" onclick="closeSettings(); bmOpen()" class="px-3 py-2.5 text-xs font-black text-white bg-gradient-to-r from-emerald-500 to-teal-500 border border-white/50 rounded-xl">Bulk email</button>
           </div>
         </div>
 
