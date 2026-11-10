@@ -8771,7 +8771,7 @@ Add New Stop
     }
     async function ocrCard(blob, onProgress) {
       const T = await loadTesseract();
-      const worker = await T.createWorker('eng', 1, { logger: m => { if (onProgress && m && m.status) onProgress(m); } });
+      const worker = await T.createWorker('eng', 1, { langPath: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int', gzip: true, logger: m => { if (onProgress && m && m.status) onProgress(m); } });
       try {
         let r = await worker.recognize(blob, {}, { blocks: true });
         // If the text is sideways or upside down, try the other three turns on a small copy and keep the one that reads best
@@ -8836,7 +8836,7 @@ Add New Stop
       if (code === 'rate_limited') return 'Too many scans in a short time. Wait a minute and try again.';
       if (code === 'session_expired') return 'Your Claude sign-in expired. Reload the app and sign in again.';
       if (code === 'invalid_json' || code === 'empty_completion' || code === 'refused') return 'Could not read that card. Retake the photo with the whole card in view and good light.';
-      return 'Could not scan the card. Check your connection and try again.';
+      return 'Could not scan the card (' + String((e && (e.message || e.code)) || e || 'unknown').slice(0, 80) + '). Check your connection and try again.';
     }
 
     function fillIfFound(id, value) {
