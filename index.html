@@ -8397,6 +8397,126 @@ Add New Stop
       'Reply with only the JSON.'
     ].join('\n');
 
+    // ---- On-device card reader (Tesseract.js). Works on the GitHub Pages site, no Claude connection needed ----
+    function loadTesseract() {
+      if (window.Tesseract) return Promise.resolve(window.Tesseract);
+      if (window.__tessLoading) return window.__tessLoading;
+      window.__tessLoading = new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+        s.onload = () => window.Tesseract ? res(window.Tesseract) : rej(new Error('ocr'));
+        s.onerror = () => { window.__tessLoading = null; rej(new Error('ocr_load')); };
+        document.head.appendChild(s);
+      });
+      return window.__tessLoading;
+    }
+
+    const CARD_ROLE_RX = /\b(manager|director|specialist|consultant|agent|broker|president|owner|officer|coordinator|supervisor|associate|representative|executive|sales|leasing|principal|administrator|assistant|superintendent|engineer|adjuster|concierge|receptionist|professional|partner|vp|ceo|coo|cfo|chief|lead|advisor|realtor)\b/i;
+    const CARD_BIZ_RX = /\b(inc|llc|ltd|corp|co\.|company|group|hotel|inn|suites?|apartments?|homes?|club|resort|hospital|church|school|properties|property|management|realty|insurance|association|village|place|lakes?|oaks|park|preserve|harbou?r|center|centre|services|restoration|plumbing|roofing)\b/i;
+
+    function parseCardText(lines) {
+      // lines: [{text, h}] in reading order; h = text height in pixels
+      const txt = lines.map(l => l.text);
+      const all = txt.join('\n');
+      const out = { businessName: '', contactName: '', role: '', phone: '', email: '', address: '', note: '', check: [] };
+      const used = new Set();
+
+      // email
+      const em = all.match(/[A-Za-z0-9._%+\-]+\s?@\s?[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/);
+      if (em) { out.email = em[0].replace(/\s+/g, '').replace(/[.,;]+$/, ''); lines.forEach((l, i) => { if (l.text.indexOf(em[0].trim()) >= 0 || /@/.test(l.text)) used.add(i); }); }
+      else out.check.push('no email found');
+
+      // phones: prefer cell / mobile / direct / D / C / M labels, then any
+      const phoneRx = /(?:\+?1[\s.\-]?)?\(?\b(\d{3})\)?[\s.\-\/]{0,2}(\d{3})[\s.\-]?(\d{4})\b/;
+      const phones = [];
+      lines.forEach((l, i) => {
+        if (/\bfax\b|^\s*f[\s:.]/i.test(l.text)) { if (phoneRx.test(l.text)) used.add(i); return; }
+        const m = l.text.match(phoneRx);
+        if (m) { phones.push({ num: `(${m[1]}) ${m[2]}-${m[3]}`, pri: /cell|mobile|direct|\bd[\s:.]|\bc[\s:.]|\bm[\s:.]/i.test(l.text) ? 0 : /office|main|\bt[\s:.]|\bo[\s:.]|phone|tel|\bp[\s:.]/i.test(l.text) ? 1 : 2, i }); used.add(i); }
+      });
+      phones.sort((a, b) => a.pri - b.pri || a.i - b.i);
+      if (phones.length) out.phone = phones[0].num; else out.check.push('no phone number found');
+
+      // address: a line with a TX/state + ZIP, plus the street line before it (or the same line)
+      let addr = '';
+      for (let i = 0; i < lines.length; i++) {
+        const t = lines[i].text;
+        const z = t.match(/\b([A-Za-z][A-Za-z.\s]+?),?\s+(TX|Texas)\.?,?\s+(\d{5})(?:-\d{4})?\b/i);
+        if (z) {
+          const city = z[1].trim().replace(/^.*\b(\d+\s)/, '').trim();
+          let street = '';
+          const before = t.slice(0, z.index).trim().replace(/[|,]\s*$/, '').trim();
+          if (/\d/.test(before)) street = before;
+          else {
+            for (let k = i - 1; k >= Math.max(0, i - 2); k--) { if (/^\s*\d{1,6}\s+\S/.test(lines[k].text) && !phoneRx.test(lines[k].text)) { street = lines[k].text.trim(); used.add(k); break; } }
+          }
+          if (street) { addr = `${street.replace(/[|]+/g, ',').replace(/\s+,/g, ',')}, ${z[1].trim().split(/\s*\|\s*/).pop().replace(/\b\w/g, c => c.toUpperCase())}, TX ${z[3]}`; used.add(i); break; }
+        }
+      }
+      if (!addr) {
+        const si = lines.findIndex((l, i) => !used.has(i) && /^\s*\d{1,6}\s+[A-Za-z0-9.\s]+\b(st|street|blvd|boulevard|rd|road|ave|avenue|dr|drive|hwy|highway|pkwy|parkway|ln|lane|way|fm)\b/i.test(l.text));
+        if (si >= 0) { addr = lines[si].text.trim(); used.add(si); out.check.push('check the city, state and ZIP in the address'); }
+      }
+      out.address = addr.replace(/\s{2,}/g, ' ');
+      if (!out.address) out.check.push('no address found');
+
+      // website lines
+      lines.forEach((l, i) => { if (/\b(www\.|https?:|\.com\b|\.org\b|\.net\b)/i.test(l.text) && !/@/.test(l.text)) used.add(i); });
+
+      // role
+      const ri = lines.findIndex((l, i) => !used.has(i) && l.text.length < 60 && CARD_ROLE_RX.test(l.text) && !/\d/.test(l.text));
+      if (ri >= 0) { out.role = lines[ri].text.replace(/[|]+/g, '').trim(); if (out.role === out.role.toUpperCase()) out.role = out.role.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase()); used.add(ri); }
+
+      // contact name: 2 to 3 capitalized words, letters only, not a business word, nearest to the role line, else the first one
+      const titleCase = (t) => (t === t.toUpperCase() ? t.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase()) : t);
+      const nameOk = (t) => { t = titleCase(t); const s = t.replace(/[,.]?\s*(MBA|CAM|CPM|CMCA|PCAM|RPA|CPA|PMP|Jr|Sr)\.?$/i, '').trim(); return /^[A-Z][a-z'\-]+(\s+[A-Z]\.?)?(\s+[A-Z][a-zA-Z'\-]+){1,2}$/.test(s) && !CARD_BIZ_RX.test(s) && !CARD_ROLE_RX.test(s); };
+      const cands = lines.map((l, i) => ({ i, t: l.text.trim(), h: l.h })).filter(c => !used.has(c.i) && nameOk(c.t));
+      if (cands.length) {
+        cands.sort((a, b) => (ri >= 0 ? Math.abs(a.i - ri) - Math.abs(b.i - ri) : a.i - b.i));
+        out.contactName = titleCase(cands[0].t).replace(/[,.]?\s*(MBA|CAM|CPM|CMCA|PCAM|RPA|CPA|PMP|Jr|Sr)\.?$/i, '').trim(); used.add(cands[0].i);
+      } else if (em) {
+        const local = out.email.split('@')[0];
+        const parts = local.split(/[._\-]/).filter(p => /^[a-z]{2,}$/i.test(p));
+        if (parts.length === 2) { out.contactName = parts.map(p => p[0].toUpperCase() + p.slice(1).toLowerCase()).join(' '); out.check.push('contact name guessed from the email'); }
+      }
+      if (!out.contactName) out.check.push('no contact name found');
+
+      // business name: biggest remaining text, preferring business words; fall back to the email/website domain
+      const rest = lines.map((l, i) => ({ i, t: l.text.replace(/[|_]+/g, ' ').trim(), h: l.h })).filter(c => !used.has(c.i) && c.t.length >= 3 && /[A-Za-z]{3}/.test(c.t) && !phoneRx.test(c.t) && !/\b\d{5}\b/.test(c.t) && !/\b(TX|Texas)\b/i.test(c.t));
+      rest.sort((a, b) => ((CARD_BIZ_RX.test(b.t) ? 1e4 : 0) + b.h) - ((CARD_BIZ_RX.test(a.t) ? 1e4 : 0) + a.h));
+      if (rest.length) {
+        const top = rest[0];
+        const near = rest.filter(c => c.i === top.i + 1 && Math.abs(c.h - top.h) < top.h * 0.25 && c.t.length < 30);
+        out.businessName = (top.t + (near.length && !CARD_ROLE_RX.test(near[0].t) ? ' ' + near[0].t : '')).replace(/\s{2,}/g, ' ');
+      }
+      if (!out.businessName) {
+        const wm = txt.filter(t => !/@/.test(t)).join('\n').match(/(?:www\.)?([a-z0-9\-]+)\.(?:com|org|net)\b/i) || all.match(/@([a-z0-9\-]+)\.(?:com|org|net)\b/i);
+        if (wm && !(out.email && out.email.toLowerCase().indexOf('@' + wm[1].toLowerCase()) >= 0 && false)) { out.businessName = wm[1].replace(/\b\w/g, c => c.toUpperCase()); out.check.push('business name guessed from the website'); }
+      }
+      if (!out.businessName && out.email) { const d = out.email.split('@')[1].split('.')[0]; out.businessName = d.charAt(0).toUpperCase() + d.slice(1); out.check.push('business name guessed from the email'); }
+      if (!out.businessName) out.check.push('no business name found');
+      out.check.push('card was read by the phone, so check every field');
+
+      const who = out.contactName || 'the contact';
+      out.note = `Stopped in and collected a card from ${who}${out.role ? ', ' + out.role : ''}${out.businessName ? ' at ' + out.businessName : ''}. Property and facility staff are often the first call after a water or fire loss, so I will follow up in two weeks.`;
+      return out;
+    }
+
+    async function ocrCard(blob, onProgress) {
+      const T = await loadTesseract();
+      const worker = await T.createWorker('eng', 1, { logger: m => { if (onProgress && m && m.status) onProgress(m); } });
+      try {
+        const r = await worker.recognize(blob, {}, { blocks: true });
+        const d = r.data || {};
+        let ls = [];
+        if (d.blocks && d.blocks.length) d.blocks.forEach(b => (b.paragraphs || []).forEach(p => (p.lines || []).forEach(l => ls.push(l))));
+        else if (d.lines) ls = d.lines;
+        let lines = ls.map(l => ({ text: String(l.text || '').replace(/\s+/g, ' ').trim(), h: l.bbox ? Math.max(1, l.bbox.y1 - l.bbox.y0) : 10, y: l.bbox ? l.bbox.y0 : 0, x: l.bbox ? l.bbox.x0 : 0 })).filter(l => l.text.length > 1);
+        if (!lines.length && d.text) lines = String(d.text).split('\n').map(t => ({ text: t.trim(), h: 10 })).filter(l => l.text.length > 1);
+        return parseCardText(lines);
+      } finally { try { await worker.terminate(); } catch (e) {} }
+    }
+
     // Crops the photo down to just the business card (and turns it upright). If the box looks wrong, the full photo is kept.
     async function cropToCard(blob, box, rotate) {
       try {
@@ -8431,6 +8551,7 @@ Add New Stop
 
     function scanErrorText(e) {
       const code = e && e.code;
+      if (e && e.message === 'ocr_load') return 'Could not load the card reader. Check your connection and try again.';
       if (code === 'not_granted') return 'Card scanning needs your OK to use Claude. Tap Take photo again and allow it.';
       if (code === 'sampling_disabled' || code === 'capability_disabled' || code === 'not_declared') return 'Card scanning is not available on this account. You can still type the stop in by hand.';
       if (code === 'images_unavailable') return 'This screen cannot send photos to Claude. Open the app again from your home screen and retry.';
@@ -8450,9 +8571,6 @@ Add New Stop
     async function scanCardFile(file) {
       if (!file || scanBusy) return;
       if (document.getElementById('editEntryId').value) return;
-      const sample = await getSampleApi();
-      if (!sample) { setScanStatus('Card scanning is not available in this view. Open the app from your home screen, or type the stop in by hand.', 'error'); return; }
-
       scanCtl = new AbortController();
       const ctl = scanCtl;
       setScanBusy(true);
@@ -8464,7 +8582,11 @@ Add New Stop
         th.src = URL.createObjectURL(small);
         th.classList.remove('hidden');
 
-        const data = await sample.json(SCAN_PROMPT, { images: small, signal: ctl.signal });
+        setScanStatus('Reading the card (the first scan takes about 20 seconds)...');
+        const data = await Promise.race([
+          ocrCard(small, m => { if (m.status === 'recognizing text') setScanStatus('Reading the card... ' + Math.round((m.progress || 0) * 100) + '%'); }),
+          new Promise((_, rej) => ctl.signal.addEventListener('abort', () => rej({ code: 'cancelled' })))
+        ]);
         if (!data || typeof data !== 'object' || Array.isArray(data)) throw { code: 'invalid_json' };
 
         // Keep only the card: crop out the table and background, and stand it upright
