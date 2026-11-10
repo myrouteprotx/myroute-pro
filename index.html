@@ -998,12 +998,11 @@
     #addVisitTodayBtn { background: linear-gradient(90deg, #00e85c, #19ff8c) !important; color: #022c0f !important; border: 3px solid #00ff6a !important; animation: addVisitBlink 1.1s ease-in-out infinite; text-shadow: none !important; }
     #addVisitTodayBtn, #addVisitTodayBtn * { color: #022c0f !important; font-weight: 900 !important; }
     @media (prefers-reduced-motion: reduce) { #addVisitTodayBtn { animation: none; box-shadow: 0 0 0 3px #00ff6a, 0 0 14px 3px rgba(0,255,106,.7); } }
-    @keyframes visitCountBlink { 0%, 100% { box-shadow: 0 0 0 3px #ff2d2d, 0 0 18px 4px rgba(255,45,45,.85); border-color: #ff2d2d; } 50% { box-shadow: 0 0 0 3px rgba(255,45,45,.15), 0 0 4px 0 rgba(255,45,45,.2); border-color: rgba(255,45,45,.25); } }
-    #todayCountBadge { display: inline-flex !important; align-items: center; justify-content: center; width: 175px; height: 40px; padding: 0 10px !important; border-radius: 12px !important; font-size: 12px !important; font-weight: 900 !important; white-space: nowrap; background: linear-gradient(90deg, #e11d1d, #ff3b3b) !important; color: #fff !important; border: 3px solid #ff2d2d !important; }
-    #todayCountBadge[data-zero="1"] { animation: visitCountBlink 1.1s ease-in-out infinite; }
-    #todayCountBadge[data-state="busy"] { background: linear-gradient(90deg, #f97316, #fb923c) !important; border-color: #fdba74 !important; }
-    #todayCountBadge[data-state="done"] { background: linear-gradient(90deg, #1d4ed8, #3b82f6) !important; border-color: #93c5fd !important; white-space: normal; line-height: 1.1; text-align: center; }
-    @media (prefers-reduced-motion: reduce) { #todayCountBadge[data-zero="1"] { animation: none; box-shadow: 0 0 0 3px #ff2d2d, 0 0 14px 3px rgba(255,45,45,.7); } }
+    @keyframes visitCountBlink { 0%, 100% { box-shadow: 0 0 0 3px var(--bl), 0 0 18px 4px var(--blg); border-color: var(--bl); } 50% { box-shadow: 0 0 0 3px transparent, 0 0 4px 0 transparent; border-color: rgba(255,255,255,.2); } }
+    #todayCountBadge { --bl: #ff2d2d; --blg: rgba(255,45,45,.85); display: inline-flex !important; align-items: center; justify-content: center; width: 175px; height: 40px; padding: 0 10px !important; border-radius: 12px !important; font-size: 12px !important; font-weight: 900 !important; white-space: nowrap; background: linear-gradient(90deg, #e11d1d, #ff3b3b) !important; color: #fff !important; border: 3px solid var(--bl) !important; animation: visitCountBlink 1.1s ease-in-out infinite; }
+    #todayCountBadge[data-state="busy"] { --bl: #ff8a1f; --blg: rgba(255,138,31,.85); background: linear-gradient(90deg, #f97316, #fb923c) !important; }
+    #todayCountBadge[data-state="done"] { --bl: #3b9bff; --blg: rgba(59,155,255,.85); background: linear-gradient(90deg, #1d4ed8, #3b82f6) !important; white-space: normal; line-height: 1.1; text-align: center; }
+    @media (prefers-reduced-motion: reduce) { #todayCountBadge { animation: none; box-shadow: 0 0 0 3px var(--bl), 0 0 14px 3px var(--blg); } }
 
     /* Visit: contact name 16, job title 14, then the call / email pills, then the photos */
     .cn-line-name { display: block !important; font-size: 16px !important; font-weight: 800; color: #fff; line-height: 1.25; margin-top: 3px; }
