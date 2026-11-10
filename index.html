@@ -10860,9 +10860,9 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     el('mrpVLDone').onclick = stop;
     el('mrpVLReset').onclick = function () { L = null; try { localStorage.removeItem(KEY); } catch (e) {} save(); apply(); document.body.classList.remove('mrp-vl-on'); if (styleEl) styleEl.textContent = ''; stop(); };
     var st = document.createElement('style');
-    st.textContent = 'body.mrp-vedit table:has(#visitsTableBody) thead th,body.mrp-vedit table:has(#todayTableBody) thead th,body.mrp-vedit table:has(#yesterdayTableBody) thead th{position:relative;cursor:grab;outline:2px dashed #34d399;outline-offset:-3px}'
+    st.textContent = 'body.mrp-vedit table:has(#visitsTableBody) thead th,body.mrp-vedit table:has(#todayTableBody) thead th,body.mrp-vedit table:has(#yesterdayTableBody) thead th{touch-action:none;user-select:none;position:relative;cursor:grab;outline:2px dashed #34d399;outline-offset:-3px}'
       + 'body.mrp-vedit #visitsTableBody td:nth-child(6)>*:not(.note-save),body.mrp-vedit #todayTableBody td:nth-child(6)>*:not(.note-save),body.mrp-vedit #yesterdayTableBody td:nth-child(6)>*:not(.note-save){outline:2px dashed #818cf8;outline-offset:1px;cursor:grab}'
-      + '.mrp-colgrip{position:absolute;right:0;top:0;bottom:0;width:10px;cursor:col-resize;background:rgba(52,211,153,.55);z-index:5}';
+      + '.mrp-colgrip{touch-action:none;position:absolute;right:0;top:0;bottom:0;width:10px;cursor:col-resize;background:rgba(52,211,153,.55);z-index:5}';
     document.head.appendChild(st);
     return b;
   }
@@ -10872,30 +10872,15 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     try { closeSettings(); } catch (e) {}
     if (!L) L = fresh();
     editing = true; document.body.classList.add('mrp-vedit', 'mrp-vl-on'); bar().style.display = 'flex'; apply();
-    TABLES.forEach(function (t) {
-      var th = document.querySelectorAll('table:has(#' + t + ') thead th');
-      th.forEach(function (h) {
-        var k = colOf(h); if (k > 6) return;
-        h.draggable = true;
-        if (!h.querySelector('.mrp-colgrip')) {
-          var g = document.createElement('span'); g.className = 'mrp-colgrip'; g.draggable = false; h.appendChild(g);
-          g.addEventListener('mousedown', function (e) { e.stopPropagation(); h.draggable = false; });
-          g.addEventListener('pointerdown', function (e) {
-            e.preventDefault(); e.stopPropagation(); h.draggable = false;
-            var tw = h.closest('table').getBoundingClientRect().width, w0 = L.w.slice(), sum = w0.reduce(function (a, b) { return a + b; }, 0), x0 = e.clientX;
-            function mv(ev) { L.w[k - 1] = Math.max(4, Math.round((w0[k - 1] + (ev.clientX - x0) / tw * sum) * 10) / 10); apply(); }
-            function up() { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); h.draggable = true; save(); }
-            document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
-          });
-        }
-        h.ondragstart = function (e) { dragCol = k; try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'col' + k); } catch (x) {} };
-        h.ondragover = function (e) { if (dragCol) e.preventDefault(); };
-        h.ondrop = function (e) {
-          e.preventDefault(); if (!dragCol || dragCol === k) { dragCol = 0; return; }
-          var o = L.order.filter(function (c) { return c !== dragCol; }), at = o.indexOf(k);
-          var from = L.order.indexOf(dragCol), to = L.order.indexOf(k);
-          o.splice(from < to ? at + 1 : at, 0, dragCol); L.order = o; dragCol = 0; apply(); save();
-        };
+    document.querySelectorAll('thead th').forEach(function (h) {
+      var k = colOf(h); if (k > 6 || h.querySelector('.mrp-colgrip')) return;
+      var g = document.createElement('span'); g.className = 'mrp-colgrip'; h.appendChild(g);
+      g.addEventListener('pointerdown', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        var tw = h.closest('table').getBoundingClientRect().width, w0 = L.w.slice(), sum = w0.reduce(function (a, b) { return a + b; }, 0), x0 = e.clientX;
+        function mv(ev) { L.w[k - 1] = Math.max(4, Math.round((w0[k - 1] + (ev.clientX - x0) / tw * sum) * 10) / 10); apply(); }
+        function up() { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); save(); }
+        document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
       });
     });
   }
@@ -10903,29 +10888,47 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     if (!editing) return; editing = false; document.body.classList.remove('mrp-vedit');
     var b = el('mrpVLBar'); if (b) b.style.display = 'none';
     document.querySelectorAll('.mrp-colgrip').forEach(function (g) { g.remove(); });
-    document.querySelectorAll('thead th[draggable]').forEach(function (h) { h.draggable = false; h.ondragstart = h.ondragover = h.ondrop = null; });
     save();
   }
-  // Boxes inside the Notes column (works on every row at once, even after the list redraws)
-  document.addEventListener('mousedown', function (e) {
-    if (!editing) return;
-    var c = e.target.closest && e.target.closest('td:nth-child(6) > *'); if (!c || !c.closest('#visitsTableBody, #todayTableBody, #yesterdayTableBody')) return;
-    if (e.target.tagName === 'TEXTAREA' && (e.target.offsetWidth - e.offsetX < 18 && e.target.offsetHeight - e.offsetY < 18)) return;
-    c.draggable = true;
+  // Drag with the pointer (mouse, pen or finger): a column title moves a column, a box in the Notes column moves that box on every row.
+  var drag = null;
+  function cellBox(n) { return n && n.closest ? n.closest('td:nth-child(6) > *') : null; }
+  document.addEventListener('pointerdown', function (e) {
+    if (!editing || e.button > 0) return;
+    var t = e.target; if (!t.closest || t.closest('.mrp-colgrip, #mrpVLBar')) return;
+    var th = t.closest('thead th');
+    if (th && colOf(th) <= 6 && th.closest(TABLES.map(function (x) { return 'table:has(#' + x + ')'; }).join(','))) { drag = { type: 'col', k: colOf(th), x: e.clientX, y: e.clientY, on: false }; return; }
+    var c = cellBox(t);
+    if (c && c.closest('#visitsTableBody, #todayTableBody, #yesterdayTableBody')) {
+      if (t.tagName === 'TEXTAREA') { var r = t.getBoundingClientRect(); if (e.clientX > r.right - 20 && e.clientY > r.bottom - 20) return; }
+      drag = { type: 'blk', key: keyOf(c), x: e.clientX, y: e.clientY, on: false };
+    }
   }, true);
-  document.addEventListener('dragstart', function (e) {
-    if (!editing) return; var c = e.target.closest && e.target.closest('td:nth-child(6) > *'); if (!c || e.target !== c) return;
-    dragKey = keyOf(c); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'blk' + dragKey); } catch (x) {}
-  }, true);
-  document.addEventListener('dragover', function (e) {
-    if (!editing || !dragKey) return; var c = e.target.closest && e.target.closest('td:nth-child(6) > *'); if (!c) return;
-    var k = keyOf(c); if (!k || k === dragKey) { e.preventDefault(); return; }
+  document.addEventListener('pointermove', function (e) {
+    if (!drag || !editing) return;
+    if (!drag.on) { if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 6) return; drag.on = true; document.body.style.userSelect = 'none'; }
     e.preventDefault();
-    var r = c.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2;
-    var o = blockOrder().filter(function (x) { return x !== dragKey; }), at = o.indexOf(k);
-    o.splice(after ? at + 1 : at, 0, dragKey); L.blocks = L.blocks || {}; L.blocks['6'] = o; apply();
+    var over = document.elementFromPoint(e.clientX, e.clientY); if (!over) return;
+    if (drag.type === 'col') {
+      var th = over.closest('thead th'); if (!th) return; var k = colOf(th); if (k > 6 || k === drag.k) return;
+      var from = L.order.indexOf(drag.k), to = L.order.indexOf(k), r = th.getBoundingClientRect();
+      if (from < to && e.clientX < r.left + r.width / 2) return; if (from > to && e.clientX > r.left + r.width / 2) return;
+      var o = L.order.filter(function (c) { return c !== drag.k; }); o.splice(to, 0, drag.k); L.order = o; apply();
+    } else {
+      var c = cellBox(over); if (!c) return; var kk = keyOf(c); if (!kk || kk === drag.key) return;
+      var r2 = c.getBoundingClientRect(), after = e.clientY > r2.top + r2.height / 2;
+      var o2 = blockOrder().filter(function (x) { return x !== drag.key; }), at = o2.indexOf(kk);
+      o2.splice(after ? at + 1 : at, 0, drag.key); L.blocks = L.blocks || {}; L.blocks['6'] = o2; apply();
+    }
   }, true);
-  document.addEventListener('dragend', function (e) { if (!editing) return; if (dragKey) { dragKey = ''; save(); } document.querySelectorAll('td:nth-child(6) > [draggable="true"]').forEach(function (n) { n.draggable = false; }); }, true);
+  function endDrag() { if (!drag) return; var was = drag.on; drag = null; document.body.style.userSelect = ''; if (was) { suppressClick = Date.now() + 300; save(); } }
+  var suppressClick = 0;
+  document.addEventListener('pointerup', endDrag, true); document.addEventListener('pointercancel', endDrag, true);
+  // While editing, clicks on the lists do nothing (so a drag never opens a visit or presses a button)
+  document.addEventListener('click', function (e) {
+    if (!editing || !e.target.closest) return;
+    if (e.target.closest('#visitsTableBody, #todayTableBody, #yesterdayTableBody, thead')) { if (!e.target.closest('textarea')) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } }
+  }, true);
   document.addEventListener('pointerup', function (e) {
     if (!editing || !e.target || e.target.tagName !== 'TEXTAREA' || !e.target.closest('td:nth-child(6)')) return;
     var h = Math.round(e.target.offsetHeight); if (h > 40 && h !== L.noteH) { L.noteH = h; apply(); save(); }
