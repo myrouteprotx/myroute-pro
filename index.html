@@ -722,6 +722,8 @@
       .cn-old { display: none !important; }
     }
 
+    .route-check { appearance: auto; width: 20px; height: 20px; min-width: 20px; margin-top: -2px; accent-color: #00e676; cursor: pointer; }
+
     /* Report Studio controls: date and week boxes fit the page, everything centered, no extra blank space */
     #repDateSelector, #repWeekSelector { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; -webkit-appearance: none; appearance: none; text-align: center; min-height: 2.5rem; }
     #repDateSelector::-webkit-date-and-time-value, #repWeekSelector::-webkit-date-and-time-value { text-align: center; min-width: 0; }
@@ -1122,7 +1124,7 @@
             <p id="todayDateLabel" class="text-[11px] text-slate-400"></p>
           </div>
           <span id="todayCountBadge" class="text-xs bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-bold">0 visits</span>
-          <div class="today-actions ml-auto flex items-center gap-2">
+          <div class="today-actions ml-auto flex flex-wrap items-center gap-2">
             <button type="button" id="yesterdayToggleBtn" onclick="toggleYesterday()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition active:scale-95">
               <i data-lucide="calendar-clock" class="w-3.5 h-3.5"></i>
               <span id="yesterdayToggleText">Yesterday's Visits</span>
@@ -1131,6 +1133,8 @@
               <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
               <span>Add visit today</span>
             </button>
+            <button type="button" onclick="copyRouteList()" title="Copy the route list: numbered names and addresses" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition active:scale-95"><span>Copy route list</span></button>
+            <button type="button" onclick="clearPlannedRoute()" title="Take off every stop you added with a check mark" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition active:scale-95"><span>Clear added stops</span></button>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -3478,6 +3482,26 @@ Add New Stop
       return `<button onclick="toggleTodayList('${item.id}')" title="${title}" aria-label="${title}" class="p-1.5 ${removed ? 'text-emerald-400' : 'text-slate-400'} hover:text-emerald-300 hover:bg-slate-700/60 rounded-lg transition"><i data-lucide="${removed ? 'list-plus' : 'list-minus'}" class="w-4 h-4"></i></button>`;
     }
 
+    // A stop is on the route list when it was visited today (and not removed) or when you checked it to be added.
+    function isOnRoute(v) { return (v.visitDate === todayString && v.removedFromToday !== todayString) || v.inRoute === true; }
+    function toggleRoute(id, on) {
+      const item = visits.find(v => v.id === id); if (!item) return;
+      if (on) { item.inRoute = true; if (item.removedFromToday === todayString) item.removedFromToday = ''; }
+      else { item.inRoute = false; if (item.visitDate === todayString) item.removedFromToday = todayString; }
+      saveRecords();
+      showToast(on ? `${item.businessName} added to your route list` : `${item.businessName} taken off your route list`);
+    }
+    function clearPlannedRoute() {
+      let n = 0; visits.forEach(v => { if (v.inRoute) { v.inRoute = false; n++; } });
+      saveRecords(); showToast(n ? `Cleared ${n} added stop${n === 1 ? '' : 's'}` : 'No added stops to clear');
+    }
+    function copyRouteList() {
+      const list = visits.filter(isOnRoute).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || ''));
+      if (!list.length) { showToast('No stops on your route list yet'); return; }
+      const txt = list.map((v, i) => `${i + 1}. ${v.businessName || ''}${v.streetAddress ? ' - ' + v.streetAddress : ''}`).join('\n');
+      const done = () => showToast(`Route list copied: ${list.length} stop${list.length === 1 ? '' : 's'}`);
+      try { navigator.clipboard.writeText(txt).then(done, () => { fallbackCopy(txt); done(); }); } catch (e) { fallbackCopy(txt); done(); }
+    }
     function toggleTodayList(id) {
       const item = visits.find(v => v.id === id);
       if (!item) return;
@@ -4754,8 +4778,8 @@ Add New Stop
 
       // Today's visits live in their own box. While searching or filtering, every match shows in the main list.
       const isFiltering = !!search || statusFilter !== 'ALL' || urgencyFilter !== 'ALL';
-      const todayList = visits.filter(v => v.visitDate === todayString && v.removedFromToday !== todayString).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || ''));
-      const mainList = isFiltering ? filtered : filtered.filter(v => !(v.visitDate === todayString && v.removedFromToday !== todayString));
+      const todayList = visits.filter(isOnRoute).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || ''));
+      const mainList = isFiltering ? filtered : filtered.filter(v => !isOnRoute(v));
 
       document.getElementById('resultsCountBadge').textContent = `${mainList.length} records`;
       document.getElementById('todayCountBadge').textContent = `${todayList.length} visit${todayList.length === 1 ? '' : 's'}`;
@@ -4779,7 +4803,7 @@ Add New Stop
         return `
           <tr data-vid="${escapeHtml(item.id)}" class="hover:bg-slate-700/40 transition">
             <td class="py-3.5 px-4">
-              <div class="font-extrabold text-white text-xs">${escapeHtml(item.businessName)}${item.clientName ? `<span class="cn-inline"> / ${escapeHtml(item.clientName)}</span>` : ''}</div>
+              <div class="font-extrabold text-white text-xs flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(item) ? 'checked' : ''} onchange="toggleRoute('${item.id}', this.checked)" aria-label="Add to my route list" title="Check to add this stop to your route list (Today's Visits)"><span>${escapeHtml(item.businessName)}${item.clientName ? `<span class="cn-inline"> / ${escapeHtml(item.clientName)}</span>` : ''}</span></div>
               ${item.clientRole ? `<div class="cn-role-inline font-extrabold text-white text-xs">${escapeHtml(item.clientRole)}</div>` : ''}
               ${groupChipDark(item)}
               ${visitPhotoIds(item).length ? `<div class="flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
