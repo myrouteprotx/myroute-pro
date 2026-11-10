@@ -501,7 +501,7 @@
     :is(#routeTrackerView, #routeMapView, #detailPage) .text-white { text-shadow: 0 0 1px rgba(255,255,255,.35); }
 
     /* Yesterday's Visits: button, heading and details a little bigger */
-    #yesterdayToggleBtn, #yesterdayToggleBtn span, #addVisitTodayBtn, #addVisitTodayBtn span { font-size: 14px !important; }
+    #yesterdayToggleBtn, #yesterdayToggleBtn span, #addVisitTodayBtn, #addVisitTodayBtn span { font-size: 12px !important; }
     #yesterdaySection h2 { font-size: 20px !important; }
     #yesterdayDateLabel { font-size: 14px !important; }
     #yesterdayCountBadge { font-size: 14px !important; }
@@ -724,7 +724,9 @@
 
     tr.route-on { background: rgba(0,230,118,.30) !important; outline: 3px solid #00e676 !important; outline-offset: -3px; box-shadow: inset 0 0 0 9999px rgba(0,230,118,.10); border-radius: 12px; }
     tr.route-on > td { background: transparent !important; }
-    @media (min-width: 700px) { .today-actions > .tb-pill { width: 175px !important; height: 40px !important; } }
+    @media (min-width: 700px) { .today-actions > .tb-pill, #addVisitTodayBtn { width: 175px !important; height: 40px !important; } }
+    #addVisitTodayBtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; min-height: 40px; font-weight: 900 !important; border-radius: 12px; white-space: nowrap; }
+    @media (max-width: 699px) { .today-actions > .tb-pill:last-child { grid-column: 1 / -1; } }
     .today-actions > .tb-pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; font-size: 11px; font-weight: 900; border-radius: 12px; text-align: center; line-height: 1.1; white-space: nowrap; }
     .today-actions > .tb-pill, .today-actions > .tb-pill * { font-size: 12px !important; font-weight: 900 !important; }
     .today-actions > .tb-pill > span { text-shadow: 0 1px 1px rgba(0,0,0,.25); }
@@ -1130,17 +1132,17 @@
             <p id="todayDateLabel" class="text-[11px] text-slate-400"></p>
           </div>
           <span id="todayCountBadge" class="text-xs bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-bold">0 visits</span>
+          <button type="button" id="addVisitTodayBtn" onclick="openModal()" class="tb-pill bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 border-emerald-300/60 text-white border transition active:scale-95">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+              <span>Add visit today</span>
+            </button>
           <div class="today-actions ml-auto flex flex-wrap items-center gap-2">
+            <button type="button" onclick="planRoute()" title="Put the stops in the shortest driving order and open it in Google Maps" class="tb-pill bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 border-purple-300/60 text-white border transition active:scale-95"><span>Plan my route</span></button>
+            <button type="button" onclick="copyRouteList()" title="Copy the route list: numbered names and addresses" class="tb-pill bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border-amber-300/60 text-white border transition active:scale-95"><span>Copy route list</span></button>
             <button type="button" id="yesterdayToggleBtn" onclick="toggleYesterday()" class="tb-pill bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-400 hover:to-blue-400 border-indigo-300/60 text-white border transition active:scale-95">
               <i data-lucide="calendar-clock" class="w-3.5 h-3.5"></i>
               <span id="yesterdayToggleText">Yesterday's Visits</span>
             </button>
-            <button type="button" id="addVisitTodayBtn" onclick="openModal()" class="tb-pill bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 border-emerald-300/60 text-white border transition active:scale-95">
-              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-              <span>Add visit today</span>
-            </button>
-            <button type="button" onclick="copyRouteList()" title="Copy the route list: numbered names and addresses" class="tb-pill bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border-amber-300/60 text-white border transition active:scale-95"><span>Copy route list</span></button>
-            <button type="button" onclick="planRoute()" title="Put the stops in the shortest driving order and open it in Google Maps" class="tb-pill bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 border-purple-300/60 text-white border transition active:scale-95"><span>Plan my route</span></button>
           </div>
         </div>
         <div class="overflow-x-auto">
