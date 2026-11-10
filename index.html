@@ -222,6 +222,7 @@
     if (!r.data || r.data.error) throw new Error((r.data && r.data.error) || 'scan_failed');
     return r.data;
   };
+  window.__mrpFn = async function (name, body) { if (!sb) throw new Error('offline'); var r = await sb.functions.invoke(name, { body: body }); if (r.error) { var d = ''; try { var c = r.error.context; if (c && c.status) { d = 'HTTP ' + c.status + ' '; var j = await c.clone().json(); d += (j.error || '') + ' ' + (j.detail || ''); } } catch (x) {} throw new Error((d || r.error.message || 'function_error').trim().slice(0, 140)); } return r.data; };
   window.claude = { use: function (name) { return ready.then(function () { return name === 'db' ? db : name === 'assets' ? assets : null; }); } };
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
 })();
@@ -2742,6 +2743,9 @@ Add New Stop
             <button type="button" onclick="mrpItemsStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Move and resize pills and tiles</button>
             <div class="text-[11px] text-slate-400 mt-2.5 mb-1.5">Move and resize the columns of the visit lists, and reorder the boxes inside the Notes column (notes box, last call, last emailed, previous notes).</div>
             <button type="button" onclick="mrpVisitLayoutStart()" class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-600 border border-emerald-400 rounded-xl transition">Move and resize the visit lists</button>
+            <button type="button" onclick="mrpEnablePush()" class="px-3 py-1.5 text-xs font-bold text-white bg-sky-700 hover:bg-sky-600 border border-sky-400 rounded-xl transition">Turn on 8:30 AM route notification</button>
+            <button type="button" onclick="mrpTestPush()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-700 hover:bg-slate-600 border border-slate-400 rounded-xl transition">Send a test notification</button>
+            <div id="pushStatus" class="w-full text-[11px] font-semibold text-slate-300" role="status"></div>
           </div>
         </div>
 
@@ -11153,6 +11157,45 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   if (typeof orig === 'function') window.updateTodayBadge = function () { var r = orig.apply(this, arguments); try { updateRouteBanner(); } catch (e) {} return r; };
   setTimeout(function () { try { updateRouteBanner(); } catch (e) {} }, 1500);
   setInterval(function () { try { updateRouteBanner(); } catch (e) {} }, 60000);
+})();
+
+/* Phone notification setup */
+(function () {
+  var FN = 'push';
+  function say(t, bad) { var el = document.getElementById('pushStatus'); if (el) { el.textContent = t; el.style.color = bad ? '#fda4af' : '#86efac'; } try { showToast(t); } catch (e) {} }
+  function b64(k) { var p = '='.repeat((4 - k.length % 4) % 4), r = (k + p).replace(/-/g, '+').replace(/_/g, '/'), raw = atob(r), a = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i); return a; }
+  window.mrpEnablePush = async function () {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) { say('This browser cannot receive notifications. On iPhone, open the app from the Home Screen icon (Share > Add to Home Screen) and try again.', true); return; }
+      say('Asking for permission...');
+      var perm = await Notification.requestPermission();
+      if (perm !== 'granted') { say('Notifications are blocked. Allow them for MyRoute Pro in your phone or browser settings, then try again.', true); return; }
+      var reg = await navigator.serviceWorker.ready;
+      var k = await window.__mrpFn(FN, { action: 'key' });
+      var sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(k.key) });
+      await window.__mrpFn(FN, { action: 'subscribe', sub: sub.toJSON() });
+      say('On. This device will get the route notification at 8:30 AM Central. Tap Send a test notification to check it.');
+    } catch (e) { say('Could not turn on notifications: ' + String((e && e.message) || e).slice(0, 140), true); }
+  };
+  window.mrpTestPush = async function () {
+    try { say('Sending a test...'); var r = await window.__mrpFn(FN, { action: 'test' }); say(r && r.sent ? 'Test sent. It should arrive in a few seconds.' : 'Nothing was sent. Tap Turn on 8:30 AM route notification on this device first.', !(r && r.sent)); }
+    catch (e) { say('Test failed: ' + String((e && e.message) || e).slice(0, 140), true); }
+  };
+  /* keep a small summary of today's route in the database so the server can build the notification */
+  var lastSum = '';
+  function writeSummary() {
+    try {
+      var list = routeAll().filter(isOnRoute);
+      var sum = { date: todayString, count: list.length, first: list.length ? routeName(list[0]) : '' };
+      var key = JSON.stringify(sum);
+      if (key === lastSum || typeof dbHandle === 'undefined' || !dbHandle) return;
+      lastSum = key; sum.at = new Date().toISOString();
+      dbHandle.doc('meta/routeToday').set(sum);
+    } catch (e) {}
+  }
+  setTimeout(writeSummary, 4000);
+  setInterval(writeSummary, 30000);
 })();
 </script>
 </body></html>

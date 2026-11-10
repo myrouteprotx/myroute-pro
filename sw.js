@@ -30,3 +30,13 @@ self.addEventListener('fetch', function (e) {
   var m = new URL(e.request.url).pathname.match(/\/_blob\/([0-9a-f]+)$/);
   if (m) e.respondWith(lookup(m[1]));
 });
+
+self.addEventListener('push', function (e) {
+  var d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) {}
+  e.waitUntil(self.registration.showNotification(d.title || "Today's route", { body: d.body || '', icon: 'icon-192.png', badge: 'icon-192.png', tag: 'route', data: { url: './' } }));
+});
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (l) { if (l.length) return l[0].focus(); return self.clients.openWindow('./'); }));
+});
