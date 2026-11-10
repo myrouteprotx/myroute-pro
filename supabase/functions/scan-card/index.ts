@@ -8,10 +8,18 @@ const cors = {
 };
 const PROMPT = `This image is a photo of a business card taken by a field sales rep. Read it and reply with only one JSON object with these keys:\n{"businessName": string, "contactName": string, "role": string, "phone": string, "email": string, "address": string, "note": string, "check": string[], "cardBox": {"x": number, "y": number, "w": number, "h": number}, "rotate": number}\nRules:\n- businessName: the company or property name copied exactly as printed on the card, including the location or branch when shown (for example \"PuroClean of West Houston\", usually printed near the address and phone). Never use a slogan or tagline (for example \"The Paramedics of Property Damage\") and never use a service list or the person's title. If the logo shows only the brand, use the full company name from the contact block. contactName: the card holder's name copied exactly as printed, including middle names, middle initials and credentials (for example "Jarod William Layton"); never shorten or drop any part. role: their job title copied word for word exactly as printed, in full, including every line of it.\n- phone: the best direct number for the person (mobile or direct before an office line), formatted (281) 555-1234. email: lower-case unless the card shows otherwise.\n- address: one line, "street, City, TX ZIP", including any suite number. Use "" for anything that is not on the card. Never guess.\n- note: two or three plain, friendly sentences in the first person, written from only what the card shows: who gave the card, their role, what the business is, why they matter to a restoration company (property managers are often the first call after a flood or fire; insurance agents refer claims), and that you will follow up. Do not claim anything was said in a conversation and do not invent details.\n- check: a short list (usually empty) naming only text you could not read with confidence or that is handwritten. Do not mention missing fields, a rotated photo, or anything you left out.\n- cardBox: the tight rectangle around the business card itself (its edges, not the table, hand or background), as fractions of the whole photo from 0 to 1: x and y are the top-left corner, w and h are the width and height. If you cannot find the card edges, use {"x":0,"y":0,"w":1,"h":1}.\n- rotate: how many degrees clockwise (0, 90, 180 or 270) the photo must be turned so the card text reads upright.\nReply with only the JSON.`;
 
+const PROP_PROMPT = `This image was taken by a field sales rep. It shows property names: a sign, a list, a directory page, a flyer, a card, a screen or a building entrance. Reply with only one JSON object: {"properties": [{"name": string, "address": string, "phone": string}], "check": string[]}
+Rules:
+- List EVERY property or business name that is clearly shown, one entry per name, copied exactly as printed. Do not skip names and do not merge them.
+- address: one line "street, City, TX ZIP" if shown next to that name, otherwise "". phone: formatted (281) 555-1234 if shown next to that name, otherwise "". Never guess or use outside knowledge.
+- If no property name can be read, return an empty properties list and say why in check.
+- check: a short list (usually empty) naming only text you could not read with confidence.
+Reply with only the JSON.`;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    const { image, mediaType } = await req.json();
+    const { image, mediaType, mode } = await req.json();
     if (!image || typeof image !== "string" || image.length > 7_000_000) {
       return new Response(JSON.stringify({ error: "bad_image" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     }
@@ -20,10 +28,10 @@ Deno.serve(async (req) => {
       headers: { "x-api-key": Deno.env.get("ANTHROPIC_API_KEY") ?? "", "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
         model: "claude-sonnet-5-5",
-        max_tokens: 1200,
+        max_tokens: 2500,
         messages: [{ role: "user", content: [
           { type: "image", source: { type: "base64", media_type: mediaType || "image/jpeg", data: image } },
-          { type: "text", text: PROMPT },
+          { type: "text", text: mode === "properties" ? PROP_PROMPT : PROMPT },
         ] }],
       }),
     });

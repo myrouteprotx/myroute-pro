@@ -213,9 +213,9 @@
     try { await pull(); listen(); } catch (e) { online = false; }
     scheduleFlush();
   })();
-  window.__mrpScan = async function (b64, mediaType) {
+  window.__mrpScan = async function (b64, mediaType, mode) {
     if (!sb) throw new Error('offline');
-    var r = await sb.functions.invoke('rapid-task', { body: { image: b64, mediaType: mediaType || 'image/jpeg' } });
+    var r = await sb.functions.invoke('rapid-task', { body: { image: b64, mediaType: mediaType || 'image/jpeg', mode: mode || '' } });
     if (r.error) {
       var det = '';
       try { var ctx = r.error.context; if (ctx && ctx.status) { det = 'HTTP ' + ctx.status + ' '; var j = await ctx.clone().json(); det += (j.error || '') + ' ' + (j.detail || j.message || ''); } } catch (x) { try { det += await r.error.context.text(); } catch (y) {} }
@@ -2228,13 +2228,13 @@ Add New Stop
           </div>
           <datalist id="managedPropertyList"></datalist>
           <div class="flex flex-wrap items-center gap-2 mt-2.5">
-            <button type="button" id="managedScanTake" onclick="document.getElementById('managedCamera').click()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-sky-600 via-cyan-600 to-teal-600 active:scale-95 transition"><i data-lucide="camera" class="w-4 h-4"></i><span>Take photo of a property</span></button>
+            <button type="button" id="managedScanTake" onclick="document.getElementById('managedCamera').click()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-sky-600 via-cyan-600 to-teal-600 active:scale-95 transition"><i data-lucide="camera" class="w-4 h-4"></i><span>Scan photo of property names</span></button>
             <button type="button" id="managedScanPick" onclick="document.getElementById('managedLibrary').click()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 bg-slate-900 border border-slate-600 active:scale-95 transition"><i data-lucide="image" class="w-4 h-4"></i><span>Choose photos</span></button>
           </div>
           <input type="file" id="managedCamera" accept="image/*" capture="environment" class="hidden">
           <input type="file" id="managedLibrary" accept="image/*" multiple class="hidden">
           <div id="managedScanStatus" class="text-[11px] font-semibold mt-2 min-h-[1rem] text-slate-300" role="status" aria-live="polite"></div>
-          <div id="managedList" class="space-y-1.5 mt-2"></div>
+          <div id="managedList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2"></div>
           <button type="submit" id="managedSaveBtn" class="mt-3 w-full px-4 py-2.5 rounded-xl text-sm font-black text-white bg-gradient-to-r from-emerald-500 to-teal-500 border border-emerald-300/60 active:scale-95 transition">Save changes</button>
         </div>
 
@@ -7300,8 +7300,7 @@ Add New Stop
     async function scanManagedFiles(files) {
       files = Array.from(files || []).filter(Boolean);
       if (!files.length || managedScanBusy) return;
-      const sample = await getSampleApi();
-      if (!sample) { setManagedScan('Reading photos is not available in this view. Open the app from your home screen, or type the property names in.', 'error'); return; }
+      if (!window.__mrpScan || navigator.onLine === false) { setManagedScan('Reading photos needs an internet connection. Type the property names in above, or try again when you are online.', 'error'); return; }
       managedScanBusy = true;
       ['managedScanTake', 'managedScanPick'].forEach(i => { const b = document.getElementById(i); if (b) b.disabled = true; });
       const api = await getAssets();
@@ -7310,14 +7309,15 @@ Add New Stop
         setManagedScan(files.length > 1 ? `Reading photo ${i + 1} of ${files.length}...` : 'Reading the photo...');
         try {
           const small = await compressImage(files[i], 1600, 0.85);
-          const data = await sample.json(PROP_PROMPT, { images: small });
+          const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej; fr.readAsDataURL(small); });
+          const data = await window.__mrpScan(b64, 'image/jpeg', 'properties');
           const list = data && Array.isArray(data.properties) ? data.properties : [];
           if (!list.length) { unread++; (Array.isArray(data && data.check) ? data.check : []).forEach(c => notes.push(String(c))); }
           list.forEach(p => { if (pushManaged(p)) added++; });
           // Keep the picture with the visit as a building photo
           if (api) { try { const res = await api.upload(small); vpPending.push(res.id); vpPhotoIds.push(res.id); renderVpPreview(); } catch (e) {} }
           renderManaged();
-        } catch (e) { unread++; }
+        } catch (e) { unread++; notes.push(String((e && (e.message || e.code)) || e).slice(0, 80)); }
       }
       const tail = unread ? ` ${unread} photo${unread === 1 ? '' : 's'} could not be read${notes.length ? ' (' + notes.slice(0, 2).join('; ') + ')' : ''}. You can type the name in above.` : '';
       setManagedScan((added ? `Added ${added} propert${added === 1 ? 'y' : 'ies'} from the photo${files.length === 1 ? '' : 's'}. Check them, then tap Save.` : 'No new properties were added.') + tail, added && !unread ? 'ok' : 'warn');
