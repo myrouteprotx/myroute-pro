@@ -1,4 +1,12 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* Add-visit photo boxes: one size, one color, aligned */
+.vp-box{display:block;width:100%;box-sizing:border-box;padding:12px 14px !important;border-radius:16px !important;border:1px solid rgba(148,163,184,.35) !important;background:rgba(30,41,59,.55) !important;margin:0 !important}
+.vp-box > .text-\[11px\]:first-child, #scanBlock .text-\[11px\]:first-child{min-height:2.4em}
+#vpPhotoTake,#vpCardTake,#scanTakeBtn{background:linear-gradient(90deg,#0284c7,#0891b2,#0d9488) !important;color:#fff !important;padding:8px 14px !important;border:0 !important}
+#vpPhotoPick,#vpCardPick,#scanPickBtn{background:#0f172a !important;color:#e2e8f0 !important;border:1px solid #475569 !important;padding:8px 14px !important}
+#vpCardBox + *, #scanWrap{margin-top:12px}
+#scanBlock>div{display:block}
+</style></head><body>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2033,7 +2041,7 @@ Add New Stop
         <!-- Photo of the front of the building / front door -->
         <div>
           <span class="block text-xs font-bold text-slate-300 mb-1">Photos of the building front or front door</span>
-          <div id="vpDropBox" onmouseenter="vpPasteTarget='building'" onfocusin="vpPasteTarget='building'" onclick="vpPasteTarget='building'" ondragover="event.preventDefault();this.style.boxShadow='0 0 0 3px #818cf8'" ondragleave="this.style.boxShadow=''" ondrop="vpDrop(event)" class="rounded-2xl border border-indigo-500/40 bg-indigo-500/5 p-3">
+          <div id="vpDropBox" onmouseenter="vpPasteTarget='building'" onfocusin="vpPasteTarget='building'" onclick="vpPasteTarget='building'" ondragover="event.preventDefault();this.style.boxShadow='0 0 0 3px #818cf8'" ondragleave="this.style.boxShadow=''" ondrop="vpDrop(event)" class="vp-box">
             <div class="text-[11px] font-semibold text-slate-400 mb-1.5">You can also drag pictures here or paste them (Ctrl+V / Cmd+V)</div>
             <div class="flex flex-wrap items-center gap-2">
               <button type="button" id="vpPhotoTake" onclick="document.getElementById('vpPhotoCamera').click()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-indigo-600 to-indigo-500 active:scale-95 transition"><i data-lucide="camera" class="w-4 h-4"></i><span id="vpPhotoTakeText">Take photo</span></button>
@@ -2045,7 +2053,7 @@ Add New Stop
             <div id="vpPhotoList" class="hidden mt-2 grid grid-cols-3 gap-2"></div>
           </div>
           <span class="block text-xs font-bold text-slate-300 mt-3 mb-1">Business card photo</span>
-          <div id="vpCardBox" onmouseenter="vpPasteTarget='card'" onfocusin="vpPasteTarget='card'" onclick="vpPasteTarget='card'" ondragover="event.preventDefault();this.style.boxShadow='0 0 0 3px #22d3ee'" ondragleave="this.style.boxShadow=''" ondrop="vpCardDrop(event)" class="rounded-2xl border border-cyan-500/40 bg-cyan-500/5 p-3">
+          <div id="vpCardBox" onmouseenter="vpPasteTarget='card'" onfocusin="vpPasteTarget='card'" onclick="vpPasteTarget='card'" ondragover="event.preventDefault();this.style.boxShadow='0 0 0 3px #22d3ee'" ondragleave="this.style.boxShadow=''" ondrop="vpCardDrop(event)" class="vp-box">
             <div class="text-[11px] font-semibold text-slate-400 mb-1.5">Take a photo, choose one, drag it here, or click this box and paste (Ctrl+V / Cmd+V)</div>
             <div class="flex flex-wrap items-center gap-2">
               <button type="button" id="vpCardTake" onclick="document.getElementById('vpCardCamera').click()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-sky-600 via-cyan-600 to-teal-600 active:scale-95 transition"><i data-lucide="camera" class="w-4 h-4"></i><span id="vpCardTakeText">Take card photo</span></button>
@@ -2059,13 +2067,12 @@ Add New Stop
         </div>
 
         <!-- Scan a business card (new stops only) -->
-        <div id="scanBlock" class="rounded-2xl border border-cyan-500/40 bg-cyan-500/10 p-3.5">
-          <div class="flex items-start gap-3">
-            <div class="w-9 h-9 shrink-0 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center"><i data-lucide="scan-line" class="w-5 h-5"></i></div>
-            <div class="min-w-0 flex-1">
-              <div class="text-xs font-black text-white">Scan a business card</div>
-              <p class="text-[11px] text-slate-300 mt-0.5">Take a photo and the form fills in the name, title, phone, email, address, and a draft note. The visit date is today and the reach-back is two weeks out. Check it, then tap Save.</p>
-              <div class="flex flex-wrap items-center gap-2 mt-2.5">
+        <div id="scanWrap"><span class="block text-xs font-bold text-slate-300 mb-1">Scan a business card</span>
+        <div id="scanBlock" class="vp-box">
+          <div>
+            <div class="min-w-0">
+              <div class="text-[11px] font-semibold text-slate-400 mb-1.5">Take or choose a photo and the form fills in from the card (name, title, phone, email, address, note). Check it, then tap Save.</div>
+              <div class="flex flex-wrap items-center gap-2">
                 <button type="button" id="scanTakeBtn" onclick="document.getElementById('scanCameraInput').click()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-sky-600 via-cyan-600 to-teal-600 active:scale-95 transition">
                   <i data-lucide="camera" class="w-4 h-4"></i><span>Take photo of card</span>
                 </button>
@@ -2080,7 +2087,7 @@ Add New Stop
               <img id="scanThumb" alt="Scanned business card" class="hidden mt-2 max-h-28 rounded-lg border border-slate-700 object-contain bg-white">
             </div>
           </div>
-        </div>
+        </div></div>
 
         <!-- Business & Client Name -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -7332,7 +7339,7 @@ Add New Stop
       visitForm.reset();
       document.getElementById('notesError').textContent = '';
       resetScan();
-      document.getElementById('scanBlock').classList.toggle('hidden', !!editId);
+      document.getElementById('scanWrap').classList.toggle('hidden', !!editId);
       if (window.lucide) lucide.createIcons();
       
       if (editId) {
