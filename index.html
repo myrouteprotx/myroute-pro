@@ -939,6 +939,8 @@
     .cpill-phone { color: #bfdbfe; background: rgba(30,64,175,.35); border-color: #60a5fa; }
     .cpill-phone:hover { background: rgba(37,99,235,.55); }
     .cpill-email { color: #fbcfe8; background: rgba(157,23,77,.35); border-color: #f472b6; }
+    .cpill-bulk { grid-column: 1 / -1; color: #a7f3d0; background: rgba(5,150,105,.25); border-color: #34d399; min-height: 30px; font-size: 12px; font-weight: 800; }
+    .cpill-bulk.on { color: #fff; background: #059669; border-color: #6ee7b7; }
     .cpill-email:hover { background: rgba(219,39,119,.5); }
     .cpill-add { border-style: dashed; }
 
@@ -3984,6 +3986,20 @@ Add New Stop
       document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.mob-hold')) e.preventDefault(); });
     })();
     // Phone and email for fire, water and lead visits: two matching pills
+
+    // One tap on a visit adds or removes it from the Bulk email list
+    function bulkBtn(f) {
+      if (!f || !f.email) return '';
+      const on = f.bulkEmail === true;
+      return `<button type="button" onclick="event.stopPropagation(); bulkToggle('${escapeHtml(f.id)}')" title="Add this contact to the Bulk email list" class="cpill cpill-bulk${on ? ' on' : ''}"><span>${on ? '✓ In bulk email list' : '+ Add to bulk email'}</span></button>`;
+    }
+    function bulkToggle(id) {
+      const v = routeAll().find(x => x.id === id); if (!v) return;
+      if (v.bulkEmail === true) delete v.bulkEmail; else v.bulkEmail = true;
+      routePersist([v]);
+      const n = routeAll().filter(x => x.bulkEmail === true).length;
+      showToast(v.bulkEmail ? 'Added. ' + n + ' in the bulk email list' : 'Removed. ' + n + ' in the bulk email list');
+    }
     function leadPillsHtml(f, kind) {
       const id = escapeHtml(f.id);
       const open = "detailOrigin = 'home'; openDetail('" + kind + "', '" + id + "')";
@@ -3992,6 +4008,7 @@ Add New Stop
                    : `<button type="button" onclick="${open}" title="Open the visit to add a phone number" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`)
         + (f.email ? `<a href="mailto:${escapeHtml(f.email)}" title="Email ${escapeHtml(f.email)}" class="cpill cpill-email"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>`
                    : `<button type="button" onclick="${open}" title="Open the visit to add an email address" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`)
+        + bulkBtn(f)
         + '</div>';
     }
     // Refresh (F5) starts at the top of the page, and the browser must not drop a saved email into the search boxes
@@ -5448,7 +5465,7 @@ Add New Stop
               ${item.clientName ? `<div class="cn-line-name">${escapeHtml(item.clientName)}</div>` : ''}
               ${item.clientRole ? `<div class="cn-line-role">${escapeHtml(item.clientRole)}</div>` : ''}
               ${groupChipDark(item)}
-              <div class="mob-only pill-row mt-1.5" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;width:100%">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" data-vid-e="${escapeHtml(item.id)}" data-kind="phone" onclick="if (Date.now() < (window.__lpUntil || 0)) { event.preventDefault(); return false; } return startCall(event, '${item.id}')" title="Tap to call. Hold to see the number." class="cpill cpill-phone mob-hold"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>` : `<button type="button" onclick="addPhonePopup('${item.id}')" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`}${item.email ? `<a href="#" data-vid-e="${escapeHtml(item.id)}" data-kind="email" onclick="event.preventDefault(); if (Date.now() < (window.__lpUntil || 0)) return false; openFollowUp('${item.id}')" title="Tap to email. Hold to see the address." class="cpill cpill-email mob-hold"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="addEmailPopup('${item.id}')" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}</div>
+              <div class="mob-only pill-row mt-1.5" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;width:100%">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" data-vid-e="${escapeHtml(item.id)}" data-kind="phone" onclick="if (Date.now() < (window.__lpUntil || 0)) { event.preventDefault(); return false; } return startCall(event, '${item.id}')" title="Tap to call. Hold to see the number." class="cpill cpill-phone mob-hold"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>` : `<button type="button" onclick="addPhonePopup('${item.id}')" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`}${item.email ? `<a href="#" data-vid-e="${escapeHtml(item.id)}" data-kind="email" onclick="event.preventDefault(); if (Date.now() < (window.__lpUntil || 0)) return false; openFollowUp('${item.id}')" title="Tap to email. Hold to see the address." class="cpill cpill-email mob-hold"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="addEmailPopup('${item.id}')" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}${bulkBtn(item)}</div>
               ${visitPhotoIds(item).length ? `<div class="mob-photo flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
               ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="lc-top flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
               ${managedItems(item).length ? `<div class="prop-incell mt-1.5"><div class="text-[11px] text-fuchsia-200 font-black mb-1">Properties:</div>${managedCards(item, 'dark', true)}</div>` : ''}
@@ -8024,11 +8041,24 @@ Add New Stop
       if (!r.name) r.flags.push('no name');
       if (!r.biz) r.flags.push('no business');
     }
-    function bmOpen() {
+    function bmQueue() { return routeAll().filter(v => v.bulkEmail === true && v.email); }
+    function bmFromQueue() {
+      const q = bmQueue();
+      bmRows = q.map(v => {
+        const t = emailTemplates.find(x => x.id === suggestTemplate(v)) || emailTemplates[0];
+        const r = { email: v.email, name: (v.clientName && v.clientName !== 'Contact TBD') ? v.clientName : '', biz: v.businessName || (typeof routeName === 'function' ? routeName(v) : ''), role: v.clientRole || '', visitId: v.id, visitDate: v.visitDate, followUpDate: v.followUpDate, address: v.streetAddress, opened: false, tplName: (t || {}).name || '' };
+        bmBuild(r, t); return r;
+      });
+      bmShow();
+    }
+    function bmClear() { const q = bmQueue(); q.forEach(v => delete v.bulkEmail); routePersist(q); showToast('Bulk email list cleared'); rpClose(); }
+    function bmOpen(manual) {
       if (!emailTemplates.length) { showToast('Make an email template first (Settings, Email Templates)'); return; }
+      if (!manual && bmQueue().length) { bmFromQueue(); return; }
       bmTpl = bmTpl || emailTemplates[0].id;
       rpShow('<div class="text-sm font-black mb-1">Bulk email</div>'
-        + '<div class="text-[11px] text-slate-300 mb-2">Paste one person per line: <b>email, name, business</b>. The name and business are optional. If an address is already one of your visits, I fill them in from that visit.</div>'
+        + '<div class="text-[11px] text-emerald-300 font-bold mb-2">Tip: on any visit with an email, tap the green <b>+ Add to bulk email</b> button and it shows up here on its own.</div>'
+        + '<div class="text-[11px] text-slate-300 mb-2">Or paste one person per line: <b>email, name, business</b>. The name and business are optional. If an address is already one of your visits, I fill them in from that visit.</div>'
         + '<textarea id="bmText" rows="8" placeholder="jane@example.com, Jane Smith, Oak Park Apartments" class="w-full text-sm px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white mb-2">' + escapeHtml(bmRaw) + '</textarea>'
         + '<label class="block text-[11px] text-slate-400 mb-1" for="bmTplSel">Email template</label>'
         + '<select id="bmTplSel" class="w-full text-sm px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white mb-3">' + emailTemplates.map(t => '<option value="' + escapeHtml(t.id) + '"' + (t.id === bmTpl ? ' selected' : '') + '>' + escapeHtml(t.name || 'Template') + '</option>').join('') + '</select>'
@@ -8055,7 +8085,7 @@ Add New Stop
         + '<div class="text-[11px] text-slate-300 mb-2">Each one is written for that person. Change anything you like. Tap <b>Open in Outlook</b>, read it there, then press Send. ' + left + ' left to open.</div>'
         + '<button type="button" onclick="bmNext()" class="w-full px-3 py-2.5 mb-3 text-xs font-black text-white bg-gradient-to-r from-fuchsia-500 to-pink-500 rounded-xl"' + (left ? '' : ' disabled') + '>' + (left ? 'Open the next one in Outlook' : 'All opened') + '</button>'
         + rows
-        + '<button type="button" onclick="bmOpen()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Back to the list</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
+        + '<button type="button" onclick="bmOpen(true)" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Paste more addresses</button><button type="button" onclick="bmClear()" class="px-3 py-2 text-xs font-black bg-rose-800 rounded-xl mr-2">Clear the list</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
     }
     function bmSync() { bmRows.forEach((r, i) => { const s = document.getElementById('bmS' + i), b = document.getElementById('bmB' + i); if (s) r.subject = s.value; if (b) r.body = b.value; }); }
     function bmSend(i) {
@@ -8063,8 +8093,8 @@ Add New Stop
       const url = 'https://outlook.office.com/mail/deeplink/compose?to=' + encodeURIComponent(r.email) + '&subject=' + encodeURIComponent(r.subject) + '&body=' + encodeURIComponent(r.body);
       const w = window.open(url, '_blank', 'noopener'); if (!w) { showToast('Allow pop-ups for this site, then tap again'); return; }
       r.opened = true;
-      const v = r.visitId && visits.find(x => x.id === r.visitId);
-      if (v) { v.emailsSent = (Array.isArray(v.emailsSent) ? v.emailsSent : []).concat([{ date: todayString, subject: r.subject, template: 'Bulk email', files: [], via: 'outlook compose' }]); saveRecords(); }
+      const v = r.visitId && routeAll().find(x => x.id === r.visitId);
+      if (v) { v.emailsSent = (Array.isArray(v.emailsSent) ? v.emailsSent : []).concat([{ date: todayString, subject: r.subject, template: 'Bulk email', files: [], via: 'outlook compose' }]); delete v.bulkEmail; routePersist([v]); }
       const sc = document.getElementById('routeOverlay'); const top = sc ? sc.scrollTop : 0; bmShow(); const sc2 = document.getElementById('routeOverlay'); if (sc2) sc2.scrollTop = top;
     }
     function bmNext() { const i = bmRows.findIndex(r => !r.opened); if (i >= 0) bmSend(i); }
