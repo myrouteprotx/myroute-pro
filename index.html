@@ -8922,7 +8922,8 @@ Add New Stop
         }
 
         const flags = Array.isArray(data.check) ? data.check.map(x => String(x).trim()).filter(Boolean) : [];
-        if (flags.length) setScanStatus('Filled in. Please check: ' + flags.join('; ') + '. Then tap Save.' + photoNote, 'warn');
+        if (!usedCloud) setScanStatus('CLAUDE WAS NOT REACHED. Reason: ' + (window.__mrpCloudErr || 'no cloud connection') + ' | The basic reader filled this in, so check every field.' + photoNote, 'warn');
+        else if (flags.length) setScanStatus('Filled in. Please check: ' + flags.join('; ') + '. Then tap Save.' + photoNote, 'warn');
         else if (!usedCloud) setScanStatus('Filled in by the basic reader (Claude was not reached: ' + (window.__mrpCloudErr || 'no cloud connection') + '). Check every field.' + photoNote, 'warn');
         else setScanStatus('Filled in by Claude. Check the details and the note, then tap Save.' + photoNote, photoNote ? 'warn' : 'ok');
         document.getElementById('notes').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
