@@ -593,10 +593,11 @@
     @media screen and (max-width: 767px) {
       .hdr-row { display: flex !important; flex-direction: column !important; flex-wrap: nowrap !important; align-items: stretch !important; justify-content: flex-start !important; row-gap: 8px; }
       #brandBlock { order: 1; width: 100%; justify-content: center; }
-      #companyBrand { width: 100%; justify-content: center; gap: 10px; }
-      #companyBrand img { height: 44px; width: auto; max-width: 30%; flex: 0 0 auto; }
-      #companyBrand .hdr-logo-right { display: block; }
-      #companyBrand .hdr-company-name { flex: 1 1 auto; min-width: 0; text-align: center; font-size: 19px; line-height: 1.15; }
+      #companyBrand { width: 100%; display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); align-items: center; justify-items: center; column-gap: 8px; }
+      #companyBrand img { height: 56px !important; width: 100% !important; max-width: 100% !important; object-fit: contain; grid-row: 1; }
+      #companyBrand img:not(.hdr-logo-right) { grid-column: 1; }
+      #companyBrand .hdr-logo-right { display: block; grid-column: 3; }
+      #companyBrand .hdr-company-name { grid-column: 2; grid-row: 1; min-width: 0; width: 100%; text-align: center; font-size: 18px; line-height: 1.15; }
       #hdrActions { order: 2; width: 100%; position: relative; }
       #hdrActions > button { width: 100%; justify-content: center; padding-top: 13px; padding-bottom: 13px; font-size: 14px; }
       #hdrActions > #syncBadge { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 2; padding: 0; pointer-events: none; }
