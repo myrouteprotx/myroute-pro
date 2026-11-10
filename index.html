@@ -560,7 +560,9 @@
     /* Hide the "in this week's report" count badges on the fire, water and lead boxes */
     #fireWeekBadge, #waterWeekBadge, #pcwWeekBadge { display: none !important; }
 
-    @media (max-width: 640px) { .mob-photo { display: none !important; } }
+    .mob-photo { display: none !important; }
+    .cpill-photo { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 34px; margin-top: 6px; border-radius: 12px; font-size: 12px; font-weight: 800; color: #fde68a; background: rgba(180,83,9,.3); border: 1px solid #f59e0b; }
+    .cpill-photo.has { color: #a7f3d0; background: rgba(5,150,105,.2); border-color: #34d399; }
     @media (max-width: 640px) {
       .mobile-settings-link { display: block !important; }
       #undoDock { display: block !important; left: max(12px, env(safe-area-inset-left, 0px)) !important; bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important; }
@@ -5467,6 +5469,7 @@ Add New Stop
               ${groupChipDark(item)}
               <div class="mob-only pill-row mt-1.5" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;width:100%">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" data-vid-e="${escapeHtml(item.id)}" data-kind="phone" onclick="if (Date.now() < (window.__lpUntil || 0)) { event.preventDefault(); return false; } return startCall(event, '${item.id}')" title="Tap to call. Hold to see the number." class="cpill cpill-phone mob-hold"><i data-lucide="phone" class="w-3.5 h-3.5"></i><span>Make a call</span></a>` : `<button type="button" onclick="addPhonePopup('${item.id}')" class="cpill cpill-phone cpill-add"><span>Add phone number</span></button>`}${item.email ? `<a href="#" data-vid-e="${escapeHtml(item.id)}" data-kind="email" onclick="event.preventDefault(); if (Date.now() < (window.__lpUntil || 0)) return false; openFollowUp('${item.id}')" title="Tap to email. Hold to see the address." class="cpill cpill-email mob-hold"><i data-lucide="mail" class="w-3.5 h-3.5"></i><span>Send an email</span></a>` : `<button type="button" onclick="addEmailPopup('${item.id}')" class="cpill cpill-email cpill-add"><span>Add email address</span></button>`}${bulkBtn(item)}</div>
               ${visitPhotoIds(item).length ? `<div class="mob-photo flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
+              <button type="button" onclick="event.stopPropagation(); detailOrigin = 'home'; openDetail('visit', '${escapeHtml(item.id)}')" title="Photos are kept on the visit and printed in the reports" class="cpill-photo${visitPhotoIds(item).length ? ' has' : ''}">${visitPhotoIds(item).length ? '✓ ' + visitPhotoIds(item).length + ' photo' + (visitPhotoIds(item).length === 1 ? '' : 's') + ' in report' : '📷 Add photos to report'}</button>
               ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="lc-top flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
               ${managedItems(item).length ? `<div class="prop-incell mt-1.5"><div class="text-[11px] text-fuchsia-200 font-black mb-1">Properties:</div>${managedCards(item, 'dark', true)}</div>` : ''}
             </td>
