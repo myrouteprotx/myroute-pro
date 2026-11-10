@@ -10494,7 +10494,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     ['pcwsSection', 'Company Leads'], ['visitsSection', 'Route Marketing Visits']
   ];
   var dragEl = null, arranging = false;
-  function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches && window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
+  function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches; } catch (e) { return false; } }
   function el(id) { return document.getElementById(id); }
   function currentOrder() {
     var box = el('routeTrackerView'); if (!box) return [];
@@ -10591,7 +10591,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   var GROUPS = ['weekPills', 'statCardsSection'];
   var on = false, dragEl = null;
   function el(id) { return document.getElementById(id); }
-  function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches && window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
+  function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches; } catch (e) { return false; } }
   function kids(g) { var c = el(g); return c ? Array.prototype.slice.call(c.children).filter(function (n) { return n.id; }) : []; }
   function snapshot() {
     var out = { order: {}, sizes: {} };
@@ -10690,7 +10690,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   var SEL = 'button, select, input:not([type="hidden"]), [role="button"], h2, h3, h4, .rounded-full, a[href]';
   var open = {}, handles = [], ctx = null, dragEl = null;
   function el(id) { return document.getElementById(id); }
-  function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches && window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
+  function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches; } catch (e) { return false; } }
   function sections() { return Array.prototype.slice.call(document.querySelectorAll('#routeTrackerView > section[id]')).filter(function (s) { return SKIP_SECTIONS.indexOf(s.id) < 0; }); }
   function allItems(sec) {
     var all = Array.prototype.slice.call(sec.querySelectorAll(SEL)).filter(function (n) { return !n.closest('table, tbody, .mrp-handle, #weekPills, #mrpArrangeBar, [id$="Modal"]'); });
