@@ -206,7 +206,11 @@
   window.__mrpScan = async function (b64, mediaType) {
     if (!sb) throw new Error('offline');
     var r = await sb.functions.invoke('rapid-task', { body: { image: b64, mediaType: mediaType || 'image/jpeg' } });
-    if (r.error) throw r.error;
+    if (r.error) {
+      var det = '';
+      try { var ctx = r.error.context; if (ctx && ctx.status) { det = 'HTTP ' + ctx.status + ' '; var j = await ctx.clone().json(); det += (j.error || '') + ' ' + (j.detail || j.message || ''); } } catch (x) { try { det += await r.error.context.text(); } catch (y) {} }
+      throw new Error((det || r.error.message || 'function_error').trim().slice(0, 140));
+    }
     if (!r.data || r.data.error) throw new Error((r.data && r.data.error) || 'scan_failed');
     return r.data;
   };
