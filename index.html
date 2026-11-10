@@ -1149,7 +1149,7 @@
             </button>
           <div class="today-actions ml-auto flex flex-wrap items-center gap-2">
             <button type="button" onclick="planRoute()" title="Put the stops in the shortest driving order and open it in Google Maps" class="tb-pill bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 border-purple-300/60 text-white border transition active:scale-95"><span>Plan my route</span></button>
-            <button type="button" onclick="copyRouteList()" title="Copy the route list: numbered names and addresses" class="tb-pill bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border-amber-300/60 text-white border transition active:scale-95"><span>Copy route list</span></button>
+            <button type="button" onclick="clearSelectedVisits()" title="Uncheck every visit you checked for the route" class="tb-pill bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border-amber-300/60 text-white border transition active:scale-95"><span>Clear selected visits</span></button>
             <button type="button" id="futureRouteBtn" onclick="rfOpen()" title="Plan a route for a future day" class="tb-pill bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 border-pink-300/60 text-white border transition active:scale-95">
               <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
               <span>Future route</span>
@@ -3539,6 +3539,12 @@ Add New Stop
     function clearPlannedRoute() {
       let n = 0; visits.forEach(v => { if (v.inRoute === true) { delete v.inRoute; n++; } });
       saveRecords(); showToast(n ? `Cleared ${n} added stop${n === 1 ? '' : 's'}` : 'No added stops to clear');
+    }
+    function clearSelectedVisits() {
+      const n = visits.filter(v => v.inRoute === true).length;
+      if (!n) { showToast('No selected visits to clear'); return; }
+      if (!confirm('Clear all ' + n + ' selected visit' + (n === 1 ? '' : 's') + '? You can undo this once with the Go back button.')) return;
+      clearPlannedRoute();
     }
     function copyRouteList() {
       const list = visits.filter(isOnRoute).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || ''));
