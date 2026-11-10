@@ -553,6 +553,7 @@
     /* Hide the "in this week's report" count badges on the fire, water and lead boxes */
     #fireWeekBadge, #waterWeekBadge, #pcwWeekBadge { display: none !important; }
 
+    @media (max-width: 640px) { .mob-photo { display: none !important; } }
     @media (max-width: 640px) {
       .mobile-settings-link { display: block !important; }
       #undoDock { display: block !important; left: max(12px, env(safe-area-inset-left, 0px)) !important; bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important; }
@@ -5113,7 +5114,7 @@ Add New Stop
               <div class="font-extrabold text-white text-xs flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(item) ? 'checked' : ''} onchange="toggleRoute('${item.id}', this.checked)" aria-label="Add to my route list" title="Check to include this stop in your planned route"><span>${escapeHtml(item.businessName)}${item.clientName ? `<span class="cn-inline"> / ${escapeHtml(item.clientName)}</span>` : ''}</span></div>
               ${item.clientRole ? `<div class="cn-role-inline font-extrabold text-white text-xs">${escapeHtml(item.clientRole)}</div>` : ''}
               ${groupChipDark(item)}
-              ${visitPhotoIds(item).length ? `<div class="flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
+              ${visitPhotoIds(item).length ? `<div class="mob-photo flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
               <div class="cn-old text-[11px] text-slate-300 font-semibold mt-0.5">
                 ${escapeHtml(item.clientName)}
                 ${item.clientRole ? `<span class="text-slate-400 font-normal"> · ${escapeHtml(item.clientRole)}</span>` : ''}
@@ -8301,7 +8302,7 @@ Add New Stop
       return `
         <tr class="hover:bg-red-950/20 transition" data-fid="${escapeHtml(f.id)}">
           <td class="py-3.5 px-4 max-w-[220px]">
-            ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the fire property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-red-400/40"></a>` : ''}
+            ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="mob-photo block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the fire property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-red-400/40"></a>` : ''}
             <div class="text-xs font-extrabold text-white break-words">${escapeHtml(f.streetAddress || 'No address')}</div>
             ${f.streetAddress ? `<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-[10px] font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-2 py-0.5 rounded-lg"><i data-lucide="navigation-2" class="w-2.5 h-2.5"></i><span>Open in Maps</span></a>` : ''}
             ${f.insurance ? `<div class="text-[10px] text-slate-400 mt-1">Insurance: ${escapeHtml(f.insurance)}</div>` : ''}
@@ -8741,7 +8742,7 @@ Add New Stop
       return `
         <tr class="hover:bg-sky-950/20 transition" data-fid="${escapeHtml(f.id)}">
           <td class="py-3.5 px-4 max-w-[220px]">
-            ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the water loss property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-sky-400/40"></a>` : ''}
+            ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="mob-photo block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the water loss property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-sky-400/40"></a>` : ''}
             <div class="text-xs font-extrabold text-white break-words">${escapeHtml(f.streetAddress || 'No address')}</div>
             ${f.streetAddress ? `<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-[10px] font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-2 py-0.5 rounded-lg"><i data-lucide="navigation-2" class="w-2.5 h-2.5"></i><span>Open in Maps</span></a>` : ''}
             ${f.insurance ? `<div class="text-[10px] text-slate-400 mt-1">Insurance: ${escapeHtml(f.insurance)}</div>` : ''}
@@ -9164,7 +9165,7 @@ Add New Stop
       return `
         <tr class="hover:bg-emerald-950/20 transition" data-fid="${escapeHtml(f.id)}">
           <td class="py-3.5 px-4 max-w-[220px]">
-            ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-emerald-400/40"></a>` : ''}
+            ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="mob-photo block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-emerald-400/40"></a>` : ''}
             <div class="text-xs font-extrabold text-white break-words">${escapeHtml(f.streetAddress || 'No address')}</div>
             ${f.streetAddress ? `<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-[10px] font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-2 py-0.5 rounded-lg"><i data-lucide="navigation-2" class="w-2.5 h-2.5"></i><span>Open in Maps</span></a>` : ''}
             ${f.insurance ? `<div class="text-[10px] text-slate-400 mt-1">Insurance: ${escapeHtml(f.insurance)}</div>` : ''}
