@@ -2786,12 +2786,6 @@ Add New Stop
         if (visits.some(v => v.inRoute === true)) { clearPlannedRoute(); return; }
         showToast('Nothing to go back to'); return;
       }
-      // If the last changes were only route check marks, one tap undoes all of them
-      try {
-        const strip = j => JSON.stringify(JSON.parse(j).map(v => { const c = Object.assign({}, v); delete c.inRoute; return c; }));
-        const cmp = strip(JSON.stringify(visits));
-        if (strip(e.v) === cmp) { while (undoStack.length && strip(undoStack[undoStack.length - 1].v) === cmp) e = undoStack.pop(); }
-      } catch (err) {}
       undoSuppress = true;
       try {
         // Lists that are saved one record at a time: write back what differs, remove what the undo takes away
