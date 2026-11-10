@@ -1350,6 +1350,7 @@
               <span>Add visit today</span>
             </button>
           <div class="today-actions ml-auto flex flex-wrap items-center gap-2">
+            <button type="button" id="todayRouteBtn" onclick="openTodayRoute()" title="See today's route stop by stop" class="tb-pill bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 border-emerald-300/60 text-white border transition active:scale-95"><span id="todayRouteBtnLabel">Today's route</span></button>
             <button type="button" onclick="planRoute()" title="Put the stops in the shortest driving order and open it in Google Maps" class="tb-pill bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 border-purple-300/60 text-white border transition active:scale-95"><span>Plan my route</span></button>
             <button type="button" onclick="clearSelectedVisits()" title="Uncheck every visit you checked for the route" class="tb-pill bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border-amber-300/60 text-white border transition active:scale-95"><span>Clear selected visits</span></button>
             <button type="button" id="futureRouteBtn" onclick="rfOpen()" title="Plan a route for a future day" class="tb-pill bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 border-pink-300/60 text-white border transition active:scale-95">
@@ -11095,6 +11096,63 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   }
   window.mrpVLTest = { get L() { return L; }, set L(v) { L = v; }, apply: apply, build: build, start: start, stop: stop, blockOrder: blockOrder };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+
+<script>
+/* Today's route: a button with the stop list, plus a banner when the app opens (phone and desktop) */
+(function () {
+  function stops() {
+    try { return routeAll().filter(isOnRoute); } catch (e) { return []; }
+  }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function dismissKey() { try { return 'mrp_rb_' + todayString; } catch (e) { return 'mrp_rb'; } }
+  function dismissed() { try { return localStorage.getItem(dismissKey()) === '1'; } catch (e) { return false; } }
+  function setDismissed() { try { localStorage.setItem(dismissKey(), '1'); } catch (e) {} }
+
+  window.dismissRouteBanner = function () { var b = document.getElementById('routeBanner'); if (b) b.remove(); setDismissed(); };
+  window.closeTodayRoute = function () { var m = document.getElementById('todayRouteModal'); if (m) m.remove(); };
+  window.openTodayRoute = function () {
+    closeTodayRoute();
+    var list = stops();
+    var rows = list.map(function (v, i) {
+      var addr = v.streetAddress ? '<div style="font-size:12px;opacity:.8">' + esc(v.streetAddress) + '</div>' : '';
+      var ph = v.phone ? '<a href="tel:' + esc(String(v.phone).replace(/[^0-9+]/g, '')) + '" style="font-size:12px;color:#7dd3fc">' + esc(v.phone) + '</a>' : '';
+      return '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.25)"><div style="flex:0 0 26px;height:26px;border-radius:50%;background:#10b981;color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center">' + (i + 1) + '</div><div style="min-width:0;flex:1"><div style="font-weight:800;font-size:14px">' + esc(routeName(v)) + '</div>' + addr + ph + '</div></div>';
+    }).join('');
+    var m = document.createElement('div');
+    m.id = 'todayRouteModal';
+    m.setAttribute('style', 'position:fixed;inset:0;z-index:100;background:rgba(2,6,23,.75);display:flex;align-items:center;justify-content:center;padding:16px');
+    m.onclick = function (e) { if (e.target === m) closeTodayRoute(); };
+    m.innerHTML = '<div style="width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;background:#0f172a;color:#fff;border:2px solid #10b981;border-radius:20px;padding:16px;box-shadow:0 0 24px rgba(16,185,129,.4)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-weight:900;font-size:17px">Today\'s route</div><button type="button" onclick="closeTodayRoute()" aria-label="Close" style="background:none;border:0;color:#fff;font-size:24px;line-height:1;cursor:pointer">&times;</button></div>'
+      + '<div style="font-size:12px;opacity:.8;margin:2px 0 6px">' + (list.length ? list.length + ' stop' + (list.length === 1 ? '' : 's') + ' planned for today' : 'No stops are planned for today yet.') + '</div>'
+      + '<div style="overflow:auto;flex:1;min-height:0">' + (rows || '<div style="padding:14px 0;font-size:13px;opacity:.85">Check visits on your list and tap Plan my route, or use Future route to plan a day ahead.</div>') + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">'
+      + (list.length ? '<button type="button" onclick="closeTodayRoute();planRoute()" style="flex:1 1 150px;padding:10px 12px;border:0;border-radius:12px;background:linear-gradient(90deg,#a855f7,#d946ef);color:#fff;font-weight:900;font-size:13px;cursor:pointer">Open in Google Maps</button><button type="button" onclick="copyRouteList()" style="flex:1 1 110px;padding:10px 12px;border-radius:12px;background:#1e293b;border:1px solid #475569;color:#e2e8f0;font-weight:800;font-size:13px;cursor:pointer">Copy list</button>' : '')
+      + '<button type="button" onclick="closeTodayRoute()" style="flex:1 1 80px;padding:10px 12px;border-radius:12px;background:#1e293b;border:1px solid #475569;color:#e2e8f0;font-weight:800;font-size:13px;cursor:pointer">Close</button></div></div>';
+    document.body.appendChild(m);
+  };
+
+  window.updateRouteBanner = function () {
+    var list = stops();
+    var lab = document.getElementById('todayRouteBtnLabel');
+    if (lab) lab.textContent = list.length ? "Today's route (" + list.length + ')' : "Today's route";
+    var b = document.getElementById('routeBanner');
+    if (!list.length || dismissed()) { if (b) b.remove(); return; }
+    if (b) { var t = b.querySelector('[data-t]'); if (t) t.textContent = "Today's route: " + list.length + ' stop' + (list.length === 1 ? '' : 's') + '. First: ' + routeName(list[0]); return; }
+    b = document.createElement('div');
+    b.id = 'routeBanner';
+    b.setAttribute('style', 'position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top,0px));background:linear-gradient(90deg,#059669,#0d9488);color:#fff;font-weight:800;font-size:13px;box-shadow:0 4px 18px rgba(0,0,0,.35)');
+    b.innerHTML = '<div data-t style="flex:1;min-width:0"></div><button type="button" onclick="openTodayRoute()" style="flex:0 0 auto;padding:7px 12px;border:0;border-radius:10px;background:#fff;color:#065f46;font-weight:900;font-size:12px;cursor:pointer">View route</button><button type="button" aria-label="Dismiss" onclick="dismissRouteBanner()" style="flex:0 0 auto;background:none;border:0;color:#fff;font-size:22px;line-height:1;cursor:pointer">&times;</button>';
+    b.querySelector('[data-t]').textContent = "Today's route: " + list.length + ' stop' + (list.length === 1 ? '' : 's') + '. First: ' + routeName(list[0]);
+    document.body.insertBefore(b, document.body.firstChild);
+  };
+
+  var orig = window.updateTodayBadge;
+  if (typeof orig === 'function') window.updateTodayBadge = function () { var r = orig.apply(this, arguments); try { updateRouteBanner(); } catch (e) {} return r; };
+  setTimeout(function () { try { updateRouteBanner(); } catch (e) {} }, 1500);
+  setInterval(function () { try { updateRouteBanner(); } catch (e) {} }, 60000);
 })();
 </script>
 </body></html>
