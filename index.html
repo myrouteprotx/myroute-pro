@@ -8109,7 +8109,7 @@ Add New Stop
       const q = bmQueue();
       bmRows = q.map(v => {
         const t = emailTemplates.find(x => x.id === suggestTemplate(v)) || emailTemplates[0];
-        const r = { email: v.email, name: (v.clientName && v.clientName !== 'Contact TBD') ? v.clientName : '', biz: v.businessName || (typeof routeName === 'function' ? routeName(v) : ''), role: v.clientRole || '', visitId: v.id, visitDate: v.visitDate, followUpDate: v.followUpDate, address: v.streetAddress, opened: false, tplName: (t || {}).name || '' };
+        const r = { email: v.email, name: (v.clientName && v.clientName !== 'Contact TBD') ? v.clientName : '', biz: v.businessName || (typeof routeName === 'function' ? routeName(v) : ''), role: v.clientRole || '', visitId: v.id, visitDate: v.visitDate, followUpDate: v.followUpDate, address: v.streetAddress, opened: false, tplId: (t || {}).id || '', tplName: (t || {}).name || '' };
         bmBuild(r, t); return r;
       });
       bmShow();
@@ -8133,19 +8133,33 @@ Add New Stop
       const tpl = emailTemplates.find(t => t.id === bmTpl) || emailTemplates[0];
       bmRows = bmParse(bmRaw);
       if (!bmRows.length) { showToast('No email addresses found'); return; }
-      bmRows.forEach(r => bmBuild(r, tpl));
+      bmRows.forEach(r => { r.tplId = tpl.id; bmBuild(r, tpl); });
       bmShow();
     }
+    function bmTplOptions(sel, withAuto) {
+      return (withAuto ? '<option value="__auto__">Match each visit automatically</option>' : '') + emailTemplates.map(t => '<option value="' + escapeHtml(t.id) + '"' + (t.id === sel ? ' selected' : '') + '>' + escapeHtml(t.name || 'Template') + '</option>').join('');
+    }
+    function bmApply(r, id) {
+      let t = emailTemplates.find(x => x.id === id);
+      if (id === '__auto__' || !t) { const v = r.visitId && routeAll().find(x => x.id === r.visitId); t = (v && emailTemplates.find(x => x.id === suggestTemplate(v))) || emailTemplates[0]; }
+      r.tplId = t.id; bmBuild(r, t);
+    }
+    function bmRowTpl(i, id) { bmSync(); if (bmRows[i]) bmApply(bmRows[i], id); bmKeep(); }
+    function bmAllTpl(id) { if (!id) return; bmSync(); bmRows.forEach(r => bmApply(r, id)); bmKeep(); }
+    function bmKeep() { const sc = document.getElementById('routeOverlay'); const top = sc ? sc.scrollTop : 0; bmShow(); const s2 = document.getElementById('routeOverlay'); if (s2) s2.scrollTop = top; }
     function bmShow() {
       const left = bmRows.filter(r => !r.opened).length;
       const rows = bmRows.map((r, i) => '<div class="border border-slate-700 rounded-xl p-2.5 mb-2" style="background:' + (r.opened ? 'rgba(16,185,129,.12)' : 'rgba(15,23,42,.6)') + '">'
         + '<div class="flex items-center gap-2 mb-1.5"><div class="flex-1 min-w-0"><div class="text-xs font-black break-all">' + escapeHtml(r.email) + '</div><div class="text-[11px] text-slate-400">' + escapeHtml([r.name, r.biz].filter(Boolean).join(' · ') || 'No name or business') + '</div>'
         + (r.flags.length ? '<div class="text-[11px] font-bold text-rose-300">Missing: ' + escapeHtml(r.flags.join(', ')) + '</div>' : '') + '</div>'
         + '<button type="button" onclick="bmSend(' + i + ')" class="px-2.5 py-1.5 text-[11px] font-black text-white rounded-lg ' + (r.opened ? 'bg-emerald-700' : 'bg-fuchsia-600') + '">' + (r.opened ? 'Opened ✓ Again' : 'Open in Outlook') + '</button></div>'
+        + '<select onchange="bmRowTpl(' + i + ', this.value)" aria-label="Email template for this contact" class="w-full text-xs px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-white mb-1.5">' + bmTplOptions(r.tplId, false) + '</select>'
         + '<input id="bmS' + i + '" value="' + escapeHtml(r.subject) + '" class="w-full text-xs px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-white mb-1.5">'
         + '<textarea id="bmB' + i + '" rows="5" class="w-full text-xs px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-white">' + escapeHtml(r.body) + '</textarea></div>').join('');
       rpShow('<div class="text-sm font-black mb-1">' + bmRows.length + ' emails ready</div>'
         + '<div class="text-[11px] text-slate-300 mb-2">Each one is written for that person. Change anything you like. Tap <b>Open in Outlook</b>, read it there, then press Send. ' + left + ' left to open.</div>'
+        + '<label class="block text-[11px] text-slate-400 mb-1" for="bmAllSel">Email template for all of them</label>'
+        + '<select id="bmAllSel" onchange="bmAllTpl(this.value)" class="w-full text-sm px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white mb-3"><option value="">Choose a template for everyone...</option>' + bmTplOptions('', true) + '</select>'
         + '<button type="button" onclick="bmNext()" class="w-full px-3 py-2.5 mb-3 text-xs font-black text-white bg-gradient-to-r from-fuchsia-500 to-pink-500 rounded-xl"' + (left ? '' : ' disabled') + '>' + (left ? 'Open the next one in Outlook' : 'All opened') + '</button>'
         + rows
         + '<button type="button" onclick="bmOpen(true)" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl mr-2">Paste more addresses</button><button type="button" onclick="bmClear()" class="px-3 py-2 text-xs font-black bg-rose-800 rounded-xl mr-2">Clear the list</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
