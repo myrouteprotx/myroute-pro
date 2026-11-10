@@ -3792,6 +3792,31 @@ Add New Stop
       document.addEventListener('touchcancel', stop, { passive: true });
       document.addEventListener('contextmenu', e => { if (window.matchMedia('(pointer: coarse)').matches && rowOf(e.target)) e.preventDefault(); });
     })();
+    // Small pop-up to add an email address to a visit without leaving the list
+    function addEmailPopup(id) {
+      const v = routeAll().find(x => x.id === id); if (!v) return;
+      const old = document.getElementById('emailPopOverlay'); if (old) old.remove();
+      const o = document.createElement('div'); o.id = 'emailPopOverlay';
+      o.style.cssText = 'position:fixed;inset:0;z-index:130;background:rgba(2,6,23,.75);display:flex;align-items:center;justify-content:center;padding:16px';
+      o.innerHTML = '<div style="width:100%;max-width:420px;background:#1e293b;border:1px solid #f472b6;border-radius:16px;padding:16px;color:#fff">'
+        + '<div style="font-size:16px;font-weight:900;margin-bottom:2px">Add email address</div>'
+        + '<div style="font-size:13px;color:#cbd5e1;margin-bottom:10px">' + escapeHtml(routeName(v)) + '</div>'
+        + '<input id="emailPopInput" type="email" inputmode="email" autocomplete="off" autocapitalize="off" placeholder="name@company.com" style="width:100%;box-sizing:border-box;font-size:16px;padding:12px;border-radius:12px;border:1px solid #64748b;background:#0f172a;color:#fff;margin-bottom:6px">'
+        + '<div id="emailPopErr" style="font-size:12px;color:#fca5a5;min-height:16px;margin-bottom:6px"></div>'
+        + '<div style="display:flex;gap:8px"><button type="button" onclick="emailPopSave(\'' + id + '\')" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:900;color:#fff;background:linear-gradient(90deg,#ec4899,#f43f5e)">Save email</button>'
+        + '<button type="button" onclick="emailPopClose()" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:900;color:#fff;background:#334155">Cancel</button></div></div>';
+      o.addEventListener('click', e => { if (e.target === o) emailPopClose(); });
+      document.body.appendChild(o);
+      const i = document.getElementById('emailPopInput'); i.focus();
+      i.addEventListener('keydown', e => { if (e.key === 'Enter') emailPopSave(id); if (e.key === 'Escape') emailPopClose(); });
+    }
+    function emailPopClose() { const o = document.getElementById('emailPopOverlay'); if (o) o.remove(); }
+    function emailPopSave(id) {
+      const v = routeAll().find(x => x.id === id); if (!v) return;
+      const val = (document.getElementById('emailPopInput').value || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { document.getElementById('emailPopErr').textContent = 'Type a full email address, like name@company.com'; return; }
+      v.email = val; routePersist([v]); emailPopClose(); showToast('Email saved for ' + routeName(v));
+    }
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
       rpClose();
@@ -5226,7 +5251,7 @@ Add New Stop
               ${item.clientRole ? `<div class="cn-role-inline font-extrabold text-white text-xs">${escapeHtml(item.clientRole)}</div>` : ''}
               ${groupChipDark(item)}
               ${(getCallSummary(item) || lastEmailedHtml(item)) ? `<div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">${getCallSummary(item)}${lastEmailedHtml(item)}</div>` : ''}
-              <div class="mob-only mt-1" style="font-size:14px"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" onclick="return startCall(event, '${item.id}')" class="text-blue-400 font-bold hover:underline inline-flex items-center gap-1" style="font-size:14px"><i data-lucide="phone" class="w-3.5 h-3.5"></i> ${escapeHtml(item.phone)}</a>` : ''}${item.email ? `<a href="#" onclick="event.preventDefault(); openFollowUp('${item.id}')" title="Open the email page for this visit" class="text-pink-300 font-bold break-all hover:underline" style="font-size:14px;text-decoration:underline dotted;text-underline-offset:3px">${escapeHtml(item.email)}</a>` : `<a href="#" onclick="event.preventDefault(); editVisit('${item.id}')" title="Add an email address" class="text-pink-300 font-bold hover:underline" style="font-size:14px;text-decoration:underline dotted;text-underline-offset:3px">Add email</a>`}</div></div>
+              <div class="mob-only mt-1" style="font-size:14px"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px">${item.phone ? `<a href="${escapeHtml(telHref(item.phone))}" target="_top" onclick="return startCall(event, '${item.id}')" class="text-blue-400 font-bold hover:underline inline-flex items-center gap-1" style="font-size:14px"><i data-lucide="phone" class="w-3.5 h-3.5"></i> ${escapeHtml(item.phone)}</a>` : ''}${item.email ? `<a href="#" onclick="event.preventDefault(); openFollowUp('${item.id}')" title="Open the email page for this visit" class="text-pink-300 font-bold break-all hover:underline" style="font-size:14px;text-decoration:underline dotted;text-underline-offset:3px">${escapeHtml(item.email)}</a>` : `<a href="#" onclick="event.preventDefault(); addEmailPopup('${item.id}')" title="Add an email address" class="text-pink-300 font-bold hover:underline" style="font-size:14px;text-decoration:underline dotted;text-underline-offset:3px">Add email</a>`}</div></div>
               ${visitPhotoIds(item).length ? `<div class="mob-photo flex flex-wrap gap-1.5 mt-1.5">${visitPhotoIds(item).map((pid, n) => `<a href="/_blob/${escapeHtml(pid)}" target="_blank" rel="noopener" title="Building photo ${n + 1}" class="inline-block"><img src="/_blob/${escapeHtml(pid)}" alt="Building ${n + 1} of ${escapeHtml(item.businessName)}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-16 h-12 object-cover rounded-lg border border-slate-600"></a>`).join('')}</div>` : ''}
               <div class="cn-old text-[11px] text-slate-300 font-semibold mt-0.5">
                 ${escapeHtml(item.clientName)}
