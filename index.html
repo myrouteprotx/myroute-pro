@@ -950,17 +950,17 @@
       table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6) { text-align: center !important; }
       /* Fixed column widths so the table always fits the window: no sideways scrolling, no big gap before Notes */
       table:has(#visitsTableBody), table:has(#todayTableBody), table:has(#yesterdayTableBody) { table-layout: fixed !important; width: 100% !important; min-width: 0 !important; }
-      table:has(#visitsTableBody) th:nth-child(1), table:has(#todayTableBody) th:nth-child(1), table:has(#yesterdayTableBody) th:nth-child(1) { width: 25% !important; }
-      table:has(#visitsTableBody) th:nth-child(2), table:has(#todayTableBody) th:nth-child(2), table:has(#yesterdayTableBody) th:nth-child(2) { width: 14% !important; }
-      table:has(#visitsTableBody) th:nth-child(3), table:has(#todayTableBody) th:nth-child(3), table:has(#yesterdayTableBody) th:nth-child(3) { width: 11% !important; }
-      table:has(#visitsTableBody) th:nth-child(4), table:has(#todayTableBody) th:nth-child(4), table:has(#yesterdayTableBody) th:nth-child(4) { width: 13% !important; }
-      table:has(#visitsTableBody) th:nth-child(5), table:has(#todayTableBody) th:nth-child(5), table:has(#yesterdayTableBody) th:nth-child(5) { width: 12% !important; white-space: normal; }
-      table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6) { width: 25% !important; white-space: normal !important; }
+      table:has(#visitsTableBody) th:nth-child(1), table:has(#todayTableBody) th:nth-child(1), table:has(#yesterdayTableBody) th:nth-child(1) { width: 20% !important; }
+      table:has(#visitsTableBody) th:nth-child(2), table:has(#todayTableBody) th:nth-child(2), table:has(#yesterdayTableBody) th:nth-child(2) { width: 11% !important; }
+      table:has(#visitsTableBody) th:nth-child(3), table:has(#todayTableBody) th:nth-child(3), table:has(#yesterdayTableBody) th:nth-child(3) { width: 9% !important; }
+      table:has(#visitsTableBody) th:nth-child(4), table:has(#todayTableBody) th:nth-child(4), table:has(#yesterdayTableBody) th:nth-child(4) { width: 10% !important; }
+      table:has(#visitsTableBody) th:nth-child(5), table:has(#todayTableBody) th:nth-child(5), table:has(#yesterdayTableBody) th:nth-child(5) { width: 10% !important; white-space: normal; }
+      table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6) { width: 40% !important; white-space: nowrap !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td { overflow-wrap: anywhere; white-space: normal !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) { min-width: 0 !important; width: auto !important; }
 
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box, :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box textarea { width: 100% !important; box-sizing: border-box; }
-      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box textarea { min-height: 120px; font-size: 13px !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box textarea { min-height: 150px; font-size: 14px !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .desk-only { width: 100%; align-items: stretch !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) > div:last-child { display: block !important; width: 100%; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) button:not(.note-save) { display: block; width: 100%; box-sizing: border-box; text-align: center !important; font-size: 12px !important; padding: 6px 8px; border: 1px solid rgba(148,163,184,.35); border-radius: 8px; background: rgba(15,23,42,.5); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -10806,7 +10806,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 (function () {
   var KEY = 'mrp_vlayout_v1', PATH = 'meta/layout6';
   var TABLES = ['visitsTableBody', 'todayTableBody', 'yesterdayTableBody'];
-  var DEFW = [25, 14, 11, 13, 12, 25];
+  var DEFW = [20, 11, 9, 10, 10, 40];
   var L = null, editing = false, dragCol = 0, dragKey = '', styleEl = null;
   function el(id) { return document.getElementById(id); }
   function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches; } catch (e) { return false; } }
