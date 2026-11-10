@@ -950,6 +950,14 @@
     @media (max-width: 767px) {
       #visitsTableBody td:nth-child(6)::before, #todayTableBody td:nth-child(6)::before, #yesterdayTableBody td:nth-child(6)::before { content: none !important; display: none !important; }
     }
+
+    /* Phone: no "Address" wording; the address link stretches the full width of the screen */
+    @media (max-width: 767px) {
+      #visitsTableBody td:nth-child(2)::before, #todayTableBody td:nth-child(2)::before, #yesterdayTableBody td:nth-child(2)::before { content: none !important; display: none !important; }
+      #visitsTableBody td:nth-child(2), #todayTableBody td:nth-child(2), #yesterdayTableBody td:nth-child(2) { max-width: 100% !important; width: 100% !important; box-sizing: border-box; }
+      #visitsTableBody td:nth-child(2) > div, #todayTableBody td:nth-child(2) > div, #yesterdayTableBody td:nth-child(2) > div { width: 100%; }
+      #visitsTableBody td:nth-child(2) a, #todayTableBody td:nth-child(2) a, #yesterdayTableBody td:nth-child(2) a { display: block !important; width: 100% !important; text-align: center; font-size: 15px; }
+    }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
