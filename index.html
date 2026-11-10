@@ -5738,7 +5738,7 @@ Add New Stop
       const sel = RM.selId ? visits.find(v => v.id === RM.selId) : null;
       let h = '';
       if (sel) {
-        const q = encodeURIComponent(`${sel.businessName || ''} ${sel.streetAddress || ''}`.trim());
+        const q = encodeURIComponent(String(sel.streetAddress || '').trim());
         const btn = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition active:scale-95';
         h += `<div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
