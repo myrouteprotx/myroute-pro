@@ -3685,6 +3685,19 @@ Add New Stop
       try { navigator.clipboard.writeText(txt).then(done, () => { fallbackCopy(txt); done(); }); } catch (e) { fallbackCopy(txt); done(); }
     }
     (function () { let tries = 0; const t = setInterval(() => { tries++; if (rmdShown || tries > 90) { clearInterval(t); return; } try { if (typeof visits !== 'undefined' && rmdList().length) { clearInterval(t); rmdShow(); } } catch (e) {} }, 700); })();
+    // Tap a radar card to jump to its original visit
+    function goToVisit(id) {
+      const row = document.querySelector('tr[data-vid="' + String(id).replace(/"/g, '') + '"]');
+      if (!row) { showToast('Opening the visit'); editVisit(id); return; }
+      try { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { row.scrollIntoView(); }
+      const old = row.style.outline; row.style.outline = '4px solid #facc15'; row.style.outlineOffset = '-4px';
+      setTimeout(() => { row.style.outline = old; }, 2800);
+    }
+    document.addEventListener('click', e => {
+      const card = e.target.closest && e.target.closest('#reachBackCardsGrid > [data-rid]');
+      if (!card || e.target.closest('a,button,input,select,textarea,label')) return;
+      goToVisit(card.dataset.rid);
+    });
     function rpClose() { const o = document.getElementById('routeOverlay'); if (o) o.remove(); }
     function rpShow(inner) {
       rpClose();
@@ -4909,7 +4922,7 @@ Add New Stop
         const mapsQuery = encodeURIComponent(String(item.streetAddress || ''));
 
         return `
-          <div class="p-4 rounded-2xl border ${isOverdue ? 'border-rose-500/40 bg-gradient-to-br from-rose-950/40 via-slate-900 to-slate-900' : 'border-amber-500/40 bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-900'} shadow-xl ${isOnRoute(item) ? 'radar-on' : ''} flex flex-col justify-between">
+          <div data-rid="${escapeHtml(item.id)}" title="Tap to jump to this visit" style="cursor:pointer" class="p-4 rounded-2xl border ${isOverdue ? 'border-rose-500/40 bg-gradient-to-br from-rose-950/40 via-slate-900 to-slate-900' : 'border-amber-500/40 bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-900'} shadow-xl ${isOnRoute(item) ? 'radar-on' : ''} flex flex-col justify-between">
             <div>
               <div class="flex items-start justify-between gap-1.5">
                 <div>
