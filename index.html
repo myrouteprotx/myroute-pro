@@ -1688,7 +1688,7 @@ Add New Stop
               <i data-lucide="map-pin" class="w-4 h-4 text-cyan-300"></i>
               <span>Route Map</span>
             </h2>
-            <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-black text-cyan-100 bg-cyan-950/60 border border-cyan-800/80">
+            <label id="rmMilesWrap" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-black text-cyan-100 bg-cyan-950/60 border border-cyan-800/80">
               <span>Show stops within</span>
               <input type="number" id="rmMilesInput" min="0.1" max="500" step="0.5" inputmode="decimal" class="w-14 px-1.5 py-1 rounded-lg bg-slate-900 border border-cyan-700 text-white text-center text-xs font-black" onchange="rmSetMiles(this.value)" oninput="rmSetMiles(this.value)">
               <span>miles of me</span>
@@ -6768,6 +6768,14 @@ Add New Stop
     // ----- Your location and the stops nearest to you -----
     let RM_NEAR_MI = (function () { try { var n = parseFloat(localStorage.getItem('mrpNearMiles')); return n > 0 && n <= 500 ? n : 3; } catch (e) { return 3; } })();
     setTimeout(function () { var i = document.getElementById('rmMilesInput'); if (i) i.value = RM_NEAR_MI; }, 0);
+    function rmPlaceMiles() {
+      var w = document.getElementById('rmMilesWrap'), b = document.getElementById('rmLocBtn'), h = document.querySelector('#routeMapView h2');
+      if (!w || !b || !h) return;
+      var desk = window.matchMedia('(min-width:1024px)').matches;
+      if (desk) { if (w.previousElementSibling !== h) h.parentNode.insertBefore(w, h.nextSibling); w.classList.replace('px-3','px-2.5'); }
+      else if (w.nextElementSibling !== b) b.parentNode.insertBefore(w, b);
+    }
+    rmPlaceMiles(); window.addEventListener('resize', rmPlaceMiles);
     function rmMilesLabel() { return (Math.round(RM_NEAR_MI * 10) / 10) + (RM_NEAR_MI === 1 ? ' mile' : ' miles'); }
     function rmSetMiles(val) {
       var n = parseFloat(val);
