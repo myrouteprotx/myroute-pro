@@ -30,8 +30,6 @@
 body.mrp-modal-open{overflow:hidden !important}
 body.mrp-modal-open *{animation-play-state:paused !important}
 
-#pastReportPair button{white-space:nowrap}
-@media (max-width:640px){#pastReportPair{display:flex!important;flex-basis:100%;width:100%;gap:8px}#pastReportPair button{flex:1 1 0;min-width:0;white-space:normal;justify-content:center;text-align:center;line-height:1.15;padding:8px 6px;font-size:11px}#pastReportPair button i,#pastReportPair button svg{flex:none}}
 </style></head><body>
 <!DOCTYPE html>
 <html lang="en">
@@ -1257,16 +1255,6 @@ body.mrp-modal-open *{animation-play-state:paused !important}
               <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
               <span>View weekly report</span>
             </button>
-            <span id="pastReportPair" class="inline-flex flex-nowrap items-center gap-2 max-w-full">
-            <button type="button" id="weekBtnPast" onclick="openPastWeeks()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl transition shadow-md shadow-cyan-600/25">
-              <i data-lucide="history" class="w-3.5 h-3.5"></i>
-              <span>View past weekly report</span>
-            </button>
-            <button type="button" id="weekBtnPastDaily" onclick="openPastReports()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl transition shadow-md shadow-indigo-600/25">
-              <i data-lucide="history" class="w-3.5 h-3.5"></i>
-              <span>View past daily reports</span>
-            </button>
-            </span>
           </div>
         </div>
       </section>
@@ -10890,7 +10878,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     el('mrpItmDone').onclick = stop;
     el('mrpItmReset').onclick = function () {
       GROUPS.forEach(function (g) { kids(g).forEach(function (n) { size(n, 0, 0); }); });
-      var o = { weekPills: ['weekBannerVisits', 'weekBannerHot', 'weekBannerFire', 'weekBannerWater', 'weekBannerLeads', 'weekCallsWrap', 'weekBtnEdit', 'weekBtnReport', 'weekBtnPast'], statCardsSection: ['tileToday', 'tileReach', 'tileHot', 'tileScheduled'] };
+      var o = { weekPills: ['weekBannerVisits', 'weekBannerHot', 'weekBannerFire', 'weekBannerWater', 'weekBannerLeads', 'weekCallsWrap', 'weekBtnEdit', 'weekBtnReport'], statCardsSection: ['tileToday', 'tileReach', 'tileHot', 'tileScheduled'] };
       apply({ order: o, sizes: {} });
     };
     return b;
