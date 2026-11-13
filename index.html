@@ -1683,10 +1683,17 @@ Add New Stop
       <section class="rounded-3xl border border-slate-700/80 bg-slate-800/80 shadow-xl overflow-hidden">
         <div class="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-slate-700/70">
           <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-3">
             <h2 class="text-base font-black text-white flex items-center gap-2">
               <i data-lucide="map-pin" class="w-4 h-4 text-cyan-300"></i>
               <span>Route Map</span>
             </h2>
+            <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-black text-cyan-100 bg-cyan-950/60 border border-cyan-800/80">
+              <span>Show stops within</span>
+              <input type="number" id="rmMilesInput" min="0.1" max="500" step="0.5" inputmode="decimal" class="w-14 px-1.5 py-1 rounded-lg bg-slate-900 border border-cyan-700 text-white text-center text-xs font-black" onchange="rmSetMiles(this.value)" oninput="rmSetMiles(this.value)">
+              <span>miles of me</span>
+            </label>
+            </div>
             <p id="rmSummary" class="text-[11px] text-slate-400 font-semibold mt-0.5"></p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -1694,11 +1701,6 @@ Add New Stop
               <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
               <span>See streets here</span>
             </a>
-            <label class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-cyan-100 bg-cyan-950/60 border border-cyan-800/80">
-              <span>Show stops within</span>
-              <input type="number" id="rmMilesInput" min="0.1" max="500" step="0.5" inputmode="decimal" class="w-14 px-1.5 py-1 rounded-lg bg-slate-900 border border-cyan-700 text-white text-center text-xs font-black" onchange="rmSetMiles(this.value)" oninput="rmSetMiles(this.value)">
-              <span>miles of me</span>
-            </label>
             <button type="button" id="rmLocBtn" onclick="rmLocate()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-white bg-gradient-to-r from-blue-600 to-cyan-500 active:scale-95 transition">
               <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
               <span>Use my location</span>
