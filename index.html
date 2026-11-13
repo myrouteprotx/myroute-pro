@@ -698,7 +698,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 
     /* Phone: Route Map buttons and filter chips use the same glowing pill look as the week box */
     @media screen and (max-width: 767px) {
-      #rmBtnGroup { display: grid !important; grid-template-columns: minmax(0, 1fr); gap: 8px !important; width: 100%; }
+      #rmBtnGroup { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px !important; width: 100%; }
       #rmBtnGroup > #rmAllBtn { display: none !important; }
       #rmBtnGroup > #rmMilesWrap { order: 0; grid-column: 1 / -1; flex-wrap: nowrap !important; white-space: nowrap; position: static !important; transform: none !important; justify-content: center; height: 58px; border-radius: 14px; font-size: 13px; background: rgba(14,165,233,.60); border: 2px solid #7dd3fc; box-shadow: 0 0 10px rgba(56,189,248,.7); color: #fff; padding: 0 10px; }
       #rmBtnGroup > #rmMilesWrap { gap: 8px; font-size: 14px; line-height: 1.1; }
