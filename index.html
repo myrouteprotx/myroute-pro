@@ -6768,6 +6768,12 @@ Add New Stop
     // ----- Your location and the stops nearest to you -----
     let RM_NEAR_MI = (function () { try { var n = parseFloat(localStorage.getItem('mrpNearMiles')); return n > 0 && n <= 500 ? n : 3; } catch (e) { return 3; } })();
     setTimeout(function () { var i = document.getElementById('rmMilesInput'); if (i) i.value = RM_NEAR_MI; }, 0);
+    (function () {
+      var st = document.getElementById('rmStage'); if (!st) return;
+      ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (n) { st.addEventListener(n, function (e) { e.preventDefault(); }, { passive: false }); });
+      st.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+      st.addEventListener('touchstart', function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    })();
     function rmPlaceMiles() {
       var w = document.getElementById('rmMilesWrap'), b = document.getElementById('rmLocBtn'), h = document.querySelector('#routeMapView h2');
       if (!w || !b || !h) return;
