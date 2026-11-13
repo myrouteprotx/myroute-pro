@@ -1223,6 +1223,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
         </div>
       </div>
 
+      <div class="flex justify-center px-1"><button type="button" id="pastReportsTrackerBtn" onclick="openPastReports()" class="px-4 py-2 rounded-full text-xs font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 border border-white/30 active:scale-95 transition">View past daily reports</button></div>
+
       <!-- Current week banner -->
       <section id="weekBanner" class="rounded-3xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 p-4 sm:p-5 shadow-xl">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1792,6 +1794,7 @@ Add New Stop
           <div id="dailyPickerWrapper">
             <label class="block text-[11px] font-bold text-slate-400 mb-1">Target Report Date</label>
             <input type="date" id="repDateSelector" class="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-extrabold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button type="button" onclick="openPastReports()" class="mt-2 w-full px-3 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 border border-white/30 active:scale-95 transition">View past daily reports</button>
           </div>
 
           <div id="weeklyPickerWrapper" class="hidden">
@@ -11337,6 +11340,41 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   function sync() { document.body.classList.toggle('mrp-modal-open', !m.classList.contains('hidden')); }
   new MutationObserver(sync).observe(m, { attributes: true, attributeFilter: ['class'] });
   sync();
+})();
+</script>
+
+<script>
+/* View past daily reports: pick a day that has visits and open its daily report */
+(function () {
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function pretty(d) { try { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return d; } }
+  window.closePastReports = function () { var m = document.getElementById('pastReportsModal'); if (m) m.remove(); };
+  window.viewPastReport = function (d) {
+    closePastReports();
+    try { switchMainTab('report'); } catch (e) {}
+    try { setReportCadence('daily'); } catch (e) {}
+    var el = document.getElementById('repDateSelector');
+    if (el) { el.value = d; el.dispatchEvent(new Event('change', { bubbles: true })); }
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+  };
+  window.openPastReports = function () {
+    closePastReports();
+    var counts = {};
+    (visits || []).forEach(function (v) { if (v && v.visitDate && v.visitDate <= todayString) counts[v.visitDate] = (counts[v.visitDate] || 0) + 1; });
+    var days = Object.keys(counts).sort().reverse();
+    var rows = days.map(function (d) {
+      return '<button type="button" onclick="viewPastReport(\'' + d + '\')" style="display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;margin-bottom:6px;border-radius:12px;background:#1e293b;border:1px solid #475569;color:#fff;font-weight:800;font-size:13px;cursor:pointer"><span>' + esc(pretty(d)) + '</span><span style="color:#a5b4fc;font-size:12px;white-space:nowrap">' + counts[d] + ' visit' + (counts[d] === 1 ? '' : 's') + '</span></button>';
+    }).join('');
+    var m = document.createElement('div');
+    m.id = 'pastReportsModal';
+    m.setAttribute('style', 'position:fixed;inset:0;z-index:100;background:rgba(2,6,23,.8);display:flex;align-items:center;justify-content:center;padding:16px');
+    m.onclick = function (e) { if (e.target === m) closePastReports(); };
+    m.innerHTML = '<div style="width:100%;max-width:480px;max-height:88vh;max-height:88dvh;display:flex;flex-direction:column;background:#0f172a;color:#fff;border:2px solid #818cf8;border-radius:20px;padding:16px;box-shadow:0 0 24px rgba(129,140,248,.4)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-weight:900;font-size:17px">Past daily reports</div><button type="button" onclick="closePastReports()" aria-label="Close" style="background:none;border:0;color:#fff;font-size:26px;line-height:1;cursor:pointer">&times;</button></div>'
+      + '<div style="font-size:12px;opacity:.8;margin:2px 0 10px">Tap a day to open its report. Newest first.</div>'
+      + '<div style="overflow:auto;flex:1;min-height:0;overscroll-behavior:contain">' + (rows || '<div style="padding:14px 0;font-size:13px;opacity:.85">No days with visits yet.</div>') + '</div></div>';
+    document.body.appendChild(m);
+  };
 })();
 </script>
 </body></html>
