@@ -13,6 +13,16 @@
 #topSearch{border:2px solid #ff1744 !important;box-shadow:0 0 6px #ff1744,0 0 14px rgba(255,23,68,.85),0 0 28px rgba(255,23,68,.55),inset 0 0 8px rgba(255,23,68,.35) !important;color:#fff !important;border-radius:9999px !important}
 #topSearch:focus{box-shadow:0 0 8px #ff1744,0 0 20px #ff1744,0 0 38px rgba(255,23,68,.75),inset 0 0 10px rgba(255,23,68,.5) !important}
 #topSearch::placeholder{color:#cbd5e1 !important;opacity:1 !important}
+
+/* Previous visits sits beside Current status, under its own header */
+.cs-pair{display:flex;gap:18px;align-items:flex-start}
+.cs-pair .cs-a{flex:0 0 auto}
+.cs-pair .cs-b{flex:0 0 108px;text-align:left}
+.pv-label{display:none;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.pv-date{font-size:12px;font-weight:700;color:#e2e8f0;line-height:1.5;white-space:nowrap}
+.pv-none{font-size:11px;font-weight:600;color:#64748b}
+@media (min-width:1100px){thead .cs-pair .cs-a{min-width:130px;text-align:left}td .cs-pair .cs-a{min-width:130px}}
+@media (max-width:1099px){.cs-pair{flex-direction:column;gap:8px}.cs-pair .cs-b{flex:0 0 auto}.pv-label{display:block}thead .cs-pair .cs-b{display:none}}
 </style></head><body>
 <!DOCTYPE html>
 <html lang="en">
@@ -1402,7 +1412,7 @@
                 <th scope="col" class="py-3.5 px-4">Address / Navigation</th>
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
                 <th scope="col" class="py-3.5 px-4">Outcome Status</th>
-                <th scope="col" class="py-3.5 px-4">Current Status</th>
+                <th scope="col" class="py-3.5 px-4"><div class="cs-pair"><div class="cs-a">Current Status</div><div class="cs-b">Previous visits</div></div></th>
                 <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -1434,7 +1444,7 @@
                 <th scope="col" class="py-3.5 px-4">Address / Navigation</th>
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
                 <th scope="col" class="py-3.5 px-4">Outcome Status</th>
-                <th scope="col" class="py-3.5 px-4">Current Status</th>
+                <th scope="col" class="py-3.5 px-4"><div class="cs-pair"><div class="cs-a">Current Status</div><div class="cs-b">Previous visits</div></div></th>
                 <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -1634,7 +1644,7 @@
                 <th scope="col" class="py-3.5 px-4">Address / Navigation</th>
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
                 <th scope="col" class="py-3.5 px-4">Outcome Status</th>
-                <th scope="col" class="py-3.5 px-4">Current Status</th>
+                <th scope="col" class="py-3.5 px-4"><div class="cs-pair"><div class="cs-a">Current Status</div><div class="cs-b">Previous visits</div></div></th>
                 <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -3356,6 +3366,16 @@ Add New Stop
     }
 
     const CURRENT_STATUS_OPTIONS = ['Not contacted yet', 'Contacted', 'Meeting scheduled', 'Proposal sent', 'Active client', 'On hold', 'Closed - not a fit'];
+    function prevVisitDates(item) {
+      const set = new Set();
+      (Array.isArray(item.notesHistory) ? item.notesHistory : []).forEach(h => { if (h && /^\d{4}-\d{2}-\d{2}$/.test(String(h.visitDate || ''))) set.add(h.visitDate); });
+      return Array.from(set).sort();
+    }
+    function prevVisitsHtml(item) {
+      const d = prevVisitDates(item);
+      const rows = d.length ? d.map(x => `<div class="pv-date">${x.slice(5, 7)}/${x.slice(8, 10)}/${x.slice(0, 4)}</div>`).join('') : '<div class="pv-none">None yet</div>';
+      return `<div class="pv-label">Previous visits</div>${rows}`;
+    }
     function getCurrentStatusSelect(item) {
       const cur = item.currentStatus || '';
       const opts = '<option value="" style="background:#1e293b;color:#ffffff;"' + (cur ? '' : ' selected') + '>Select status</option>' + CURRENT_STATUS_OPTIONS.map(x => `<option value="${escapeHtml(x)}" style="background:#1e293b;color:#ffffff;" ${cur === x ? 'selected' : ''}>${escapeHtml(x)}</option>`).join('');
@@ -5596,7 +5616,7 @@ Add New Stop
               <div class="flex flex-col items-start gap-1.5">${getStatusSelect(item)}${getResultSelect(item)}</div>
             </td>
 
-            <td class="py-3.5 px-4 whitespace-nowrap">${getCurrentStatusSelect(item)}</td>
+            <td class="py-3.5 px-4 whitespace-nowrap"><div class="cs-pair"><div class="cs-a">${getCurrentStatusSelect(item)}</div><div class="cs-b">${prevVisitsHtml(item)}</div></div></td>
 
             <td class="py-3.5 px-4 max-w-xs">
               
