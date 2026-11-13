@@ -23,6 +23,12 @@
 .pv-none{font-size:11px;font-weight:600;color:#ffffff}
 @media (min-width:1100px){thead .cs-pair .cs-a{min-width:130px;text-align:left}thead .cs-pair .cs-b{text-align:center}td .cs-pair .cs-a{min-width:130px}}
 @media (max-width:1099px){.cs-pair{flex-direction:column;gap:8px}.cs-pair .cs-b{flex:0 0 auto}.pv-label{display:block}thead .cs-pair .cs-b{display:none}}
+
+/* Add-visit form on phones: scroll inside the form, reach the top and bottom, no page scrolling behind it, no animations competing */
+#visitModal > div{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+@media (max-width:1099px){#visitModal > div{max-height:calc(100vh - 24px) !important;max-height:calc(100dvh - 24px) !important}}
+body.mrp-modal-open{overflow:hidden !important}
+body.mrp-modal-open *{animation-play-state:paused !important}
 </style></head><body>
 <!DOCTYPE html>
 <html lang="en">
@@ -11300,6 +11306,15 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   });
   main.addEventListener('input', function () { if (top.value !== main.value) top.value = main.value; });
   setInterval(function () { if (document.activeElement !== top && top.value !== main.value) top.value = main.value; }, 400);
+})();
+</script>
+
+<script>
+(function () {
+  var m = document.getElementById('visitModal'); if (!m) return;
+  function sync() { document.body.classList.toggle('mrp-modal-open', !m.classList.contains('hidden')); }
+  new MutationObserver(sync).observe(m, { attributes: true, attributeFilter: ['class'] });
+  sync();
 })();
 </script>
 </body></html>
