@@ -698,10 +698,10 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 
     /* Phone: Route Map buttons and filter chips use the same glowing pill look as the week box */
     @media screen and (max-width: 767px) {
-      #rmBtnGroup { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px !important; width: 100%; }
-      #rmBtnGroup > #rmStreets { order: 1; } #rmBtnGroup > #rmLocBtn { order: 2; } #rmBtnGroup > #rmFitBtn { order: 3; } #rmBtnGroup > #rmAllBtn { order: 4; }
-      #rmBtnGroup > #rmMilesWrap { order: 5; grid-column: span 2; position: static !important; transform: none !important; justify-content: center; height: 58px; border-radius: 14px; font-size: 13px; background: rgba(14,165,233,.60); border: 2px solid #7dd3fc; box-shadow: 0 0 10px rgba(56,189,248,.7); color: #fff; padding: 0 10px; }
-      #rmBtnGroup > #rmMilesWrap { flex-wrap: wrap; gap: 2px 6px; font-size: 12px; line-height: 1.1; }
+      #rmBtnGroup { display: grid !important; grid-template-columns: minmax(0, 1fr); gap: 8px !important; width: 100%; }
+      #rmBtnGroup > #rmAllBtn { display: none !important; }
+      #rmBtnGroup > #rmMilesWrap { order: 0; grid-column: 1 / -1; flex-wrap: nowrap !important; white-space: nowrap; position: static !important; transform: none !important; justify-content: center; height: 58px; border-radius: 14px; font-size: 13px; background: rgba(14,165,233,.60); border: 2px solid #7dd3fc; box-shadow: 0 0 10px rgba(56,189,248,.7); color: #fff; padding: 0 10px; }
+      #rmBtnGroup > #rmMilesWrap { gap: 8px; font-size: 14px; line-height: 1.1; }
       #rmBtnGroup > #rmMilesWrap input { width: 3.6rem; height: 38px; font-size: 16px; }
       #rmBtnGroup > a, #rmBtnGroup > button { display: flex !important; align-items: center; justify-content: center; text-align: center; width: 100% !important; height: 58px; min-height: 58px; margin: 0; padding: 4px 6px !important; box-sizing: border-box; font-size: 13px !important; font-weight: 900 !important; line-height: 1.15; color: #fff !important; border-radius: 14px !important; white-space: normal; }
       #rmStreets { background: rgba(99,102,241,.60) !important; border: 2px solid #a5b4fc !important; box-shadow: 0 0 10px rgba(129,140,248,.7); }
