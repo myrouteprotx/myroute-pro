@@ -2130,7 +2130,7 @@ Add New Stop
                 <button type="button" id="scanStopBtn" onclick="stopScan()" class="hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-200 bg-rose-950/60 border border-rose-700/70 active:scale-95 transition"><span>Stop</span></button>
               </div>
               <input type="file" id="scanCameraInput" accept="image/*" capture="environment" class="hidden">
-              <input type="file" id="scanLibraryInput" accept="image/*" class="hidden">
+              <input type="file" id="scanLibraryInput" accept="image/*" multiple class="hidden">
               <div id="scanStatus" class="text-[11px] font-semibold mt-2 min-h-[1rem] text-slate-300" role="status" aria-live="polite"></div>
               <img id="scanThumb" alt="Scanned business card" class="hidden mt-2 max-h-28 rounded-lg border border-slate-700 object-contain bg-white">
             </div>
@@ -7005,7 +7005,7 @@ Add New Stop
 
     function setVpStatus(msg, tone) {
       const el = document.getElementById('vpPhotoStatus');
-      el.textContent = msg || '';
+      el.textContent = (msg && scanTotal > 1 ? 'Card ' + Math.min(scanTotal, scanTotal - scanQueue.length) + ' of ' + scanTotal + ': ' : '') + (msg || '');
       el.className = 'text-[11px] font-semibold mt-2 min-h-[1rem] ' + (tone === 'error' ? 'text-rose-300' : tone === 'ok' ? 'text-emerald-300' : 'text-slate-300');
     }
     function renderVpPreview() {
@@ -7133,7 +7133,7 @@ Add New Stop
       const files = items.filter(i => i.kind === 'file' && /^image\//.test(i.type)).map(i => i.getAsFile()).filter(Boolean);
       if (!files.length) return;
       e.preventDefault();
-      if (vpPasteTarget === 'managed') scanManagedFiles(files); else if (vpPasteTarget === 'scan') scanCardFile(files[0]); else if (vpPasteTarget === 'card') handleVpCardFiles(files); else handleVpPhotos(files);
+      if (vpPasteTarget === 'managed') scanManagedFiles(files); else if (vpPasteTarget === 'scan') scanFiles(files); else if (vpPasteTarget === 'card') handleVpCardFiles(files); else handleVpPhotos(files);
     });
     function managedDrop(e) {
       e.preventDefault(); e.currentTarget.style.boxShadow = '';
@@ -7145,7 +7145,7 @@ Add New Stop
       e.preventDefault(); e.currentTarget.style.boxShadow = '';
       const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []).filter(f => /^image\//.test(f.type));
       if (!files.length) { setScanStatus('Drop a picture file of the card here.', 'error'); return; }
-      scanCardFile(files[0]);
+      scanFiles(files);
     }
     function removeVpPhoto(i) {
       vpPhotoIds.splice(i, 1);
@@ -7476,6 +7476,8 @@ Add New Stop
       cleanVpPhotos(vpSaved ? vpPhotoIds : []);
       cleanVpCard(vpSaved ? vpCardId : '');
       vpSaved = false;
+      if (!window.__keepQueue) { scanQueue = []; scanTotal = 0; }
+      window.__keepQueue = false;
       visitModal.classList.add('hidden');
       discardScanPhoto();
       resetScan();
@@ -7701,7 +7703,10 @@ Add New Stop
       if (vpCardOrig && vpCardOrig !== vpCardId) dropAssetLater(vpCardOrig);
       vpSaved = true;
       saveRecords();
+      const moreCards = !editId && scanQueue.length;
+      if (moreCards) window.__keepQueue = true;
       closeModal();
+      if (moreCards) setTimeout(() => { openModal(); scanCardFile(scanQueue.shift()); }, 450);
     });
 
     // CSV Export
@@ -8942,6 +8947,13 @@ Add New Stop
       if (el && v) el.value = v;
     }
 
+    let scanQueue = [], scanTotal = 0;
+    function scanFiles(files) {
+      files = Array.from(files || []).filter(f => f && /^image\//.test(f.type || 'image/'));
+      if (!files.length) return;
+      scanTotal = files.length; scanQueue = files.slice(1);
+      scanCardFile(files[0]);
+    }
     async function scanCardFile(file) {
       if (!file || scanBusy) return;
       if (document.getElementById('editEntryId').value) return;
@@ -9029,9 +9041,9 @@ Add New Stop
 
     ['scanCameraInput', 'scanLibraryInput'].forEach(id => {
       document.getElementById(id).addEventListener('change', e => {
-        const f = e.target.files && e.target.files[0];
+        const fl = Array.from(e.target.files || []);
         e.target.value = '';
-        scanCardFile(f);
+        scanFiles(fl);
       });
     });
 
