@@ -29,6 +29,9 @@
 @media (max-width:1099px){#visitModal > div{max-height:calc(100vh - 24px) !important;max-height:calc(100dvh - 24px) !important}}
 body.mrp-modal-open{overflow:hidden !important}
 body.mrp-modal-open *{animation-play-state:paused !important}
+
+#pastReportPair button{white-space:nowrap}
+@media (max-width:480px){#pastReportPair{gap:6px}#pastReportPair button{padding-left:8px;padding-right:8px;font-size:10px}}
 </style></head><body>
 <!DOCTYPE html>
 <html lang="en">
@@ -1254,6 +1257,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
               <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
               <span>View weekly report</span>
             </button>
+            <span id="pastReportPair" class="inline-flex flex-nowrap items-center gap-2 max-w-full">
             <button type="button" id="weekBtnPast" onclick="openPastWeeks()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl transition shadow-md shadow-cyan-600/25">
               <i data-lucide="history" class="w-3.5 h-3.5"></i>
               <span>View past weekly report</span>
@@ -1262,6 +1266,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
               <i data-lucide="history" class="w-3.5 h-3.5"></i>
               <span>View past daily reports</span>
             </button>
+            </span>
           </div>
         </div>
       </section>
