@@ -8,6 +8,11 @@
 #scanBlock>div{display:block}
 
 @media (max-width:1099px){#visitModal{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;background:rgba(2,6,23,.94) !important}#visitModal *{-webkit-backdrop-filter:none !important;backdrop-filter:none !important}}
+
+/* Top search bar: vibrant red neon circle border */
+#topSearch{border:2px solid #ff1744 !important;box-shadow:0 0 6px #ff1744,0 0 14px rgba(255,23,68,.85),0 0 28px rgba(255,23,68,.55),inset 0 0 8px rgba(255,23,68,.35) !important;color:#fff !important;border-radius:9999px !important}
+#topSearch:focus{box-shadow:0 0 8px #ff1744,0 0 20px #ff1744,0 0 38px rgba(255,23,68,.75),inset 0 0 10px rgba(255,23,68,.5) !important}
+#topSearch::placeholder{color:#cbd5e1 !important;opacity:1 !important}
 </style></head><body>
 <!DOCTYPE html>
 <html lang="en">
@@ -1192,6 +1197,15 @@
     <!-- TAB 1: DAILY ROUTE TRACKER CRM VIEW                      -->
     <!-- ======================================================== -->
     <div id="routeTrackerView" class="space-y-6">
+
+      <!-- Search bar (a copy of the one under Route Marketing Visits) -->
+      <div id="topSearchWrap" class="flex justify-center px-1">
+        <div class="relative w-full max-w-xl">
+          <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style="color:#ff6b81"></i>
+          <input type="search" id="topSearch" autocomplete="off" style="font-size:16px" placeholder="Search name, business, address or phone..." aria-label="Search visits"
+            class="w-full pl-11 pr-4 py-2.5 text-sm bg-slate-950 rounded-full text-white placeholder-slate-400 focus:outline-none">
+        </div>
+      </div>
 
       <!-- Current week banner -->
       <section id="weekBanner" class="rounded-3xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 p-4 sm:p-5 shadow-xl">
@@ -4109,7 +4123,7 @@ Add New Stop
     // Refresh (F5) starts at the top of the page, and the browser must not drop a saved email into the search boxes
     try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
     (function () {
-      const ids = ['searchInput', 'fireSearch', 'waterSearch', 'pcwSearch', 'repSearch', 'pastWeeksSearch'];
+      const ids = ['searchInput', 'topSearch', 'fireSearch', 'waterSearch', 'pcwSearch', 'repSearch', 'pastWeeksSearch'];
       const desktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
       function guard() {
         ids.forEach(id => {
@@ -8389,7 +8403,7 @@ Add New Stop
 
     // ----- Search suggestions: as you type in any search box, offer names, businesses, addresses, phones and emails already in the app -----
     (function () {
-      const SEARCH_IDS = ['searchInput', 'repSearch', 'pastWeeksSearch', 'detailGroupSearch'];
+      const SEARCH_IDS = ['searchInput', 'topSearch', 'repSearch', 'pastWeeksSearch', 'detailGroupSearch'];
       let dl = document.getElementById('searchSuggestList');
       if (!dl) { dl = document.createElement('datalist'); dl.id = 'searchSuggestList'; document.body.appendChild(dl); }
       function pool() {
@@ -11252,6 +11266,20 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   }
   setTimeout(writeSummary, 4000);
   setInterval(writeSummary, 30000);
+})();
+</script>
+
+<script>
+/* Top search bar stays in step with the search under Route Marketing Visits */
+(function () {
+  var top = document.getElementById('topSearch'), main = document.getElementById('searchInput');
+  if (!top || !main) return;
+  top.addEventListener('input', function () { main.value = top.value; main.dispatchEvent(new Event('input', { bubbles: true })); });
+  top.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); var t = document.getElementById('visitsTableBody') || main; try { t.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (x) {} top.blur(); }
+  });
+  main.addEventListener('input', function () { if (top.value !== main.value) top.value = main.value; });
+  setInterval(function () { if (document.activeElement !== top && top.value !== main.value) top.value = main.value; }, 400);
 })();
 </script>
 </body></html>
