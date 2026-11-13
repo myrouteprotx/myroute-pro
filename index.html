@@ -1223,8 +1223,6 @@ body.mrp-modal-open *{animation-play-state:paused !important}
         </div>
       </div>
 
-      <div class="flex justify-center px-1"><button type="button" id="pastReportsTrackerBtn" onclick="openPastReports()" class="px-4 py-2 rounded-full text-xs font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 border border-white/30 active:scale-95 transition">View past daily reports</button></div>
-
       <!-- Current week banner -->
       <section id="weekBanner" class="rounded-3xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 p-4 sm:p-5 shadow-xl">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1259,6 +1257,10 @@ body.mrp-modal-open *{animation-play-state:paused !important}
             <button type="button" id="weekBtnPast" onclick="openPastWeeks()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl transition shadow-md shadow-cyan-600/25">
               <i data-lucide="history" class="w-3.5 h-3.5"></i>
               <span>View past weekly report</span>
+            </button>
+            <button type="button" id="weekBtnPastDaily" onclick="openPastReports()" class="wk-glow inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl transition shadow-md shadow-indigo-600/25">
+              <i data-lucide="history" class="w-3.5 h-3.5"></i>
+              <span>View past daily reports</span>
             </button>
           </div>
         </div>
