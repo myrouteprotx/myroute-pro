@@ -10,7 +10,9 @@ const PROMPT = `This image is a photo of a business card taken by a field sales 
 
 const PROP_PROMPT = `This image was taken by a field sales rep. It shows property names: a sign, a list, a directory page, a flyer, a card, a screen or a building entrance. Reply with only one JSON object: {"properties": [{"name": string, "address": string, "phone": string}], "check": string[]}
 Rules:
-- List EVERY property or business name that is clearly shown, one entry per name, copied exactly as printed. Do not skip names and do not merge them.
+- List EVERY property, facility or location shown, one entry per name or address, copied exactly as printed. Do not skip any and do not merge them. A list of addresses (for example the other locations on the back of a business card) counts: each address is its own entry.
+- If a location has a name, use it as name. If it shows only an address, use the street address (for example "1420 Marina Bay Dr") as name and put the full address in address.
+- Include every location on the image even if it is the same company as the card holder.
 - address: one line "street, City, TX ZIP" if shown next to that name, otherwise "". phone: formatted (281) 555-1234 if shown next to that name, otherwise "". Never guess or use outside knowledge.
 - If no property name can be read, return an empty properties list and say why in check.
 - check: a short list (usually empty) naming only text you could not read with confidence.
