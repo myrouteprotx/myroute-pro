@@ -6773,7 +6773,7 @@ Add New Stop
       if (!w || !b || !h) return;
       var desk = window.matchMedia('(min-width:1024px)').matches;
       var hd = h.closest('.justify-between');
-      if (desk) { if (hd && w.parentNode !== hd) hd.appendChild(w); if (hd) hd.style.position = 'relative'; w.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2'; }
+      if (desk) { if (hd && w.parentNode !== hd) hd.appendChild(w); if (hd) hd.style.position = 'relative'; w.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(1.2);z-index:2'; }
       else { w.style.cssText = ''; if (hd) hd.style.position = ''; if (w.nextElementSibling !== b) b.parentNode.insertBefore(w, b); }
     }
     rmPlaceMiles(); window.addEventListener('resize', rmPlaceMiles);
