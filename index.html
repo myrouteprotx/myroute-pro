@@ -831,7 +831,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     #repDateSelector, #repWeekSelector, #repSalesPersonName, #repTerritoryName, #repManagerEmail, #repCompanyName { text-align: center; }
     #dailyPickerWrapper, #weeklyPickerWrapper { min-width: 0; }
     @media screen and (max-width: 767px) {
-      #reportStudioView { padding: 6px; }
+      #reportStudioView { padding: 6px; width: 100vw; max-width: 100vw; margin-left: calc(50% - 50vw) !important; margin-right: calc(50% - 50vw) !important; border-left-width: 0 !important; border-right-width: 0 !important; border-radius: 0 !important; box-sizing: border-box; }
+      #reportModeBadge { display: none !important; }
       #reportStudioView > section.no-print { padding: 14px; gap: 0; }
       #reportStudioView > section.no-print > * { margin-top: 10px; }
       #reportStudioView > section.no-print > :first-child { margin-top: 0; }
@@ -1749,9 +1750,16 @@ Add New Stop
         
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-700/80">
           <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500 via-rose-500 to-amber-500 text-white flex items-center justify-center shadow-lg shadow-pink-500/30">
+            <div class="hidden md:flex w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500 via-rose-500 to-amber-500 text-white items-center justify-center shadow-lg shadow-pink-500/30">
               <i data-lucide="sparkles" class="w-6 h-6 stroke-[2.5]"></i>
             </div>
+            <svg class="md:hidden w-12 h-12 shrink-0" viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 3px #f472b6) drop-shadow(0 0 9px #ec4899);" aria-hidden="true">
+              <defs><linearGradient id="icoDoc2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f9a8d4"/><stop offset="1" stop-color="#fcd34d"/></linearGradient></defs>
+              <path d="M8 3h11l6.5 6.5V27a1.5 1.5 0 0 1-1.5 1.5H8A1.5 1.5 0 0 1 6.5 27V4.5A1.5 1.5 0 0 1 8 3z" stroke="url(#icoDoc2)" stroke-width="2" fill="rgba(244,114,182,.15)"/>
+              <path d="M19 3v6.5h6.5" stroke="url(#icoDoc2)" stroke-width="2"/>
+              <path d="M10.5 14h6M10.5 18h4" stroke="url(#icoDoc2)" stroke-width="2"/>
+              <path d="M11 24.5l3.2-3.8 2.8 2.2 4.2-5.2" stroke="#fde68a" stroke-width="2"/>
+            </svg>
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="text-lg font-black text-white">Route Report Studio</h2>
