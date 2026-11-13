@@ -7019,7 +7019,7 @@ Add New Stop
       Object.keys(btns).forEach(k => { document.getElementById(btns[k]).className = (k === tab) ? active[k] : idle; });
 
       if (tab === 'report') renderVibrantReport();
-      if (tab === 'map') renderRouteMap();
+      if (tab === 'map') { renderRouteMap(); if (!RM.autoLoc && RM.watch === null && !RM.me) { RM.autoLoc = true; try { rmLocate(); } catch (e) {} } }
     }
 
     // Modal Operations
