@@ -1367,6 +1367,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
             <button type="button" id="queueBadgeCount" onclick="toggleRadar()" aria-expanded="false" aria-controls="reachBackCardsGrid" class="text-xs font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full transition cursor-pointer">
               0 delinquent
             </button>
+            <button type="button" id="clearDelinquentBtn" onclick="clearAllDelinquent()" title="Remove every visit from this radar by clearing its reach-back date" class="text-xs font-black bg-rose-600/80 hover:bg-rose-500 text-white border border-rose-300/60 px-3 py-1 rounded-full transition cursor-pointer">Clear all</button>
           </div>
           <p class="text-xs text-slate-400">Accounts scheduled for contact today or overdue for follow-up</p>
         </div>
@@ -5379,6 +5380,15 @@ Add New Stop
       radarOpen = typeof open === 'boolean' ? open : !radarOpen;
       renderReachBackQueue();
       lucide.createIcons();
+    }
+
+    function clearAllDelinquent() {
+      const list = visits.filter(v => v.followUpDate && v.visitStatus !== 'Not Interested' && v.followUpDate <= todayString);
+      if (!list.length) { try { showToast('Nothing to clear. The radar is empty.'); } catch (e) {} return; }
+      if (!confirm('Clear all ' + list.length + ' delinquent reach-backs? Their reach-back dates will be removed so they leave the radar. You can undo this once with the Go back button.')) return;
+      list.forEach(v => { v.followUpDate = ''; });
+      saveRecords();
+      try { showToast('Cleared ' + list.length + ' delinquent reach-backs'); } catch (e) {}
     }
 
     function renderReachBackQueue() {
