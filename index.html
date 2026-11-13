@@ -6772,8 +6772,9 @@ Add New Stop
       var w = document.getElementById('rmMilesWrap'), b = document.getElementById('rmLocBtn'), h = document.querySelector('#routeMapView h2');
       if (!w || !b || !h) return;
       var desk = window.matchMedia('(min-width:1024px)').matches;
-      if (desk) { if (w.previousElementSibling !== h) h.parentNode.insertBefore(w, h.nextSibling); w.classList.replace('px-3','px-2.5'); }
-      else if (w.nextElementSibling !== b) b.parentNode.insertBefore(w, b);
+      var hd = h.closest('.justify-between');
+      if (desk) { if (hd && w.parentNode !== hd) hd.appendChild(w); if (hd) hd.style.position = 'relative'; w.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2'; }
+      else { w.style.cssText = ''; if (hd) hd.style.position = ''; if (w.nextElementSibling !== b) b.parentNode.insertBefore(w, b); }
     }
     rmPlaceMiles(); window.addEventListener('resize', rmPlaceMiles);
     function rmMilesLabel() { return (Math.round(RM_NEAR_MI * 10) / 10) + (RM_NEAR_MI === 1 ? ' mile' : ' miles'); }
