@@ -696,6 +696,25 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       .wk-actions > button.wk-glow > span { font-size: 12px !important; font-weight: 900 !important; }
     }
 
+    /* Phone: Route Map buttons and filter chips use the same glowing pill look as the week box */
+    @media screen and (max-width: 767px) {
+      #rmBtnGroup { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px !important; width: 100%; }
+      #rmBtnGroup > #rmMilesWrap { grid-column: 1 / -1; position: static !important; transform: none !important; justify-content: center; height: 58px; border-radius: 14px; font-size: 13px; background: rgba(14,165,233,.60); border: 2px solid #7dd3fc; box-shadow: 0 0 10px rgba(56,189,248,.7); color: #fff; padding: 0 10px; }
+      #rmBtnGroup > #rmMilesWrap input { width: 4.2rem; height: 38px; font-size: 16px; }
+      #rmBtnGroup > a, #rmBtnGroup > button { display: flex !important; align-items: center; justify-content: center; text-align: center; width: 100% !important; height: 58px; min-height: 58px; margin: 0; padding: 4px 6px !important; box-sizing: border-box; font-size: 13px !important; font-weight: 900 !important; line-height: 1.15; color: #fff !important; border-radius: 14px !important; white-space: normal; }
+      #rmStreets { background: rgba(99,102,241,.60) !important; border: 2px solid #a5b4fc !important; box-shadow: 0 0 10px rgba(129,140,248,.7); }
+      #rmLocBtn { background: rgba(16,185,129,.60) !important; border: 2px solid #6ee7b7 !important; box-shadow: 0 0 10px rgba(52,211,153,.7); }
+      #rmFitBtn { background: rgba(245,158,11,.65) !important; border: 2px solid #fcd34d !important; box-shadow: 0 0 10px rgba(251,191,36,.7); }
+      #rmAllBtn { background: rgba(244,63,94,.60) !important; border: 2px solid #fda4af !important; box-shadow: 0 0 10px rgba(251,113,133,.7); }
+      #rmBtnGroup > a svg, #rmBtnGroup > button svg, #rmBtnGroup > a i, #rmBtnGroup > button i { display: none !important; }
+      #rmLegend { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px !important; }
+      #rmLegend .rm-chip { display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 2px !important; width: 100%; height: 58px; padding: 4px 6px !important; box-sizing: border-box; border-radius: 14px !important; text-align: center; line-height: 1.15; font-size: 12px !important; font-weight: 900 !important; color: #fff !important; background: color-mix(in srgb, var(--c) 60%, transparent) !important; border: 2px solid color-mix(in srgb, var(--c) 55%, #fff) !important; box-shadow: 0 0 10px color-mix(in srgb, var(--c) 70%, transparent); }
+      #rmLegend .rm-chip > span { color: #fff !important; }
+      #rmLegend .rm-chip > span.rounded-full { display: none; }
+      #rmLegend .rm-chip-on { border-color: #fff !important; box-shadow: 0 0 6px #fff, 0 0 16px var(--c) !important; background: color-mix(in srgb, var(--c) 90%, transparent) !important; }
+      #rmLegend > span { grid-column: 1 / -1; margin-left: 0 !important; justify-content: center; }
+    }
+
     /* Phone: under Today's Visits, Yesterday's Visits sits on the left and Add visit today on the right, equal size */
     @media screen and (max-width: 767px) {
       .today-actions { width: 100%; margin-left: 0 !important; display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; }
@@ -1701,7 +1720,7 @@ Add New Stop
             </div>
             <p id="rmSummary" class="text-[11px] text-slate-400 font-semibold mt-0.5"></p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
+          <div id="rmBtnGroup" class="flex flex-wrap items-center gap-2">
             <a id="rmStreets" href="https://www.google.com/maps" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-cyan-200 bg-cyan-950/60 border border-cyan-800/80 hover:text-cyan-100 transition">
               <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
               <span>See streets here</span>
@@ -1710,11 +1729,11 @@ Add New Stop
               <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
               <span>Use my location</span>
             </button>
-            <button type="button" onclick="rmFit(false)" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-slate-200 bg-slate-900 border border-slate-700 hover:bg-slate-700 transition active:scale-95">
+            <button type="button" id="rmFitBtn" onclick="rmFit(false)" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-slate-200 bg-slate-900 border border-slate-700 hover:bg-slate-700 transition active:scale-95">
               <i data-lucide="locate-fixed" class="w-3.5 h-3.5"></i>
               <span>Fit my stops</span>
             </button>
-            <button type="button" onclick="rmFit(true)" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-slate-200 bg-slate-900 border border-slate-700 hover:bg-slate-700 transition active:scale-95">
+            <button type="button" id="rmAllBtn" onclick="rmFit(true)" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-slate-200 bg-slate-900 border border-slate-700 hover:bg-slate-700 transition active:scale-95">
               <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
               <span>Show everything</span>
             </button>
@@ -6555,7 +6574,7 @@ Add New Stop
       const withGeo = visits.filter(rmHasGeo);
       const chip = (key, label, color, count) => {
         const on = RM.filter === key;
-        return `<button type="button" onclick="rmSetFilter('${escapeHtml(key)}')" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold border transition active:scale-95 ${on ? 'bg-slate-100 text-slate-900 border-white' : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-700'}">`
+        return `<button type="button" style="--c:${color || '#818cf8'}" onclick="rmSetFilter('${escapeHtml(key)}')" class="rm-chip${on ? ' rm-chip-on' : ''} inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold border transition active:scale-95 ${on ? 'bg-slate-100 text-slate-900 border-white' : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-700'}">`
           + (color ? `<span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span>` : '')
           + `<span>${escapeHtml(label)}</span><span class="${on ? 'text-slate-600' : 'text-slate-400'}">${count}</span></button>`;
       };
