@@ -1123,6 +1123,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     #detailBody select[data-df] { line-height: normal; padding-right: 28px !important; }
     #detailBody input[type="date"][data-df] { line-height: normal; display: flex; align-items: center; }
     #detailBody input[type="date"][data-df]::-webkit-date-and-time-value { text-align: left; min-height: 0; }
+    #detailBody input[type="date"][data-df]::-webkit-datetime-edit { flex: 1 1 auto; }
+    #detailBody input[type="date"][data-df]::-webkit-calendar-picker-indicator { margin-left: auto; }
     #detailBody textarea[data-df] { font-size: 16px !important; box-sizing: border-box; width: 100% !important; }
     #detailBody .grid > div.rounded-2xl { box-sizing: border-box; min-width: 0; }
 
@@ -5303,9 +5305,9 @@ Add New Stop
           + dEdit('Contact preference', kind, id, 'preferredContact', v.preferredContact || 'Phone Call', 'select', PREFERRED_OPTIONS)
           + dEdit('Address', kind, id, 'streetAddress', v.streetAddress, 'text', null, v.streetAddress ? '<div style="margin-top:8px;font-size:14px">' + addrLinkHtml(v.streetAddress, v.businessName) + '</div>' : '')
           + dEdit('Visited on', kind, id, 'visitDate', v.visitDate, 'date')
+          + dEdit('When to reach back', kind, id, 'followUpDate', v.followUpDate, 'date')
           + dEdit('Outcome status', kind, id, 'visitStatus', v.visitStatus || 'New Lead', 'select', STATUS_OPTIONS.map(x => [x, x]))
           + dEdit('Result of visit', kind, id, 'visitResult', v.visitResult || '', 'select', RESULT_OPTIONS.map(r => [r.value, r.label]))
-          + dEdit('When to reach back', kind, id, 'followUpDate', v.followUpDate, 'date')
           + dEdit('Notes', kind, id, 'notes', v.notes, 'textarea')
           + dField('Properties they manage', managedItems(v).length ? managedCards(v, 'dark', true) : '') + detailGroupBox(id) + detailPhotoBox(kind, id) + dPhotoRow(dField('Building photos', dPhotos(visitPhotoIds(v), 'Building')) + dField('Business card', dPhotos([v.cardPhotoId], 'Business card')))
           + dField('Follow-up email', followUpBox(v))
@@ -5323,8 +5325,8 @@ Add New Stop
           + dEdit('Email', kind, id, 'email', f.email, 'email', null, f.email ? dEmailBtn(f.email, '') : '')
           + dEdit('Insurance', kind, id, 'insurance', f.insurance)
           + dEdit('Visited on', kind, id, 'visitDate', f.visitDate, 'date')
-          + dEdit('Outcome', kind, id, 'outcome', f.outcome || '', 'select', outList)
           + dEdit('When to reach back', kind, id, 'followUpDate', f.followUpDate, 'date')
+          + dEdit('Outcome', kind, id, 'outcome', f.outcome || '', 'select', outList)
           + dEdit('Notes', kind, id, 'notes', f.notes, 'textarea')
           + detailPhotoBox(kind, id) + dPhotoRow(dField('Photo', dPhotos([f.photoId], 'Property')))
           + dField('Weekly reports', c.weekOf(f).length ? escapeHtml(c.weekOf(f).map(w => 'Week ' + parseInt(w.split('-W')[1], 10)).join(', ')) : '')
