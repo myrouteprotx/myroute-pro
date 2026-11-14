@@ -11199,7 +11199,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     try { localStorage.setItem(KEY, JSON.stringify(L || {})); } catch (e) {}
     try { if (typeof dbHandle !== 'undefined' && dbHandle) dbHandle.doc(PATH).set({ data: JSON.stringify(L || {}), at: new Date().toISOString() }); } catch (e) {}
   }
-  function fresh() { return { order: [1, 2, 3, 4, 5, 6], w: DEFW.slice(), blocks: {}, noteH: 0 }; }
+  function fresh() { return { order: [1, 2, 3, 4, 5, 6], w: DEFW.slice(), blocks: {}, noteH: 0, noteW: 0, align: {} }; }
   function keyOf(n) { var k = (n.classList && n.classList[0]) || n.tagName.toLowerCase(); return /^[A-Za-z_][\w-]*$/.test(k) ? k : ''; }
   function seenKeys() {
     var ks = [];
@@ -11227,6 +11227,8 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     c += S('tbody > tr:not(.prop-row) > td:nth-child(6)') + '{display:flex !important;flex-direction:column}';
     blockOrder().forEach(function (k, i) { c += S('tbody > tr:not(.prop-row) > td:nth-child(6) > .' + k) + '{order:' + (i + 1) + '}'; });
     if (L.noteH) c += S('tbody > tr > td:nth-child(6) .note-box textarea') + '{height:' + L.noteH + 'px !important;min-height:' + L.noteH + 'px !important}';
+    if (L.noteW) c += S('tbody > tr > td:nth-child(6) .note-box textarea') + '{width:' + L.noteW + 'px !important;min-width:0 !important;max-width:100% !important}';
+    if (L.align) Object.keys(L.align).forEach(function (k) { var a = L.align[k]; if (a === 'left' || a === 'center' || a === 'right') c += S('thead > tr > th:nth-child(' + k + ')') + '{text-align:' + a + ' !important}' + S('thead > tr > th:nth-child(' + k + ') > div') + '{justify-content:' + (a === 'left' ? 'flex-start' : a === 'right' ? 'flex-end' : 'center') + ' !important}'; });
     return c + '}';
   }
   function apply() {
@@ -11238,13 +11240,15 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var b = el('mrpVLBar'); if (b) return b;
     b = document.createElement('div'); b.id = 'mrpVLBar';
     b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:150;display:none;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;background:#0f172a;border-top:2px solid #34d399;color:#fff;font-size:12px';
-    b.innerHTML = '<div><b>Editing the visit lists.</b> Drag a column title to move that column. Drag the edge of a title to make the column wider or narrower. In the Notes column, drag the boxes up or down to reorder them, and drag the corner of the notes box to make it taller. Then press Done.</div><div style="display:flex;gap:8px"><button type="button" id="mrpVLReset" style="padding:8px 14px;border-radius:10px;background:#334155;color:#fff;font-weight:800;font-size:12px">Back to original</button><button type="button" id="mrpVLDone" style="padding:8px 18px;border-radius:10px;background:#059669;color:#fff;font-weight:900;font-size:12px">Done</button></div>';
+    b.innerHTML = '<div><b>Editing the visit lists.</b> Drag a column title to move that column. Drag the edge of a title to make the column wider or narrower. Use the small arrows under a title to move its text left, center or right. In the Notes column, drag the boxes up or down to reorder them, and drag the bottom-right corner of the notes box to make it bigger or smaller, wider or taller to make it taller. Then press Done.</div><div style="display:flex;gap:8px"><button type="button" id="mrpVLReset" style="padding:8px 14px;border-radius:10px;background:#334155;color:#fff;font-weight:800;font-size:12px">Back to original</button><button type="button" id="mrpVLDone" style="padding:8px 18px;border-radius:10px;background:#059669;color:#fff;font-weight:900;font-size:12px">Done</button></div>';
     document.body.appendChild(b);
     el('mrpVLDone').onclick = stop;
     el('mrpVLReset').onclick = function () { L = null; try { localStorage.removeItem(KEY); } catch (e) {} save(); apply(); document.body.classList.remove('mrp-vl-on'); if (styleEl) styleEl.textContent = ''; stop(); };
     var st = document.createElement('style');
     st.textContent = 'body.mrp-vedit table:has(#visitsTableBody) thead th,body.mrp-vedit table:has(#todayTableBody) thead th,body.mrp-vedit table:has(#yesterdayTableBody) thead th{touch-action:none;user-select:none;position:relative;cursor:grab;outline:2px dashed #34d399;outline-offset:-3px}'
       + 'body.mrp-vedit #visitsTableBody td:nth-child(6)>*:not(.note-save),body.mrp-vedit #todayTableBody td:nth-child(6)>*:not(.note-save),body.mrp-vedit #yesterdayTableBody td:nth-child(6)>*:not(.note-save){outline:2px dashed #818cf8;outline-offset:1px;cursor:grab}'
+      + 'body.mrp-vedit #visitsTableBody td:nth-child(6) textarea,body.mrp-vedit #todayTableBody td:nth-child(6) textarea,body.mrp-vedit #yesterdayTableBody td:nth-child(6) textarea{resize:both !important;overflow:auto}'
+      + '.mrp-al{position:absolute;left:50%;bottom:2px;transform:translateX(-50%);display:flex;gap:3px;z-index:6}.mrp-al button{width:22px;height:18px;border-radius:5px;border:1px solid #34d399;background:#064e3b;color:#fff;font-size:11px;line-height:1;cursor:pointer;padding:0}'
       + '.mrp-colgrip{touch-action:none;position:absolute;right:0;top:0;bottom:0;width:10px;cursor:col-resize;background:rgba(52,211,153,.55);z-index:5}';
     document.head.appendChild(st);
     return b;
@@ -11258,6 +11262,13 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     document.querySelectorAll('thead th').forEach(function (h) {
       var k = colOf(h); if (k > 6 || h.querySelector('.mrp-colgrip')) return;
       var g = document.createElement('span'); g.className = 'mrp-colgrip'; h.appendChild(g);
+      var al = document.createElement('span'); al.className = 'mrp-al'; al.title = 'Move this title: left, center or right';
+      [['left', '\u25C0'], ['center', '\u25CF'], ['right', '\u25B6']].forEach(function (a) {
+        var bt = document.createElement('button'); bt.type = 'button'; bt.textContent = a[1]; bt.title = 'Title ' + a[0];
+        bt.addEventListener('pointerdown', function (ev) { ev.preventDefault(); ev.stopPropagation(); L.align = L.align || {}; L.align[k] = a[0]; apply(); save(); });
+        al.appendChild(bt);
+      });
+      h.appendChild(al);
       g.addEventListener('pointerdown', function (e) {
         e.preventDefault(); e.stopPropagation();
         var tw = h.closest('table').getBoundingClientRect().width, w0 = L.w.slice(), sum = w0.reduce(function (a, b) { return a + b; }, 0), x0 = e.clientX;
@@ -11270,7 +11281,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   function stop() {
     if (!editing) return; editing = false; document.body.classList.remove('mrp-vedit');
     var b = el('mrpVLBar'); if (b) b.style.display = 'none';
-    document.querySelectorAll('.mrp-colgrip').forEach(function (g) { g.remove(); });
+    document.querySelectorAll('.mrp-colgrip, .mrp-al').forEach(function (g) { g.remove(); });
     save();
   }
   // Drag with the pointer (mouse, pen or finger): a column title moves a column, a box in the Notes column moves that box on every row.
@@ -11278,7 +11289,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   function cellBox(n) { return n && n.closest ? n.closest('td:nth-child(6) > *') : null; }
   document.addEventListener('pointerdown', function (e) {
     if (!editing || e.button > 0) return;
-    var t = e.target; if (!t.closest || t.closest('.mrp-colgrip, #mrpVLBar')) return;
+    var t = e.target; if (!t.closest || t.closest('.mrp-colgrip, .mrp-al, #mrpVLBar')) return;
     var th = t.closest('thead th');
     if (th && colOf(th) <= 6 && th.closest(TABLES.map(function (x) { return 'table:has(#' + x + ')'; }).join(','))) { drag = { type: 'col', k: colOf(th), x: e.clientX, y: e.clientY, on: false }; return; }
     var c = cellBox(t);
@@ -11314,7 +11325,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   }, true);
   document.addEventListener('pointerup', function (e) {
     if (!editing || !e.target || e.target.tagName !== 'TEXTAREA' || !e.target.closest('td:nth-child(6)')) return;
-    var h = Math.round(e.target.offsetHeight); if (h > 40 && h !== L.noteH) { L.noteH = h; apply(); save(); }
+    var h = Math.round(e.target.offsetHeight), w = Math.round(e.target.offsetWidth), ch = false; if (h > 40 && h !== L.noteH) { L.noteH = h; ch = true; } if (w > 120 && w !== L.noteW) { L.noteW = w; ch = true; } if (ch) { apply(); save(); }
   }, true);
   window.mrpVisitLayoutStart = function () { openAdminGate('arrange', start); };
   function init() {
