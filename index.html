@@ -1257,6 +1257,23 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     .pj-name { font-size:14px; font-weight:900; color:#fff; margin-top:6px; word-break:break-word; }
     .pj-sub { font-size:11px; color:#c3d3f5; margin-top:2px; word-break:break-word; }
     .pj-empty { grid-column:1/-1; text-align:center; padding:22px 10px; font-size:13px; font-weight:700; color:#c3d3f5; border:1px dashed rgba(70,150,255,.5); border-radius:14px; }
+
+    .pj-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+    #projectsSection { position:relative; z-index:30; }
+    .pj-tile { position:relative; }
+    .pj-tile > .pj-face { cursor:pointer; border-radius:16px; padding:12px 12px 10px; min-height:96px; display:flex; flex-direction:column; justify-content:space-between; color:#fff; border:2px solid rgba(255,255,255,.35); box-shadow:0 0 16px var(--pc), inset 0 0 18px rgba(255,255,255,.08); background:linear-gradient(160deg,var(--pc),rgba(3,9,28,.85)); transition:transform .15s; }
+    .pj-tile:hover > .pj-face, .pj-tile.open > .pj-face { transform:translateY(-2px); border-color:#fff; }
+    .pj-step { font-size:9px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.75); }
+    .pj-label { font-size:12px; font-weight:900; line-height:1.2; margin-top:2px; }
+    .pj-num { font-size:30px; font-weight:900; line-height:1; margin-top:6px; text-shadow:0 0 14px rgba(255,255,255,.5); }
+    .pj-drop { display:none; position:absolute; left:0; right:0; top:100%; margin-top:6px; min-width:200px; max-height:260px; overflow:auto; z-index:60; border-radius:14px; padding:6px; background:rgba(3,9,28,.97); border:1px solid rgba(110,170,255,.8); box-shadow:0 8px 30px rgba(0,0,0,.6), 0 0 18px rgba(40,130,255,.45); }
+    .pj-tile:hover > .pj-drop, .pj-tile.open > .pj-drop { display:block; }
+    .pj-tile:hover::after { content:""; position:absolute; left:0; right:0; top:100%; height:8px; }
+    .pj-item { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:8px 10px; border-radius:10px; font-size:12px; font-weight:800; color:#fff; background:transparent; border:0; cursor:pointer; }
+    .pj-item:hover { background:rgba(40,130,255,.35); }
+    .pj-dot { width:8px; height:8px; border-radius:50%; flex:none; }
+    .pj-none { padding:10px; font-size:11px; font-weight:700; color:#9bb2e6; }
+    @media (max-width: 640px) { .pj-tiles { grid-template-columns:repeat(2,minmax(0,1fr)); } .pj-drop { left:0; right:0; } }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -1407,10 +1424,9 @@ body.mrp-modal-open *{animation-play-state:paused !important}
             <h2 class="text-lg sm:text-xl font-black text-white">Projects in Production</h2>
             <span id="projCount" class="px-2.5 py-0.5 rounded-full text-xs font-black text-white" style="background:linear-gradient(90deg,#f05a00,#ff8226);box-shadow:0 0 12px rgba(255,110,20,.6)">0</span>
           </div>
-          <div class="text-[11px] text-slate-300 font-semibold">Anything with a Current status, until it reaches Job Closed &ndash; Finalized</div>
+          <div class="text-[11px] text-slate-300 font-semibold">Hover or tap a stage to see its projects</div>
         </div>
-        <div id="projStages" class="flex flex-wrap gap-2 mt-3"></div>
-        <div id="projList" class="grid gap-3 mt-4" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))"></div>
+        <div id="projTiles" class="pj-tiles mt-4"></div>
       </section>
 
       <section id="statCardsSection" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -11758,35 +11774,30 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
 <script>
 (function () {
   var STAGES = function () { return (typeof CURRENT_STATUS_OPTIONS !== 'undefined') ? CURRENT_STATUS_OPTIONS : []; };
-  var TYPES = { visit: ['Visit', '#0a5be0'], fire: ['Fire', '#cf2a08'], water: ['Water', '#0a8fb8'], pcw: ['Company lead', '#d97200'] };
-  var filter = '', lastSig = '';
+  var COLORS = ['#0a5be0', '#0a74d8', '#0a8fb8', '#0b9a88', '#d97200', '#f05a00', '#067a6c'];
+  var DOT = { visit: '#3a95ff', fire: '#ff6238', water: '#14c6ee', pcw: '#f5a020' };
+  var lastSig = '';
   function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function gather() {
     var out = [];
-    try { visits.forEach(function (v) { if (v.currentStatus) out.push({ kind: 'visit', id: v.id, name: v.businessName || 'Unnamed stop', sub: v.clientName && v.clientName !== 'Contact TBD' ? v.clientName : '', addr: v.streetAddress || '', st: v.currentStatus, date: v.visitDate || '' }); }); } catch (e) {}
+    try { visits.forEach(function (v) { if (v.currentStatus) out.push({ kind: 'visit', id: v.id, name: v.businessName || v.clientName || 'Unnamed stop', st: v.currentStatus }); }); } catch (e) {}
     [['fire', typeof fires !== 'undefined' ? fires : []], ['water', typeof waters !== 'undefined' ? waters : []], ['pcw', typeof pcws !== 'undefined' ? pcws : []]].forEach(function (g) {
-      g[1].forEach(function (f) { if (f.currentStatus) out.push({ kind: g[0], id: f.id, name: f.streetAddress || f.homeownerName || f.ownerName || 'Unnamed property', sub: f.homeownerName || f.ownerName || '', addr: f.streetAddress && (f.homeownerName || f.ownerName) ? f.streetAddress : '', st: f.currentStatus, date: f.visitDate || '' }); });
+      g[1].forEach(function (f) { if (f.currentStatus) out.push({ kind: g[0], id: f.id, name: f.homeownerName || f.ownerName || f.streetAddress || 'Unnamed property', st: f.currentStatus }); });
     });
     return out;
   }
-  function setStatus(kind, id, val) { if (kind === 'visit') changeCurrentStatus(id, val); else leadSetCurrentStatus(kind, id, val); }
-  window.__projSetStatus = setStatus;
-  window.__projFilter = function (st) { filter = (filter === st) ? '' : st; lastSig = ''; render(); };
+  window.__projOpen = function (kind, id) { try { document.querySelectorAll('.pj-tile.open').forEach(function (t) { t.classList.remove('open'); }); openDetail(kind, id); } catch (e) {} };
+  window.__projTap = function (el) { var t = el.parentNode, was = t.classList.contains('open'); document.querySelectorAll('.pj-tile.open').forEach(function (x) { x.classList.remove('open'); }); if (!was) t.classList.add('open'); };
+  document.addEventListener('click', function (e) { if (!e.target.closest || !e.target.closest('.pj-tile')) document.querySelectorAll('.pj-tile.open').forEach(function (t) { t.classList.remove('open'); }); });
   function render() {
-    var box = document.getElementById('projList'), stg = document.getElementById('projStages'); if (!box || !stg) return;
-    var all = gather(), closed = 'Job Closed – Finalized', active = all.filter(function (x) { return x.st !== closed; });
-    var sig = JSON.stringify(all) + '|' + filter; if (sig === lastSig) return; lastSig = sig;
-    document.getElementById('projCount').textContent = active.length;
-    var st = STAGES();
-    stg.innerHTML = st.map(function (n) { var c = all.filter(function (x) { return x.st === n; }).length; return '<span class="pj-chip' + (filter === n ? ' on' : '') + '" role="button" tabindex="0" onclick="__projFilter(this.getAttribute(\'data-s\'))" data-s="' + esc(n) + '">' + esc(n) + '<b>' + c + '</b></span>'; }).join('');
-    var shown = filter ? all.filter(function (x) { return x.st === filter; }) : active;
-    if (!shown.length) { box.innerHTML = '<div class="pj-empty">' + (filter ? 'Nothing in this stage yet.' : 'No projects in production yet. Set a Current status on any visit, fire, water or lead and it shows up here.') + '</div>'; return; }
-    box.innerHTML = shown.map(function (x) {
-      var t = TYPES[x.kind], opts = st.map(function (n) { return '<option value="' + esc(n) + '"' + (n === x.st ? ' selected' : '') + ' style="background:#0a1a44;color:#fff">' + esc(n) + '</option>'; }).join('');
-      return '<div class="pj-card"><span class="pj-type" style="background:' + t[1] + '">' + t[0] + '</span><div class="pj-name">' + esc(x.name) + '</div>'
-        + (x.sub ? '<div class="pj-sub">' + esc(x.sub) + '</div>' : '') + (x.addr ? '<div class="pj-sub">' + esc(x.addr) + '</div>' : '')
-        + (x.date ? '<div class="pj-sub">Visited ' + esc(x.date.slice(5, 7) + '/' + x.date.slice(8, 10) + '/' + x.date.slice(0, 4)) + '</div>' : '')
-        + '<select onchange="__projSetStatus(\'' + x.kind + '\',\'' + esc(x.id) + '\', this.value)" aria-label="Current status" class="mt-2 w-full text-[11px] font-bold rounded-lg px-2.5 py-2 text-white focus:outline-none" style="background:rgba(10,90,224,.35);border:1px solid rgba(110,170,255,.7)">' + opts + '</select></div>';
+    var box = document.getElementById('projTiles'); if (!box) return;
+    var all = gather(), st = STAGES(), sig = JSON.stringify(all); if (sig === lastSig) return; lastSig = sig;
+    var closed = st[st.length - 1];
+    document.getElementById('projCount').textContent = all.filter(function (x) { return x.st !== closed; }).length;
+    box.innerHTML = st.map(function (n, i) {
+      var items = all.filter(function (x) { return x.st === n; });
+      var list = items.length ? items.map(function (x) { return '<button type="button" class="pj-item" onclick="__projOpen(\'' + x.kind + '\',\'' + esc(x.id) + '\')"><span class="pj-dot" style="background:' + DOT[x.kind] + '"></span><span>' + esc(x.name) + '</span></button>'; }).join('') : '<div class="pj-none">Nothing in this stage</div>';
+      return '<div class="pj-tile" style="--pc:' + COLORS[i % COLORS.length] + '"><div class="pj-face" role="button" tabindex="0" onclick="__projTap(this)"><div><div class="pj-step">Step ' + (i + 1) + '</div><div class="pj-label">' + esc(n) + '</div></div><div class="pj-num">' + items.length + '</div></div><div class="pj-drop">' + list + '</div></div>';
     }).join('');
   }
   setInterval(function () { try { render(); } catch (e) {} }, 1000);
