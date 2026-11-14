@@ -1212,6 +1212,25 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       #undoDock #undoBtn { padding: 9px 14px !important; font-size: 12px !important; }
       #undoDock #settingsDockBtn { display: inline-flex !important; padding: 9px 12px !important; }
     }
+
+    /* ===== Dusk sci-fi theme: twilight sky, glass panels, neon blue and orange edges ===== */
+    body.hero-glow-bg {
+      background-color: #030718 !important;
+      background-image:
+        radial-gradient(ellipse 90% 40% at 50% 108%, rgba(255,106,10,.34) 0, rgba(255,106,10,0) 70%),
+        radial-gradient(ellipse 60% 35% at 0% 100%, rgba(255,70,20,.22) 0, rgba(255,70,20,0) 70%),
+        radial-gradient(ellipse 70% 40% at 100% 0%, rgba(30,120,255,.28) 0, rgba(30,120,255,0) 70%),
+        radial-gradient(ellipse 60% 45% at 0% 0%, rgba(20,80,210,.25) 0, rgba(20,80,210,0) 70%),
+        linear-gradient(180deg, #030718 0%, #061440 38%, #0a2260 68%, #1a2058 86%, #3a1c3e 100%) !important;
+      background-attachment: fixed !important;
+    }
+    [class*="bg-slate-9"], [class*="bg-slate-8"] { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+    .border-slate-700, .border-slate-800 { border-color: rgba(70,150,255,.42) !important; }
+    .border-slate-600 { border-color: rgba(70,150,255,.55) !important; }
+    .rounded-2xl.border, .rounded-3xl.border, .rounded-xl.border { box-shadow: 0 0 14px rgba(40,130,255,.16), inset 0 0 22px rgba(40,130,255,.06); }
+    h1, h2, h3 { text-shadow: 0 0 18px rgba(90,170,255,.30); }
+    input, select, textarea { caret-color: #ff8a3d; }
+    ::selection { background: rgba(255,120,30,.55); color: #fff; }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
