@@ -5159,7 +5159,7 @@ Add New Stop
     let detailDirty = new Set();
     // Photos added from the details page (uploaded now, attached to the record when Save is pressed)
     let detailAdds = [], detailAddCtx = null, detailAddBusy = false;
-    function detailPhotoBox(kind, id) {
+    function detailPhotoBox(kind, id, inner) {
       detailAdds = []; detailAddCtx = { kind, id };
       const single = kind !== 'visit';
       const btn = 'inline-flex items-center gap-1.5 text-sm font-black px-3.5 py-2 rounded-xl border transition';
@@ -5174,6 +5174,7 @@ Add New Stop
         <input type="hidden" id="detailPhotoField" data-dk="${kind}" data-did="${escapeHtml(id)}" data-df="__photos">
         <div id="detailAddStatus" class="text-xs font-semibold mt-2 min-h-[1rem] text-slate-300"></div>
         <div id="detailAddList" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-3"></div>
+        ${inner ? `<div class="dt-boxphotos" style="margin-top:12px">${inner}</div>` : ''}
       </div>`;
     }
     function detailAddMsg(m, tone) { const el = document.getElementById('detailAddStatus'); if (el) { el.textContent = m || ''; el.className = 'text-xs font-semibold mt-2 min-h-[1rem] ' + (tone === 'error' ? 'text-rose-300' : tone === 'ok' ? 'text-emerald-300' : 'text-slate-300'); } }
@@ -5305,7 +5306,7 @@ Add New Stop
     function openDetail(kind, id) {
       if (openDraftId && id !== openDraftId) { openDraftId = null; finalizePropDrafts(); }
       if (document.getElementById('detailPage').classList.contains('hidden')) detailScrollY = window.scrollY;
-      let html = '', title = '', editFn = null;
+      let html = '', title = '', editFn = null, detailPhotoInner = '';
       if (kind === 'visit') {
         const v = visits.find(x => x.id === id); if (!v) return;
         title = v.businessName || 'Visit';
@@ -5320,9 +5321,10 @@ Add New Stop
           + dEdit('Outcome status', kind, id, 'visitStatus', v.visitStatus || 'New Lead', 'select', STATUS_OPTIONS.map(x => [x, x]))
           + dEdit('Result of visit', kind, id, 'visitResult', v.visitResult || '', 'select', RESULT_OPTIONS.map(r => [r.value, r.label]))
           + dEdit('Notes', kind, id, 'notes', v.notes, 'textarea')
-          + dField('Properties they manage', managedItems(v).length ? managedCards(v, 'dark', true) : '') + detailGroupBox(id) + dPhotoRow(dField('Building photos', dPhotos(visitPhotoIds(v), 'Building')) + dField('Business card', dPhotos([v.cardPhotoId], 'Business card')))
+          + dField('Properties they manage', managedItems(v).length ? managedCards(v, 'dark', true) : '') + detailGroupBox(id)
           + dField('Follow-up email', followUpBox(v))
           + dField('Calls logged', dCalls(v.calls)) + dField('Previous visit notes', dHistory(v.notesHistory));
+        detailPhotoInner = dPhotoRow(dField('Building photos', dPhotos(visitPhotoIds(v), 'Building')) + dField('Business card', dPhotos([v.cardPhotoId], 'Business card')));
         editFn = () => editVisit(id);
       } else {
         const c = leadCfg(kind); const f = leadFind(kind, id); if (!f) return;
@@ -5339,15 +5341,15 @@ Add New Stop
           + dEdit('When to reach back', kind, id, 'followUpDate', f.followUpDate, 'date')
           + dEdit('Outcome', kind, id, 'outcome', f.outcome || '', 'select', outList)
           + dEdit('Notes', kind, id, 'notes', f.notes, 'textarea')
-          + dPhotoRow(dField('Photo', dPhotos([f.photoId], 'Property')))
           + dField('Weekly reports', c.weekOf(f).length ? escapeHtml(c.weekOf(f).map(w => 'Week ' + parseInt(w.split('-W')[1], 10)).join(', ')) : '')
           + dField('Calls logged', dCalls(f.calls)) + dField('Previous visit notes', dHistory(f.notesHistory));
+        detailPhotoInner = dPhotoRow(dField('Photo', dPhotos([f.photoId], 'Property')));
         editFn = () => window[c.edit](id);
       }
       document.getElementById('detailKind').textContent = detailName[kind];
       document.getElementById('detailKind').className = 'text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ' + detailTone[kind];
       document.getElementById('detailKind').style.display = kind === 'visit' ? 'none' : '';
-      document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${kind === 'visit' ? followUpTopBtn(id) : ''}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="dt-wrap"><div class="dt-left"><div class="dt-grid grid gap-2 grid-cols-1">${html}</div></div><aside class="dt-right"><div style="margin-bottom:12px">${detailPhotoBox(kind, id)}</div>${window.prodNotesHtml ? window.prodNotesHtml(kind, id) : ''}</aside></div>`;
+      document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${kind === 'visit' ? followUpTopBtn(id) : ''}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="dt-wrap"><div class="dt-left"><div class="dt-grid grid gap-2 grid-cols-1">${html}</div></div><aside class="dt-right"><div style="margin-bottom:12px">${detailPhotoBox(kind, id, detailPhotoInner)}</div>${window.prodNotesHtml ? window.prodNotesHtml(kind, id) : ''}</aside></div>`;
       detailDirty = new Set();
       if (kind === 'visit') {
         detailGroupRender();
