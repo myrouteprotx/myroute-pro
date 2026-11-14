@@ -1308,7 +1308,27 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     .pn-meta button { margin-left:auto; font-size:10px; font-weight:800; color:#ff9a6a; background:none; border:0; cursor:pointer; }
     .pn-text { margin-top:4px; font-size:13px; font-weight:600; color:#f1f6ff; white-space:pre-wrap; word-break:break-word; }
     .pn-empty { padding:14px 6px; text-align:center; font-size:12px; font-weight:700; color:#9bb2e6; }
-  </style>
+  
+    /* Report Studio dark page (on screen only; the exported email/PDF stays white) */
+    @media screen {
+    #vibrantReportCanvas.rs-dark{background:#070d1c!important;color:#e6edf8!important;border-color:rgba(80,160,255,.35)!important}
+    #vibrantReportCanvas.rs-dark .bg-white,#vibrantReportCanvas.rs-dark [class*="bg-slate-50"],#vibrantReportCanvas.rs-dark [class*="bg-slate-100"],#vibrantReportCanvas.rs-dark [class*="bg-gray-50"]{background-color:#0d1730!important}
+    #vibrantReportCanvas.rs-dark [class*="-50 "],#vibrantReportCanvas.rs-dark [class*="-50\""]{}
+    #vibrantReportCanvas.rs-dark [class*="bg-emerald-50"],#vibrantReportCanvas.rs-dark [class*="bg-sky-50"],#vibrantReportCanvas.rs-dark [class*="bg-red-50"],#vibrantReportCanvas.rs-dark [class*="bg-rose-50"],#vibrantReportCanvas.rs-dark [class*="bg-amber-50"],#vibrantReportCanvas.rs-dark [class*="bg-orange-50"],#vibrantReportCanvas.rs-dark [class*="bg-indigo-50"],#vibrantReportCanvas.rs-dark [class*="bg-purple-50"],#vibrantReportCanvas.rs-dark [class*="bg-blue-50"],#vibrantReportCanvas.rs-dark [class*="bg-cyan-50"],#vibrantReportCanvas.rs-dark [class*="bg-pink-50"],#vibrantReportCanvas.rs-dark [class*="bg-fuchsia-50"],#vibrantReportCanvas.rs-dark [class*="bg-teal-50"],#vibrantReportCanvas.rs-dark [class*="bg-yellow-50"]{background-color:#0f1c3a!important}
+    #vibrantReportCanvas.rs-dark .text-slate-900,#vibrantReportCanvas.rs-dark .text-slate-800,#vibrantReportCanvas.rs-dark .text-slate-700{color:#f1f6ff!important}
+    #vibrantReportCanvas.rs-dark .text-slate-600,#vibrantReportCanvas.rs-dark .text-slate-500{color:#b4c4de!important}
+    #vibrantReportCanvas.rs-dark .border-slate-200,#vibrantReportCanvas.rs-dark .border-slate-300,#vibrantReportCanvas.rs-dark [class*="border-emerald-"],#vibrantReportCanvas.rs-dark [class*="border-sky-"],#vibrantReportCanvas.rs-dark [class*="border-red-"],#vibrantReportCanvas.rs-dark [class*="border-rose-"],#vibrantReportCanvas.rs-dark [class*="border-amber-"]{border-color:rgba(80,160,255,.28)!important}
+    #vibrantReportCanvas.rs-dark thead,#vibrantReportCanvas.rs-dark thead tr,#vibrantReportCanvas.rs-dark thead th{background:#12224a!important;color:#cfe3ff!important}
+    #vibrantReportCanvas.rs-dark tbody tr{background:transparent!important}
+    #vibrantReportCanvas.rs-dark textarea,#vibrantReportCanvas.rs-dark input{background:#0a1329!important;color:#f1f6ff!important;border-color:rgba(80,160,255,.35)!important}
+    #vibrantReportCanvas.rs-dark [class*="divide-"]>*{border-color:rgba(80,160,255,.2)!important}
+    #vibrantReportCanvas.rs-dark [class*="text-emerald-7"],#vibrantReportCanvas.rs-dark [class*="text-emerald-8"]{color:#5ff0c8!important}
+    #vibrantReportCanvas.rs-dark [class*="text-sky-7"],#vibrantReportCanvas.rs-dark [class*="text-sky-8"],#vibrantReportCanvas.rs-dark [class*="text-blue-7"],#vibrantReportCanvas.rs-dark [class*="text-blue-8"],#vibrantReportCanvas.rs-dark [class*="text-indigo-7"],#vibrantReportCanvas.rs-dark [class*="text-indigo-8"]{color:#7cc4ff!important}
+    #vibrantReportCanvas.rs-dark [class*="text-red-7"],#vibrantReportCanvas.rs-dark [class*="text-red-8"],#vibrantReportCanvas.rs-dark [class*="text-rose-7"],#vibrantReportCanvas.rs-dark [class*="text-rose-8"]{color:#ff9a9a!important}
+    #vibrantReportCanvas.rs-dark [class*="text-amber-7"],#vibrantReportCanvas.rs-dark [class*="text-amber-8"],#vibrantReportCanvas.rs-dark [class*="text-orange-7"],#vibrantReportCanvas.rs-dark [class*="text-orange-8"]{color:#ffb866!important}
+    #vibrantReportCanvas.rs-dark [class*="text-purple-7"],#vibrantReportCanvas.rs-dark [class*="text-fuchsia-7"],#vibrantReportCanvas.rs-dark [class*="text-pink-7"]{color:#e2a8ff!important}
+    }
+</style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
 
@@ -1981,6 +2001,8 @@ Add New Stop
           </div>
 
           <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <!-- Report page light/dark switch -->
+            <button type="button" id="btnReportTheme" onclick="toggleReportDark()" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-black text-white bg-slate-900 border border-cyan-400/60 hover:bg-slate-800 rounded-xl transition active:scale-95" title="Switch the report page between a white and a dark background (exports stay white)"><span id="reportThemeIcon">🌙</span><span id="reportThemeText">Dark mode</span></button>
             <!-- Copy Rich Email Button -->
             <button id="btnCopyHtmlEmail" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-black text-white bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 hover:from-fuchsia-500 hover:to-rose-500 rounded-xl transition shadow-lg shadow-pink-600/25 active:scale-95" title="Copy vibrant HTML email preserving all colors to paste directly into Gmail or Outlook">
               <i data-lucide="palette" class="w-3.5 h-3.5"></i>
@@ -11911,6 +11933,16 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
     var eid = btn.getAttribute('data-pn-del'); r.prodNotes = (r.prodNotes || []).filter(function (e) { return e.id !== eid; });
     persist(kind, r); document.getElementById('pnList').innerHTML = listHtml(kind, id); showToast('Note deleted');
   };
+})();
+</script>
+<script>
+(function(){
+  function apply(on){var c=document.getElementById('vibrantReportCanvas');if(c)c.classList.toggle('rs-dark',on);
+    var t=document.getElementById('reportThemeText'),i=document.getElementById('reportThemeIcon');
+    if(t)t.textContent=on?'Light mode':'Dark mode';if(i)i.textContent=on?'\u2600\uFE0F':'\uD83C\uDF19';}
+  window.toggleReportDark=function(){var c=document.getElementById('vibrantReportCanvas');var on=!(c&&c.classList.contains('rs-dark'));apply(on);try{localStorage.setItem('mrp_report_dark',on?'1':'0')}catch(e){}};
+  var saved=false;try{saved=localStorage.getItem('mrp_report_dark')==='1'}catch(e){}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){apply(saved)});else apply(saved);
 })();
 </script>
 </body></html>
