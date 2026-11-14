@@ -5115,6 +5115,20 @@ Add New Stop
       if (!Array.isArray(calls) || !calls.length) return '';
       return calls.map(c => `<div class="text-sm">${escapeHtml(formatCallTime(c.at))}</div>`).join('');
     }
+    function detailHistoryLink(kind, id) {
+      const r = kind === 'visit' ? visits.find(x => x.id === id) : leadFind(kind, id);
+      const n = r && Array.isArray(r.notesHistory) ? r.notesHistory.length : 0; if (!n) return '';
+      return `<a href="#" onclick="detailHistoryOpen('${kind}','${escapeHtml(id)}');return false" style="color:#5ca2fe;font-weight:800;font-size:14px;text-decoration:underline;text-underline-offset:3px">View previous visit notes (${n})</a>`;
+    }
+    function detailHistoryOpen(kind, id) {
+      const r = kind === 'visit' ? visits.find(x => x.id === id) : leadFind(kind, id); if (!r) return;
+      let m = document.getElementById('detailHistoryModal'); if (m) m.remove();
+      m = document.createElement('div'); m.id = 'detailHistoryModal';
+      m.style.cssText = 'position:fixed;inset:0;z-index:99500;background:rgba(0,4,14,.78);display:flex;align-items:center;justify-content:center;padding:16px';
+      m.onclick = e => { if (e.target === m) m.remove(); };
+      m.innerHTML = `<div style="width:100%;max-width:640px;max-height:82vh;overflow:auto;border-radius:18px;border:1.5px solid rgba(110,170,255,.7);background:#06112b;padding:18px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px"><div style="font-size:16px;font-weight:900;color:#fff">Previous visit notes</div><button type="button" onclick="document.getElementById('detailHistoryModal').remove()" style="border:1px solid rgba(110,170,255,.7);background:rgba(10,40,100,.7);color:#fff;font-weight:800;font-size:13px;padding:6px 14px;border-radius:10px;cursor:pointer">Close</button></div><div class="text-sm text-slate-200">${dHistory(r.notesHistory)}</div></div>`;
+      document.body.appendChild(m);
+    }
     function dHistory(h) {
       if (!Array.isArray(h) || !h.length) return '';
       return h.slice().reverse().map(e => `<div class="mb-2 pb-2 border-b border-slate-700 last:border-0"><div class="text-xs font-black text-amber-300">Visit on ${escapeHtml(e.visitDate || 'unknown date')}${(e.visitResult || e.outcome) ? ' · ' + escapeHtml(e.visitResult || e.outcome) : ''}</div><div class="text-sm font-medium text-slate-200 whitespace-pre-wrap">${escapeHtml(e.notes || '')}</div></div>`).join('');
@@ -5350,7 +5364,7 @@ Add New Stop
           + dEdit('Notes', kind, id, 'notes', v.notes, 'textarea')
           + dField('Properties they manage', managedItems(v).length ? managedCards(v, 'dark', true) : '') + detailGroupBox(id)
           + dField('Follow-up email', followUpBox(v))
-          + dField('Calls logged', dCalls(v.calls)) + dField('Previous visit notes', dHistory(v.notesHistory));
+          + dField('Calls logged', dCalls(v.calls));
         detailPhotoInner = dPhotoRow(dField('Building photos', dPhotos(visitPhotoIds(v), 'Building')) + dField('Business card', dPhotos([v.cardPhotoId], 'Business card')));
         editFn = () => editVisit(id);
       } else {
@@ -5369,14 +5383,14 @@ Add New Stop
           + dEdit('Outcome', kind, id, 'outcome', f.outcome || '', 'select', outList)
           + dEdit('Notes', kind, id, 'notes', f.notes, 'textarea')
           + dField('Weekly reports', c.weekOf(f).length ? escapeHtml(c.weekOf(f).map(w => 'Week ' + parseInt(w.split('-W')[1], 10)).join(', ')) : '')
-          + dField('Calls logged', dCalls(f.calls)) + dField('Previous visit notes', dHistory(f.notesHistory));
+          + dField('Calls logged', dCalls(f.calls));
         detailPhotoInner = dPhotoRow(dField('Photo', dPhotos([f.photoId], 'Property')));
         editFn = () => window[c.edit](id);
       }
       document.getElementById('detailKind').textContent = detailName[kind];
       document.getElementById('detailKind').className = 'text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ' + detailTone[kind];
       document.getElementById('detailKind').style.display = kind === 'visit' ? 'none' : '';
-      document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${kind === 'visit' ? followUpTopBtn(id) : ''}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="dt-wrap"><div class="dt-left"><div class="dt-grid grid gap-2 grid-cols-1">${html}</div></div><aside class="dt-right">${detailPhotoBox(kind, id, detailPhotoInner)}</aside></div><div id="dtPN" class="dt-pnwide">${window.prodNotesHtml ? window.prodNotesHtml(kind, id) : ''}</div>`;
+      document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${detailHistoryLink(kind, id)}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="dt-wrap"><div class="dt-left"><div class="dt-grid grid gap-2 grid-cols-1">${html}</div></div><aside class="dt-right">${detailPhotoBox(kind, id, detailPhotoInner)}</aside></div><div id="dtPN" class="dt-pnwide">${window.prodNotesHtml ? window.prodNotesHtml(kind, id) : ''}</div>`;
       detailDirty = new Set();
       try {
         const g = document.querySelector('#detailBody .dt-grid');
