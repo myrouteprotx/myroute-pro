@@ -3482,6 +3482,7 @@ Add New Stop
       };
     }
 
+    function mrpCanon(x) { return JSON.stringify(x, function (k, v) { if (v && typeof v === 'object' && !Array.isArray(v)) { var o = {}; Object.keys(v).sort().forEach(function (q) { o[q] = v[q]; }); return o; } return v; }); }
     let syncInflight = 0;
     let syncRetryTimer = null;
     let resyncBusy = false;
@@ -3491,6 +3492,9 @@ Add New Stop
       if (undoReady && !undoSuppress && JSON.stringify(sortVisits(remote.slice())) !== JSON.stringify(visits)) { undoStack = []; }
       synced.clear();
       remote.forEach(v => synced.set(v.id, JSON.stringify(v)));
+      // Our own save echoing back: nothing changed, so do not rebuild every table (that looked like a page refresh)
+      const wasReady = remoteReady, nextVisits = sortVisits(remote.slice());
+      if (wasReady && mrpCanon(nextVisits) === mrpCanon(visits)) { setSyncStatus(true); return; }
       visits = sortVisits(remote);
       remoteReady = true;
       try { finalizePropDrafts(); } catch (e) {}
@@ -3710,7 +3714,9 @@ Add New Stop
     function changeCurrentStatus(id, val) {
       const v = visits.find(x => x.id === id); if (!v) return;
       v.currentStatus = val; if (!val) delete v.currentStatus;
-      saveRecords(); showToast(val ? 'Current status: ' + val : 'Current status cleared');
+      // quiet save: the status box already shows the new value, so the tables are not rebuilt (that rebuild looked like a page refresh)
+      lsSet(STORAGE_KEY, JSON.stringify(visits)); undoCommit(); pushChanges(); try { renderVibrantReport(); } catch (e) {}
+      showToast(val ? 'Current status: ' + val : 'Current status cleared');
     }
     function changeStatus(id, newStatus) {
       const item = visits.find(v => v.id === id);
@@ -9621,13 +9627,14 @@ Add New Stop
       db.collection('fires').onSnapshot(snap => {
         if (snap.metadata.fromCache) return;
         const remote = snap.docs.map(d => ({ ...d.data() }));
+        const wasFirst = first;
         if (first) {
           first = false;
           // Fires saved on this device before sync was ready go up to the shared database
           const have = new Set(remote.map(r => r.id));
           fires.filter(f => !have.has(f.id)).forEach(f => { remote.push(f); writeFire(f); });
         }
-        fires = sortFires(remote);
+        { const next = sortFires(remote); if (!wasFirst && mrpCanon(next) === mrpCanon(fires)) return; fires = next; }
         persistFires();
         renderFires();
         renderVibrantReport();
@@ -10059,13 +10066,14 @@ Add New Stop
       db.collection('waters').onSnapshot(snap => {
         if (snap.metadata.fromCache) return;
         const remote = snap.docs.map(d => ({ ...d.data() }));
+        const wasFirst = first;
         if (first) {
           first = false;
           // Waters saved on this device before sync was ready go up to the shared database
           const have = new Set(remote.map(r => r.id));
           waters.filter(f => !have.has(f.id)).forEach(f => { remote.push(f); writeWater(f); });
         }
-        waters = sortWaters(remote);
+        { const next = sortWaters(remote); if (!wasFirst && mrpCanon(next) === mrpCanon(waters)) return; waters = next; }
         persistWaters();
         renderWaters();
         renderVibrantReport();
@@ -10480,13 +10488,14 @@ Add New Stop
       db.collection('pcws').onSnapshot(snap => {
         if (snap.metadata.fromCache) return;
         const remote = snap.docs.map(d => ({ ...d.data() }));
+        const wasFirst = first;
         if (first) {
           first = false;
           // Pcws saved on this device before sync was ready go up to the shared database
           const have = new Set(remote.map(r => r.id));
           pcws.filter(f => !have.has(f.id)).forEach(f => { remote.push(f); writePcw(f); });
         }
-        pcws = sortPcws(remote);
+        { const next = sortPcws(remote); if (!wasFirst && mrpCanon(next) === mrpCanon(pcws)) return; pcws = next; }
         persistPcws();
         renderPcws();
         renderVibrantReport();
@@ -11903,7 +11912,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   window.leadSetCurrentStatus = function (kind, id, val) {
     var f = leadFind(kind, id); if (!f) return; var c = leadCfg(kind);
     f.currentStatus = val; if (!val) delete f.currentStatus;
-    c.write(f); c.after(); showToast(val ? 'Current status: ' + val : 'Current status cleared');
+    c.write(f); showToast(val ? 'Current status: ' + val : 'Current status cleared');
   };
   window.saveLeadNote = function (btn, kind, id) {
     var f = leadFind(kind, id); if (!f) return;
