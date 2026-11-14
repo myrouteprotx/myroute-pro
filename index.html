@@ -6536,7 +6536,7 @@ Add New Stop
           + (() => { const r3 = RM_NEAR_MI * 1609.34 / (111320 / RM.S); return r3 > 12 && r3 < 4000 ? `<circle r="${r3.toFixed(1)}" fill="rgba(34,211,238,0.05)" stroke="rgba(34,211,238,0.55)" stroke-width="1.5" stroke-dasharray="6 6"/>` : ''; })()
           + `<circle r="16" fill="rgba(59,130,246,0.25)"><animate attributeName="r" values="9;22;9" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.9;0;0.9" dur="2.4s" repeatCount="indefinite"/></circle>`
           + `<circle r="8" fill="#2563eb" stroke="#ffffff" stroke-width="3"/>`
-          + `<text y="-16" text-anchor="middle" class="rm-lbl">You are here</text></g>`;
+          + `<text y="-16" text-anchor="middle" class="rm-lbl">${RM.me.src === 'office' ? 'Office' : 'You are here'}</text></g>`;
       }
 
       svg.innerHTML = h;
@@ -6835,6 +6835,23 @@ Add New Stop
     }
     function rmDistText(mi) { return mi < 0.1 ? Math.max(10, Math.round(mi * 5280 / 10) * 10) + ' ft' : (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + ' mi'; }
 
+    // Desktop: show the saved default address (set in Settings) as "Office"
+    async function rmUseOffice() {
+      let e = homeEntry();
+      if (!e) {
+        try { const d = await dbHandle.doc('meta/home').get(); if (d && d.exists) { const x = d.data(); if (x && x.data) { localStorage.setItem(HOME_KEY, x.data); homeRender(); e = homeEntry(); } } } catch (er) {}
+      }
+      if (!e) return false;
+      let lat = e.lat, lng = e.lng;
+      if (!(Number.isFinite(lat) && Number.isFinite(lng))) {
+        try { const g = await rmGeo(e.addr); if (g) { lat = g[0]; lng = g[1]; const d = homeData(); const en = d.list[d.def]; if (en) { en.lat = lat; en.lng = lng; homeSave(d); } } } catch (er) {}
+      }
+      if (!(Number.isFinite(lat) && Number.isFinite(lng))) return false;
+      RM.me = { lat, lng, src: 'office' };
+      if (RM.w > 0 && RM.S < 20000) { RM.cLat = lat; RM.cLng = lng; RM.S = 20000; }
+      rmDraw(); rmNear();
+      return true;
+    }
     function rmLocStop() {
       if (RM.watch !== null && navigator.geolocation) { try { navigator.geolocation.clearWatch(RM.watch); } catch (e) {} }
       RM.watch = null;
@@ -6912,7 +6929,7 @@ Add New Stop
             <button type="button" onclick="rmManualMe('Move your spot.')" class="px-2.5 py-1 rounded-lg text-[11px] font-black text-slate-200 bg-slate-900 border border-slate-700">${RM.me.src === 'gps' ? 'Set spot by hand' : 'Move my spot'}</button>
             <button type="button" onclick="rmLocStop()" class="px-2.5 py-1 rounded-lg text-[11px] font-black text-rose-200 bg-rose-950/60 border border-rose-800/70">Clear</button>
           </div></div>
-        <p class="text-[10px] text-slate-400 font-semibold mt-1">${RM.me.src === 'gps' ? 'Following your live location.' : 'Using the spot you tapped.'} Distances are straight-line.</p>
+        <p class="text-[10px] text-slate-400 font-semibold mt-1">${RM.me.src === 'gps' ? 'Following your live location.' : RM.me.src === 'office' ? 'Using your Office address from Settings.' : 'Using the spot you tapped.'} Distances are straight-line.</p>
         <div class="mt-2 space-y-1.5 max-h-80 overflow-y-auto">${list.length ? list.map(({ v, mi }) => `<button type="button" onclick="rmGoTo('${escapeHtml(v.id)}')" class="w-full flex items-center justify-between gap-3 text-left px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 active:scale-[0.99] transition">
             <span class="min-w-0"><span class="block text-xs font-extrabold text-white truncate">${escapeHtml(v.businessName || 'Visit')}</span><span class="block text-[11px] text-slate-400 truncate">${escapeHtml(v.streetAddress || v.clientName || '')}</span></span>
             <span class="shrink-0 text-[11px] font-black text-cyan-300">${escapeHtml(rmDistText(mi))}</span></button>`).join('') : ('<p class="text-[11px] text-slate-400">No stops are within ' + rmMilesLabel() + ' of this spot.</p>')}</div>`;
@@ -7058,7 +7075,7 @@ Add New Stop
       Object.keys(btns).forEach(k => { document.getElementById(btns[k]).className = (k === tab) ? active[k] : idle; });
 
       if (tab === 'report') renderVibrantReport();
-      if (tab === 'map') { renderRouteMap(); if (!RM.autoLoc && RM.watch === null && !RM.me) { RM.autoLoc = true; try { rmLocate(); } catch (e) {} } }
+      if (tab === 'map') { renderRouteMap(); if (!RM.autoLoc && RM.watch === null && !RM.me) { RM.autoLoc = true; if (window.matchMedia('(min-width:1024px)').matches) { rmUseOffice().then(ok => { if (!ok) { try { rmLocate(); } catch (e) {} } }).catch(() => { try { rmLocate(); } catch (e) {} }); } else { try { rmLocate(); } catch (e) {} } } }
     }
 
     // Modal Operations
