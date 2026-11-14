@@ -5157,7 +5157,14 @@ Add New Stop
     }
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !document.getElementById('detailPage').classList.contains('hidden')) closeDetail(); });
     let detailOrigin = 'home';
+    // A click that only closes an open drop-down box must not open the visit
+    ['pointerdown', 'mousedown', 'touchstart'].forEach(ev => document.addEventListener(ev, (e) => {
+      const ae = document.activeElement;
+      if (ae && ae.tagName === 'SELECT' && e.target !== ae) window.__selDismiss = Date.now() + 600;
+    }, true));
+    document.addEventListener('change', (e) => { if (e.target && e.target.tagName === 'SELECT') window.__selDismiss = Date.now() + 600; }, true);
     document.addEventListener('click', (e) => {
+      if (Date.now() < (window.__selDismiss || 0)) return;
       if (e.target.closest('a, button, input, select, textarea, label, summary')) return;
       const rr = e.target.closest('#repTableBody tr[data-rvid], #repFiresBody tr[data-rfid], #repWatersBody tr[data-rwid], #repPcwsBody tr[data-rpid]');
       if (rr) {
