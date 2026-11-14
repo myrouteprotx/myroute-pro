@@ -11672,9 +11672,9 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 <script>
 (function () {
   var KEY = 'mrp_intro_seen';
-  try { if (sessionStorage.getItem(KEY) === '1' && location.hash !== '#intro') return; } catch (e) {}
+  var DAY = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' }); try { if (localStorage.getItem(KEY) === DAY && location.hash !== '#intro') return; } catch (e) {}
   function start() {
-    try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+    try { localStorage.setItem(KEY, DAY); } catch (e) {}
     var root = document.createElement('div'); root.id = 'mrpIntro';
     var logoId = ''; try { var le = document.getElementById('repCompanyLogoId'); logoId = le ? le.value.trim() : ''; } catch (e) {}
     var nm = ''; try { var ne = document.getElementById('repCompanyName'); nm = ne ? ne.value.trim() : ''; } catch (e) {}
@@ -11682,7 +11682,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var logoSrc = logoId && logoId !== '5075726f436c65616e' ? '/_blob/' + logoId : 'puroclean-logo.png';
     var word = 'MyRoute Pro', h = '';
     for (var k = 0; k < word.length; k++) h += word[k] === ' ' ? '<span class="sp" style="--i:' + k + '">&nbsp;</span>' : '<span style="--i:' + k + '">' + word[k] + '</span>';
-    root.innerHTML = '<canvas></canvas><div class="flash"></div><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#128266; Tap for sound</button>'
+    root.innerHTML = '<canvas></canvas><div class="flash"></div><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#9654; Tap to begin</button>'
       + '<div class="ti"><h1>' + h + '</h1><div class="tag">The Smarter Way to Manage Your Market</div>'
       + '</div>';
     document.body.appendChild(root);
@@ -11729,8 +11729,10 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function stopAudio() { vTimers.forEach(clearTimeout); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {} try { if (ac && ac.state !== 'closed') setTimeout(function () { try { ac.close(); } catch (e) {} }, 200); } catch (e) {} }
     var sndBtn = root.querySelector('.snd');
     try { var AC = window.AudioContext || window.webkitAudioContext; if (AC) { ac = new AC(); } } catch (e) { ac = null; }
-    if (ac) { setTimeout(function () { if (done) return; if (ac.state === 'running') startAudio(); else if (nowS() < 4) sndBtn.style.display = ''; }, 120); }
-    sndBtn.addEventListener('click', function (ev) { ev.stopPropagation(); sndBtn.style.display = 'none'; try { if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.speak(new SpeechSynthesisUtterance('')); } } catch (e) {} ac.resume().then(function () { startAudio(); }).catch(function () {}); });
+    var begun = false;
+    function begin() { if (begun) return; begun = true; t0 = performance.now(); requestAnimationFrame(frame); }
+    if (ac) { setTimeout(function () { if (done) return; if (ac.state === 'running') { begin(); startAudio(); } else { sndBtn.style.display = ''; } }, 120); } else { setTimeout(begin, 0); }
+    sndBtn.addEventListener('click', function (ev) { ev.stopPropagation(); sndBtn.style.display = 'none'; try { if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.speak(new SpeechSynthesisUtterance('')); } } catch (e) {} begin(); ac.resume().then(function () { startAudio(); }).catch(function () {}); });
     function io(x) { x = Math.max(0, Math.min(1, x)); return x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
     function lerp(a, b, t) { return a + (b - a) * t; }
     var RT = []; for (i = 0; i < 11; i++) RT.push({ a: (i - 5) * 1.15 + (rnd() - .5) * .5, b: .5 + rnd() * 1.1, c: .12 + rnd() * .2, p: rnd() * 6.28, hue: i % 3 === 0 ? '#60a5fa' : i % 3 === 1 ? '#22d3ee' : '#3b82f6' });
@@ -11797,7 +11799,6 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function finish() { if (done) return; done = true; try { stopAudio(); } catch (e) {} root.classList.add('out'); setTimeout(function () { if (root.parentNode) root.parentNode.removeChild(root); }, 950); removeEventListener('resize', size); }
     root.querySelector('.skip').addEventListener('click', finish);
     root.addEventListener('click', finish);
-    requestAnimationFrame(frame);
   }
   function waitThenStart() {
     var tries = 0;
