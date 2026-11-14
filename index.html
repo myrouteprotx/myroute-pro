@@ -11789,7 +11789,17 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
     });
     return out;
   }
-  window.__projOpen = function (kind, id) { try { document.querySelectorAll('.pj-tile.open').forEach(function (t) { t.classList.remove('open'); }); openDetail(kind, id); } catch (e) {} };
+  window.__projOpen = function (kind, id) {
+    try { document.querySelectorAll('.pj-tile.open').forEach(function (t) { t.classList.remove('open'); }); } catch (e) {}
+    function flash(row) { try { row.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { row.scrollIntoView(); } row.classList.add('rm-flash'); setTimeout(function () { row.classList.remove('rm-flash'); }, 3200); }
+    try {
+      if (kind === 'visit') { goToVisit(id); return; }
+      var body = { fire: 'fireTableBody', water: 'waterTableBody', pcw: 'pcwTableBody' }[kind], sel = '#' + body + ' tr[data-fid="' + String(id).replace(/"/g, '') + '"]';
+      var row = document.querySelector(sel);
+      if (!row) { try { if (kind === 'fire') { firesShowAll = true; renderFires(); } else if (kind === 'water') { watersShowAll = true; renderWaters(); } else { pcwsShowAll = true; renderPcws(); } } catch (e) {} row = document.querySelector(sel); }
+      if (row) { flash(row); } else { openDetail(kind, id); }
+    } catch (e) { try { openDetail(kind, id); } catch (e2) {} }
+  };
   window.__projTap = function (el) { var t = el.parentNode, was = t.classList.contains('open'); document.querySelectorAll('.pj-tile.open').forEach(function (x) { x.classList.remove('open'); }); if (!was) t.classList.add('open'); };
   document.addEventListener('click', function (e) { if (!e.target.closest || !e.target.closest('.pj-tile')) document.querySelectorAll('.pj-tile.open').forEach(function (t) { t.classList.remove('open'); }); });
   function render() {
