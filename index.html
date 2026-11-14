@@ -1275,6 +1275,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     .pj-item:hover { background:rgba(40,130,255,.35); }
     .pj-dot { width:8px; height:8px; border-radius:50%; flex:none; }
     .pj-none { padding:10px; font-size:11px; font-weight:700; color:#9bb2e6; }
+    @media (min-width: 900px) { .pj-tiles { grid-template-columns:repeat(7,minmax(0,1fr)); } }
     @media (max-width: 640px) { .pj-tiles { grid-template-columns:repeat(2,minmax(0,1fr)); } .pj-drop { left:0; right:0; } }
   </style>
 </head>
