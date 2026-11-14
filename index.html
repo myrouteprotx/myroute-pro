@@ -635,7 +635,6 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     @media (max-width: 640px) {
       .mobile-settings-link { display: block !important; }
       #undoDock { display: block !important; left: max(12px, env(safe-area-inset-left, 0px)) !important; bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important; }
-      #undoDock #settingsDockBtn { display: none !important; }
       #undoDock #undoBtn { padding: 7px 14px !important; font-size: 11px !important; border-width: 2px !important; border-radius: 14px !important; }
       #undoDock #undoBtn svg, #undoDock #undoBtn i { width: 14px !important; height: 14px !important; }
       #undoDock #undoLabel { display: none !important; }
@@ -1202,6 +1201,15 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       #fireTableBody td:nth-child(6)::before, #waterTableBody td:nth-child(6)::before, #pcwTableBody td:nth-child(6)::before { content: "Notes & contact" !important; display: block !important; }
       #fireTableBody td:nth-child(7)::before, #waterTableBody td:nth-child(7)::before, #pcwTableBody td:nth-child(7)::before { content: "Actions" !important; display: block !important; }
       #fireTableBody td:nth-child(7), #waterTableBody td:nth-child(7), #pcwTableBody td:nth-child(7) { text-align: left !important; }
+    }
+    /* Go back and Settings live in the top bar, next to Add New Stop */
+    #hdrActions #undoDock { position: static !important; inset: auto !important; left: auto !important; bottom: auto !important; max-width: none; z-index: auto; display: inline-grid !important; grid-template-columns: auto auto; gap: 8px; }
+    #hdrActions #undoDock .dock-btn { padding: 9px 14px !important; border-radius: 12px !important; font-size: 12px !important; }
+    @media screen and (max-width: 767px) {
+      #hdrActions { display: grid !important; grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
+      #hdrActions #undoDock { grid-template-columns: 2fr 1fr; width: 100%; }
+      #hdrActions #undoDock #undoLabel { display: none !important; }
+      #hdrActions #undoDock #settingsDockBtn { display: inline-flex !important; }
     }
   </style>
 </head>
@@ -11623,6 +11631,12 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   window.waterRowTemplate = function (f) { return leadRow('water', f); };
   window.pcwRowTemplate = function (f) { return leadRow('pcw', f); };
   try { if (typeof renderFires === 'function') { renderFires(); renderWaters(); renderPcws(); } } catch (e) {}
+})();
+</script>
+<script>
+(function () {
+  function mv() { var d = document.getElementById('undoDock'), h = document.getElementById('hdrActions'); if (d && h && d.parentNode !== h) { d.classList.remove('fixed', 'bottom-5', 'left-5'); h.insertBefore(d, h.firstChild); } }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mv); else mv();
 })();
 </script>
 </body></html>
