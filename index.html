@@ -917,6 +917,17 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     section[class*="border-red-500"] { border-color: #fb8f6e !important; box-shadow: 0 0 14px rgba(251,143,110,.45), inset 0 0 0 1px rgba(251,143,110,.35); }
     section[class*="border-sky-500"] { border-color: #33dbfd !important; box-shadow: 0 0 14px rgba(51,219,253,.45), inset 0 0 0 1px rgba(51,219,253,.35); }
 
+
+    /* Desktop: Current Week and Urgent Reach-Back Radar sit side by side (they stack on smaller screens) */
+    @media screen and (min-width: 1100px) {
+      #routeTrackerView { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); column-gap: 1.5rem; row-gap: 1.5rem; grid-auto-flow: row dense; align-items: stretch; }
+      #routeTrackerView > * { grid-column: 1 / -1; margin-top: 0 !important; }
+      #routeTrackerView > #weekBanner { grid-column: 1; }
+      #routeTrackerView > #radarSection { grid-column: 2; }
+      #weekBanner, #radarSection { display: flex; flex-direction: column; justify-content: center; }
+      #weekBanner > div { justify-content: flex-start !important; gap: 12px 16px; }
+      #radarSection > div:first-child { border-bottom: 0 !important; padding-bottom: 0 !important; }
+    }
     /* Text and boxes 3% larger across the app */
     header, main { zoom: 1.03; }
 
@@ -1632,7 +1643,6 @@ body.mrp-modal-open *{animation-play-state:paused !important}
             </button>
             <button type="button" id="clearDelinquentBtn" onclick="clearAllDelinquent()" title="Remove every visit from this radar by clearing its reach-back date" class="text-xs font-black bg-rose-600/80 hover:bg-rose-500 text-white border border-rose-300/60 px-3 py-1 rounded-full transition cursor-pointer">Clear all</button>
           </div>
-          <p class="text-xs text-slate-400">Accounts scheduled for contact today or overdue for follow-up</p>
         </div>
 
         <div id="radarRouteBar" style="display:none;position:sticky;top:8px;z-index:15" class="mb-3 flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-slate-900/95 border border-pink-400/60 shadow-xl">
