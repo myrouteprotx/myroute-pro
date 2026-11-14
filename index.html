@@ -1182,15 +1182,26 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       #visitsTableBody > tr .note-save, #todayTableBody > tr .note-save, #yesterdayTableBody > tr .note-save { right: calc(13.1% - 139px) !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(7) { right: calc(13.1% - 49px) !important; }
     }
-    /* Desktop: fire, water loss and company lead lists look like the visit lists (wide notes box, icons under the notes) */
+    /* Fire, water loss and Company lead lists: same columns and look as the visit lists */
     @media screen and (min-width: 1100px) {
-      table:has(#fireTableBody) tr, table:has(#waterTableBody) tr, table:has(#pcwTableBody) tr { grid-template-columns: minmax(150px,1.3fr) minmax(130px,1fr) minmax(140px,1.2fr) minmax(130px,.9fr) minmax(140px,1fr) minmax(360px,2.1fr) minmax(130px,.9fr) !important; }
+      table:has(#fireTableBody) tr, table:has(#waterTableBody) tr, table:has(#pcwTableBody) tr { grid-template-columns: minmax(150px,1.3fr) minmax(150px,1.2fr) minmax(150px,1fr) minmax(150px,1fr) minmax(220px,1.4fr) minmax(440px,2.1fr) !important; }
       table:has(#fireTableBody) tbody > tr, table:has(#waterTableBody) tbody > tr, table:has(#pcwTableBody) tbody > tr { position: relative; padding-bottom: 46px; }
-      #fireTableBody > tr > td:nth-child(8), #waterTableBody > tr > td:nth-child(8), #pcwTableBody > tr > td:nth-child(8) { display: block !important; position: absolute !important; right: calc(23.2% - 100px); bottom: 6px; padding: 0 !important; width: auto !important; min-width: 0 !important; z-index: 2; background: transparent; text-align: right !important; }
-      #fireTableBody > tr > td:nth-child(8) > div, #waterTableBody > tr > td:nth-child(8) > div, #pcwTableBody > tr > td:nth-child(8) > div { flex-wrap: nowrap !important; justify-content: flex-end !important; margin: 0 !important; }
-      table:has(#fireTableBody) th:nth-child(8), table:has(#waterTableBody) th:nth-child(8), table:has(#pcwTableBody) th:nth-child(8) { display: none !important; }
-      #fireTableBody > tr > td:nth-child(6) > p, #waterTableBody > tr > td:nth-child(6) > p, #pcwTableBody > tr > td:nth-child(6) > p { display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; min-height: 84px; background: #0b1127; border: 1px solid #475569; border-radius: 8px; padding: 8px 10px; font-size: 14px !important; line-height: 1.35; color: #e2e8f0 !important; }
+      #fireTableBody > tr .note-save, #waterTableBody > tr .note-save, #pcwTableBody > tr .note-save { position: absolute !important; right: calc(13.1% - 139px) !important; bottom: 10px; margin: 0 !important; z-index: 2; }
+      #fireTableBody > tr > td:nth-child(7), #waterTableBody > tr > td:nth-child(7), #pcwTableBody > tr > td:nth-child(7) { display: block !important; position: absolute !important; right: calc(13.1% - 49px) !important; bottom: 6px; padding: 0 !important; width: auto !important; min-width: 0 !important; z-index: 2; background: transparent; text-align: right !important; }
+      #fireTableBody > tr > td:nth-child(7) .act-wrap, #waterTableBody > tr > td:nth-child(7) .act-wrap, #pcwTableBody > tr > td:nth-child(7) .act-wrap { flex-wrap: nowrap !important; justify-content: flex-end !important; margin: 0 !important; width: auto !important; }
+      table:has(#fireTableBody) th:nth-child(7), table:has(#waterTableBody) th:nth-child(7), table:has(#pcwTableBody) th:nth-child(7) { display: none !important; }
       table:has(#fireTableBody) th:nth-child(6), table:has(#waterTableBody) th:nth-child(6), table:has(#pcwTableBody) th:nth-child(6) { text-align: center !important; }
+      #fireTableBody > tr > td:nth-child(6) .note-box textarea, #waterTableBody > tr > td:nth-child(6) .note-box textarea, #pcwTableBody > tr > td:nth-child(6) .note-box textarea { width: 100% !important; box-sizing: border-box; min-height: 100px; font-size: 14px !important; }
+      #fireTableBody > tr > td:nth-child(6), #waterTableBody > tr > td:nth-child(6), #pcwTableBody > tr > td:nth-child(6) { min-width: 0 !important; }
+    }
+    @media screen and (max-width: 1099px) {
+      #fireTableBody td:nth-child(2)::before, #waterTableBody td:nth-child(2)::before, #pcwTableBody td:nth-child(2)::before { content: "Address" !important; display: block !important; }
+      #fireTableBody td:nth-child(3)::before, #waterTableBody td:nth-child(3)::before, #pcwTableBody td:nth-child(3)::before { content: "Visited on" !important; display: block !important; }
+      #fireTableBody td:nth-child(4)::before, #waterTableBody td:nth-child(4)::before, #pcwTableBody td:nth-child(4)::before { content: "Outcome" !important; display: block !important; }
+      #fireTableBody td:nth-child(5)::before, #waterTableBody td:nth-child(5)::before, #pcwTableBody td:nth-child(5)::before { content: "Current status" !important; display: block !important; }
+      #fireTableBody td:nth-child(6)::before, #waterTableBody td:nth-child(6)::before, #pcwTableBody td:nth-child(6)::before { content: "Notes & contact" !important; display: block !important; }
+      #fireTableBody td:nth-child(7)::before, #waterTableBody td:nth-child(7)::before, #pcwTableBody td:nth-child(7)::before { content: "Actions" !important; display: block !important; }
+      #fireTableBody td:nth-child(7), #waterTableBody td:nth-child(7), #pcwTableBody td:nth-child(7) { text-align: left !important; }
     }
   </style>
 </head>
@@ -1542,13 +1553,12 @@ body.mrp-modal-open *{animation-play-state:paused !important}
           <table class="stack w-full text-left text-xs border-collapse">
             <thead class="bg-slate-900/90 text-red-200/80 font-bold uppercase tracking-wider border-b border-red-500/30">
               <tr>
-                <th scope="col" class="py-3.5 px-4">Fire Address</th>
-                <th scope="col" class="py-3.5 px-4">Homeowner / Property Owner</th>
-                <th scope="col" class="py-3.5 px-4">Phone & Email</th>
+                <th scope="col" class="py-3.5 px-4">Business & Client</th>
+                <th scope="col" class="py-3.5 px-4">Address / Navigation</th>
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
-                <th scope="col" class="py-3.5 px-4">Outcome of Visit</th>
-                <th scope="col" class="py-3.5 px-4">Notes</th>
-                <th scope="col" class="py-3.5 px-4">Weekly Report</th>
+                <th scope="col" class="py-3.5 px-4">Outcome Status</th>
+                <th scope="col" class="py-3.5 px-4"><div class="cs-pair"><div class="cs-a">Current Status</div><div class="cs-b">Previous visits</div></div></th>
+                <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -1582,13 +1592,12 @@ body.mrp-modal-open *{animation-play-state:paused !important}
           <table class="stack w-full text-left text-xs border-collapse">
             <thead class="bg-slate-900/90 text-sky-200/80 font-bold uppercase tracking-wider border-b border-sky-500/30">
               <tr>
-                <th scope="col" class="py-3.5 px-4">Loss Address</th>
-                <th scope="col" class="py-3.5 px-4">Homeowner / Property Owner</th>
-                <th scope="col" class="py-3.5 px-4">Phone & Email</th>
+                <th scope="col" class="py-3.5 px-4">Business & Client</th>
+                <th scope="col" class="py-3.5 px-4">Address / Navigation</th>
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
-                <th scope="col" class="py-3.5 px-4">Outcome of Visit</th>
-                <th scope="col" class="py-3.5 px-4">Notes</th>
-                <th scope="col" class="py-3.5 px-4">Weekly Report</th>
+                <th scope="col" class="py-3.5 px-4">Outcome Status</th>
+                <th scope="col" class="py-3.5 px-4"><div class="cs-pair"><div class="cs-a">Current Status</div><div class="cs-b">Previous visits</div></div></th>
+                <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -1622,13 +1631,12 @@ body.mrp-modal-open *{animation-play-state:paused !important}
           <table class="stack w-full text-left text-xs border-collapse">
             <thead class="bg-slate-900/90 text-emerald-200/80 font-bold uppercase tracking-wider border-b border-emerald-500/30">
               <tr>
-                <th scope="col" class="py-3.5 px-4">Property Address</th>
-                <th scope="col" class="py-3.5 px-4">Homeowner / Property Owner</th>
-                <th scope="col" class="py-3.5 px-4">Phone & Email</th>
+                <th scope="col" class="py-3.5 px-4">Business & Client</th>
+                <th scope="col" class="py-3.5 px-4">Address / Navigation</th>
                 <th scope="col" class="py-3.5 px-4">Visited On / Reach Back</th>
-                <th scope="col" class="py-3.5 px-4">Outcome of Visit</th>
-                <th scope="col" class="py-3.5 px-4">Notes</th>
-                <th scope="col" class="py-3.5 px-4">Weekly Report</th>
+                <th scope="col" class="py-3.5 px-4">Outcome Status</th>
+                <th scope="col" class="py-3.5 px-4"><div class="cs-pair"><div class="cs-a">Current Status</div><div class="cs-b">Previous visits</div></div></th>
+                <th scope="col" class="py-3.5 px-4">Notes and Last Contacted</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -11554,6 +11562,63 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
       + '<div style="overflow:auto;flex:1;min-height:0;overscroll-behavior:contain">' + (rows || '<div style="padding:14px 0;font-size:13px;opacity:.85">No days with visits yet.</div>') + '</div></div>';
     document.body.appendChild(m);
   };
+})();
+</script>
+<script>
+/* Fire, water loss and Company lead rows use the same columns, headers and pills as the visit rows */
+(function () {
+  var KIND = { fire: { name: 'Fire', hue: 'red' }, water: { name: 'Water', hue: 'sky' }, pcw: { name: 'Pcw', hue: 'emerald' } };
+  function esc(x) { return escapeHtml(x == null ? '' : String(x)); }
+  function fn(kind, tail) { return window[kind + tail]; }
+  window.leadSetCurrentStatus = function (kind, id, val) {
+    var f = leadFind(kind, id); if (!f) return; var c = leadCfg(kind);
+    f.currentStatus = val; if (!val) delete f.currentStatus;
+    c.write(f); c.after(); showToast(val ? 'Current status: ' + val : 'Current status cleared');
+  };
+  window.saveLeadNote = function (btn, kind, id) {
+    var f = leadFind(kind, id); if (!f) return;
+    var box = btn.closest('.note-box'), ta = box.querySelector('textarea'), c = leadCfg(kind);
+    f.notes = ta.value.trim(); c.write(f); c.after();
+    btn.dataset.orig = f.notes; btn.textContent = 'Saved'; btn.className = 'note-save note-state-saved mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-black border';
+    showToast('Note saved');
+  };
+  function curSelect(kind, f) {
+    var cur = f.currentStatus || '';
+    var opts = '<option value="" style="background:#1e293b;color:#ffffff;"' + (cur ? '' : ' selected') + '>Select status</option>' + CURRENT_STATUS_OPTIONS.map(function (x) { return '<option value="' + esc(x) + '" style="background:#1e293b;color:#ffffff;" ' + (cur === x ? 'selected' : '') + '>' + esc(x) + '</option>'; }).join('');
+    return '<select onchange="leadSetCurrentStatus(\'' + kind + '\',\'' + esc(f.id) + '\', this.value)" aria-label="Current status" class="vbox text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-800 text-white border border-slate-600">' + opts + '</select>';
+  }
+  window.leadRow = function (kind, f) {
+    var K = KIND[kind].name, id = esc(f.id), wk = getISOWeekString();
+    var weeks = fn(kind, 'Weeks')(f), inThis = weeks.indexOf(wk) >= 0;
+    var other = weeks.filter(function (w) { return w !== wk; });
+    var names = [];
+    if (f.homeownerName) names.push('<div class="text-xs text-white font-extrabold">' + esc(f.homeownerName) + '<span class="text-[10px] text-slate-300 font-semibold"> \u00b7 homeowner</span></div>');
+    if (f.ownerName) names.push('<div class="text-xs text-white font-extrabold">' + esc(f.ownerName) + '<span class="text-[10px] text-slate-300 font-semibold"> \u00b7 property owner</span></div>');
+    var q = encodeURIComponent(f.streetAddress || '');
+    var overdue = !!(f.followUpDate && f.followUpDate < todayString);
+    var visitBox = dateBoxHtml(f.visitDate, "change" + K + "Date('" + id + "', this.value)", 'Visit date', 'Choose the visit date', false).replace('class="vbox vdate', 'class="vbox vdate vd-visit');
+    var reachBox = dateBoxHtml(f.followUpDate, "leadSetReach('" + kind + "','" + id + "', this.value)", 'Reach-back date', (overdue ? 'Overdue. ' : '') + 'Change the reach-back date', overdue).replace('class="vbox vdate', 'class="vbox vdate vd-reach');
+    var weekBtn = '<button type="button" onclick="toggle' + K + 'Week(\'' + id + '\')" aria-pressed="' + inThis + '" class="cpill cpill-bulk" style="' + (inThis ? 'background:rgba(220,38,38,.55);border-color:#fca5a5;color:#fff' : '') + '"><span>' + (inThis ? "\u2713 In this week's report" : '+ Add to this week') + '</span></button>'
+      + (other.length ? '<div class="text-[10px] text-slate-300" style="grid-column:1/-1;text-align:center">Also in: ' + esc(other.map(function (w) { return 'Wk ' + parseInt(w.split('-W')[1], 10); }).join(', ')) + '</div>' : '');
+    var pills = leadPillsHtml(f, kind).replace(/<\/div>$/, weekBtn + '</div>');
+    var notes = '<div class="note-box mt-1" data-nid="' + id + '"><div class="notes-lbl">Notes and Last Contacted</div>'
+      + '<textarea rows="3" placeholder="Add a note..." aria-label="Notes for ' + esc(f.streetAddress || 'this stop') + '" oninput="noteTyped(this)" class="w-full text-[11px] leading-snug px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-y">' + esc(f.notes || '') + '</textarea>'
+      + '<button type="button" onclick="saveLeadNote(this,\'' + kind + '\',\'' + id + '\')" data-orig="' + esc(f.notes || '') + '" class="note-save note-state-saved mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-black border">Saved</button></div>';
+    return '<tr class="hover:bg-slate-700/40 transition' + (isOnRoute(f) ? ' route-on' : '') + '" data-fid="' + id + '">'
+      + '<td class="py-3.5 px-4 max-w-[220px]"><div class="text-xs font-extrabold text-white break-words flex items-start gap-2"><input type="checkbox" class="route-check" ' + (isOnRoute(f) ? 'checked' : '') + ' onchange="toggleRoute(\'' + id + '\', this.checked)" aria-label="Add to my planned route" title="Check to include this stop in your planned route"><span>' + esc(f.streetAddress || 'No address') + '</span></div>'
+        + (names.length ? '<div class="mt-1">' + names.join('') + '</div>' : '<div class="text-slate-400 italic text-[11px] mt-1">No names yet</div>')
+        + '<div class="mt-1.5">' + pills + '</div></td>'
+      + '<td class="py-3.5 px-4 max-w-[200px]">' + (f.streetAddress ? '<div class="text-[11px] font-semibold" style="word-break:break-word">' + addrLinkHtml(f.streetAddress, '') + '</div>' : '<span class="text-slate-500 italic text-[11px]">No address</span>') + '</td>'
+      + '<td class="py-3.5 px-4 whitespace-nowrap text-slate-300 font-semibold">' + visitBox + reachBox + '</td>'
+      + '<td class="py-3.5 px-4 whitespace-nowrap"><div class="flex flex-col items-start gap-1.5"><select onchange="change' + K + 'Outcome(\'' + id + '\', this.value)" aria-label="Outcome of visit" class="vbox text-[11px] rounded-lg px-2.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 ' + fn(kind, 'OutcomeClass')(f.outcome) + '">' + fn(kind, 'OutcomeOptions')(f.outcome || '') + '</select></div></td>'
+      + '<td class="py-3.5 px-4 whitespace-nowrap"><div class="cs-pair"><div class="cs-a">' + curSelect(kind, f) + '</div><div class="cs-b">' + prevVisitsHtml(f) + '</div></div></td>'
+      + '<td class="py-3.5 px-4 max-w-xs">' + notes + '</td>'
+      + '<td class="py-3.5 px-4 text-right">' + leadActions(kind, f) + '</td></tr>';
+  };
+  window.fireRowTemplate = function (f) { return leadRow('fire', f); };
+  window.waterRowTemplate = function (f) { return leadRow('water', f); };
+  window.pcwRowTemplate = function (f) { return leadRow('pcw', f); };
+  try { if (typeof renderFires === 'function') { renderFires(); renderWaters(); renderPcws(); } } catch (e) {}
 })();
 </script>
 </body></html>
