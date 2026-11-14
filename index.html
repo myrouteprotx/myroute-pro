@@ -12137,8 +12137,21 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
         + ((e.photos && e.photos.length) ? '<div class="pn-thumbs">' + e.photos.map(function (pid) { return '<a href="/_blob/' + esc(pid) + '" target="_blank" rel="noopener"><img src="/_blob/' + esc(pid) + '" alt="Production photo" loading="lazy"></a>'; }).join('') + '</div>' : '') + '</div>';
     }).join('');
   }
+  /* older notes and photos saved before initials existed get the current user's initials once */
+  function backfill(kind, id) {
+    var r = rec(kind, id); if (!r) return;
+    var miss = (r.prodNotes || []).some(function (e) { return !e.by; }) || (r.prodPhotos || []).some(function (e) { return !e.by && !e.cby; });
+    if (!miss) return;
+    needInitials(function (ini) {
+      (r.prodNotes || []).forEach(function (e) { if (!e.by) e.by = ini; });
+      (r.prodPhotos || []).forEach(function (e) { if (!e.by && !e.cby) e.by = ini; });
+      try { persist(kind, r); } catch (er) { console.warn(er); }
+      var l = document.getElementById('pnList'); if (l) l.innerHTML = listHtml(kind, id); pfRefresh(kind, id);
+    });
+  }
   window.prodNotesHtml = function (kind, id) {
     pending = [];
+    setTimeout(function () { backfill(kind, id); }, 0);
     var r = rec(kind, id), st = r && r.currentStatus ? r.currentStatus : '';
     return '<div class="pn-box" data-pn-kind="' + kind + '" data-pn-id="' + esc(id) + '"><div class="pn-title"><span>&#128193; Production Notes</span>' + (st ? '<span class="pn-tag">' + esc(st) + '</span>' : '') + '</div>'
       + '<textarea class="pn-ta" id="pnText" placeholder="Add a production note..."></textarea>'
