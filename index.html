@@ -3473,7 +3473,7 @@ Add New Stop
       return `<select onchange="changeStatus('${item.id}', this.value)" aria-label="Outcome status" class="vbox text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 ${getStatusSelectClass(item.visitStatus)}">${options}</select>`;
     }
 
-    const CURRENT_STATUS_OPTIONS = ['Sold \u2013 Sent to Production', 'Turned Over to Production', 'Pending Job Scheduling', 'Job Scheduled', 'Production in Progress', 'Complete', 'Job Closed \u2013 Finalized'];
+    const CURRENT_STATUS_OPTIONS = ['Sold \u2013 Sent to Production', 'Production Handoff Complete', 'Awaiting Production Assignment', 'Job Scheduled', 'Production in Progress', 'Complete \u2013 Pending Closeout', 'Job Closed \u2013 Finalized'];
     // A status saved earlier with old wording still shows until a new one is picked
     function csOptionList(cur) { return (cur && CURRENT_STATUS_OPTIONS.indexOf(cur) < 0) ? [cur].concat(CURRENT_STATUS_OPTIONS) : CURRENT_STATUS_OPTIONS; }
     function prevVisitDates(item) {
