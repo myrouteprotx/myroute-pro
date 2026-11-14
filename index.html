@@ -12032,7 +12032,7 @@ html.mrp-introing body > *:not(#mrpIntro){visibility:hidden !important}
   var IW = 1672, IH = 941, K = window.__MRP_K || .75;
   function start() {
     var root = document.createElement('div'); root.id = 'mrpIntro';
-    root.innerHTML = '<video playsinline webkit-playsinline preload="auto" src="intro-end.mp4?v=18"></video><canvas></canvas><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#9654; Tap to begin</button>';
+    root.innerHTML = '<video playsinline webkit-playsinline preload="auto" src="intro-end.mp4?v=19"></video><canvas></canvas><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#9654; Tap to begin</button>';
     document.body.appendChild(root); document.documentElement.classList.add('mrp-introing');
     var v = root.querySelector('video'), cv = root.querySelector('canvas'), snd = root.querySelector('.snd'), done = false, cut = false, raf = 0, t0 = 0, began = false, spoke = false, spokeDone = false;
     var ctx = cv.getContext('2d'), W = 0, H = 0, S0 = 1;
@@ -12136,7 +12136,7 @@ html.mrp-introing body > *:not(#mrpIntro){visibility:hidden !important}
     var pre = null;
     function sounds() {
       /* the map-scene sound (deep bass hum plus a soft singing-bowl tone as the laser lights each pin) is one prepared recording */
-      try { pre = new Audio('intro-pre.mp3?v=16'); pre.volume = 1; var pp = pre.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {}
+      try { pre = new Audio('intro-pre.mp3?v=17'); pre.volume = 1; var pp = pre.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {}
     }
     function speak() {
       if (spoke) return; spoke = true;
