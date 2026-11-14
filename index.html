@@ -5120,7 +5120,19 @@ Add New Stop
       if (kind !== 'visit') return '';
       const v = visits.find(x => x.id === id); if (!v) return '';
       const n = managedItems(v).length + (v.groupId ? Math.max(0, groupMembers(v.groupId).length - 1) : 0); if (!n) return '';
-      return `<span title="${n} other propert${n > 1 ? 'ies' : 'y'}" style="color:#ff8a00;font-weight:900;font-size:26px;line-height:1;text-shadow:0 0 12px rgba(255,138,0,.55)">(${n})</span>`;
+      return `<a href="#" onclick="detailGoProps('${escapeHtml(id)}');return false" title="Show the ${n} other propert${n > 1 ? 'ies' : 'y'} in the visits list" style="color:#ff8a00;font-weight:900;font-size:26px;line-height:1;text-shadow:0 0 12px rgba(255,138,0,.55);text-decoration:none;cursor:pointer;border-bottom:2px solid rgba(255,138,0,.5)">(${n})</a>`;
+    }
+    function detailGoProps(id) {
+      closeDetail();
+      if (!document.getElementById('detailPage').classList.contains('hidden')) return; /* unsaved-changes warning is showing */
+      try { switchMainTab('tracker'); } catch (e) {}
+      setTimeout(() => {
+        const tr = document.querySelector('tr[data-vid="' + String(id).replace(/"/g, '') + '"]');
+        if (!tr) { showToast('That visit is hidden by the current filters'); return; }
+        const nx = tr.nextElementSibling, rows = [tr].concat(nx && nx.classList.contains('prop-row') ? [nx] : []);
+        tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        rows.forEach(r => { r.style.transition = 'box-shadow .4s'; r.style.boxShadow = 'inset 0 0 0 2px #ff8a00, 0 0 18px rgba(255,138,0,.6)'; setTimeout(() => { r.style.boxShadow = ''; }, 2600); });
+      }, 120);
     }
     function detailHistoryLink(kind, id) {
       const r = kind === 'visit' ? visits.find(x => x.id === id) : leadFind(kind, id);
