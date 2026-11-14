@@ -11837,7 +11837,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var sc = mk(Math.round(IW * K), Math.round(IH * K)), sx = sc.getContext('2d'), mkc = mk(sc.width, sc.height), mx = mkc.getContext('2d'), lt = mk(sc.width, sc.height), lx = lt.getContext('2d'), stamp = mk(256, 256);
     var sg = stamp.getContext('2d'), gr = sg.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.2, 'rgba(255,255,255,.85)'); gr.addColorStop(.45, 'rgba(255,255,255,.5)'); gr.addColorStop(.7, 'rgba(255,255,255,.17)'); gr.addColorStop(.88, 'rgba(255,255,255,.04)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); sg.fillStyle = gr; sg.fillRect(0, 0, 256, 256);
     var voiceTimer = 0;
-    function finish() { if (done) return; done = true; cancelAnimationFrame(raf); clearTimeout(voiceTimer); try { speechSynthesis.cancel(); } catch (e) {} try { v.pause(); } catch (e) {} root.classList.add('out'); setTimeout(function () { if (root.parentNode) root.parentNode.removeChild(root); }, 950); }
+    function finish() { if (done) return; done = true; cancelAnimationFrame(raf); clearTimeout(voiceTimer); try { speechSynthesis.cancel(); } catch (e) {} try { if (pre) pre.pause(); } catch (e) {} try { v.pause(); } catch (e) {} root.classList.add('out'); setTimeout(function () { if (root.parentNode) root.parentNode.removeChild(root); }, 950); }
     root.querySelector('.skip').addEventListener('click', function (e) { e.stopPropagation(); finish(); });
     root.addEventListener('click', finish);
     v.addEventListener('ended', function () { var n = 0, w = setInterval(function () { n += 200; if ((spokeDone || !spoke) && n >= 500 || n >= 4000) { clearInterval(w); finish(); } }, 200); });
@@ -11906,13 +11906,10 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var ac = null;
     function tone(f, at, dur, gain, type) { try { var o = ac.createOscillator(), g = ac.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, ac.currentTime + at); g.gain.linearRampToValueAtTime(gain, ac.currentTime + at + .02); g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + at + dur); o.connect(g); g.connect(ac.destination); o.start(ac.currentTime + at); o.stop(ac.currentTime + at + dur + .05); } catch (e) {} }
     function sweep(at, dur) { try { var n = ac.sampleRate * dur, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0); for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; var s = ac.createBufferSource(); s.buffer = b; var f = ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 2; f.frequency.setValueAtTime(300, ac.currentTime + at); f.frequency.exponentialRampToValueAtTime(5000, ac.currentTime + at + dur); var g = ac.createGain(); g.gain.setValueAtTime(0, ac.currentTime + at); g.gain.linearRampToValueAtTime(.16, ac.currentTime + at + dur * .9); g.gain.linearRampToValueAtTime(0, ac.currentTime + at + dur); s.connect(f); f.connect(g); g.connect(ac.destination); s.start(ac.currentTime + at); } catch (e) {} }
+    var pre = null;
     function sounds() {
-      try { ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; }
-      if (!ac) return;
-      /* a sharp ping each time the laser lights a pin (the first four notes of a rising scale) */
-      [[1319, 2.8], [1568, 4.6], [1760, 5.6], [2093, 7.4]].forEach(function (p) { tone(p[0], p[1], .9, .07, 'sine'); tone(p[0] * 2, p[1], .35, .02, 'sine'); tone(p[0] * 3, p[1], .06, .02, 'triangle'); });
-      /* a deep bass hum under the whole map scene */
-      try { [[65, .26], [130, .07]].forEach(function (h) { var o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = h[0]; g.gain.setValueAtTime(0, ac.currentTime); g.gain.linearRampToValueAtTime(h[1], ac.currentTime + 1.5); g.gain.setValueAtTime(h[1], ac.currentTime + PRE - .2); g.gain.linearRampToValueAtTime(0, ac.currentTime + PRE + .7); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + PRE + .8); }); } catch (e) {}
+      /* the map-scene sound (deep bass hum plus a soft singing-bowl tone as the laser lights each pin) is one prepared recording */
+      try { pre = new Audio('intro-pre.mp3'); pre.volume = 1; var pp = pre.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {}
     }
     function speak() {
       if (spoke) return; spoke = true;
