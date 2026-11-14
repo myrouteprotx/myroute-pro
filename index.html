@@ -181,7 +181,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       if (!o) {
         o = document.createElement('div'); o.id = 'mrpAuth';
         o.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0b1127;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
-        o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.18;pointer-events:none"></div><div style="position:relative;width:100%;max-width:360px;background:rgba(17,26,54,.92);border:1px solid #324256;border-radius:16px;padding:22px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:4px">My Route Pro</div><div style="color:#93a3b9;font-size:13px;margin-bottom:14px">Sign in to load your stops on this device.</div>'
+        o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.144;pointer-events:none"></div><div style="position:relative;width:100%;max-width:360px;background:rgba(17,26,54,.92);border:1px solid #324256;border-radius:16px;padding:22px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:4px">My Route Pro</div><div style="color:#93a3b9;font-size:13px;margin-bottom:14px">Sign in to load your stops on this device.</div>'
           + '<input id="mrpEmail" type="email" autocomplete="username" placeholder="Email" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:8px">'
           + '<input id="mrpPass" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:10px">'
           + '<button id="mrpIn" type="button" style="width:100%;padding:13px;border-radius:10px;background:#00e6c7;border:2px solid #14ffe0;color:#04210f;font-weight:900;font-size:16px">Sign in</button>'
@@ -313,18 +313,18 @@ body.mrp-modal-open *{animation-play-state:paused !important}
             fuchsia: {"50": "#eaf4ff", "100": "#d3e8ff", "200": "#a8d1ff", "300": "#6fb4ff", "400": "#3a95ff", "500": "#1677ff", "600": "#0a5be0", "700": "#0a47b4", "800": "#0c3a8c", "900": "#0d2b66", "950": "#081a40"},
             blue: {"50": "#eaf4ff", "100": "#d3e8ff", "200": "#a8d1ff", "300": "#6fb4ff", "400": "#3a95ff", "500": "#1677ff", "600": "#0a5be0", "700": "#0a47b4", "800": "#0c3a8c", "900": "#0d2b66", "950": "#081a40"},
             violet: {"50": "#eaf4ff", "100": "#d3e8ff", "200": "#a8d1ff", "300": "#6fb4ff", "400": "#3a95ff", "500": "#1677ff", "600": "#0a5be0", "700": "#0a47b4", "800": "#0c3a8c", "900": "#0d2b66", "950": "#081a40"},
-            rose: {"50": "#fff1ec", "100": "#ffdcd0", "200": "#ffb9a1", "300": "#ff8a66", "400": "#ff5f33", "500": "#ff4416", "600": "#e02f08", "700": "#b52305", "800": "#8a1c06", "900": "#661505", "950": "#3d0c03"},
-            pink: {"50": "#fff1ec", "100": "#ffdcd0", "200": "#ffb9a1", "300": "#ff8a66", "400": "#ff5f33", "500": "#ff4416", "600": "#e02f08", "700": "#b52305", "800": "#8a1c06", "900": "#661505", "950": "#3d0c03"},
-            red: {"50": "#fff1ec", "100": "#ffdcd0", "200": "#ffb9a1", "300": "#ff8a66", "400": "#ff5f33", "500": "#ff4416", "600": "#e02f08", "700": "#b52305", "800": "#8a1c06", "900": "#661505", "950": "#3d0c03"},
-            amber: {"50": "#fff8e6", "100": "#ffecbf", "200": "#ffd980", "300": "#ffc24d", "400": "#ffa726", "500": "#ff8f00", "600": "#e67300", "700": "#b85700", "800": "#8a4300", "900": "#663200", "950": "#3b1c00"},
-            orange: {"50": "#fff4e8", "100": "#ffe2c2", "200": "#ffc58a", "300": "#ffa04d", "400": "#ff8226", "500": "#ff6a0a", "600": "#e65100", "700": "#b83d00", "800": "#8f3000", "900": "#6b2400", "950": "#3f1500"},
-            yellow: {"50": "#fff8e6", "100": "#ffecbf", "200": "#ffd980", "300": "#ffc24d", "400": "#ffa726", "500": "#ff8f00", "600": "#e67300", "700": "#b85700", "800": "#8a4300", "900": "#663200", "950": "#3b1c00"},
-            emerald: {"50": "#e8fffb", "100": "#c2fff4", "200": "#85ffe9", "300": "#3dfad8", "400": "#12ecc6", "500": "#00cfa8", "600": "#00a688", "700": "#008570", "800": "#006a5b", "900": "#00554a", "950": "#00332d"},
-            teal: {"50": "#e8fffb", "100": "#c2fff4", "200": "#85ffe9", "300": "#3dfad8", "400": "#12ecc6", "500": "#00cfa8", "600": "#00a688", "700": "#008570", "800": "#006a5b", "900": "#00554a", "950": "#00332d"},
-            green: {"50": "#e8fffb", "100": "#c2fff4", "200": "#85ffe9", "300": "#3dfad8", "400": "#12ecc6", "500": "#00cfa8", "600": "#00a688", "700": "#008570", "800": "#006a5b", "900": "#00554a", "950": "#00332d"},
-            lime: {"50": "#e8fffb", "100": "#c2fff4", "200": "#85ffe9", "300": "#3dfad8", "400": "#12ecc6", "500": "#00cfa8", "600": "#00a688", "700": "#008570", "800": "#006a5b", "900": "#00554a", "950": "#00332d"},
-            sky: {"50": "#eaf7ff", "100": "#cdeeff", "200": "#9ddfff", "300": "#5fcdff", "400": "#26b7ff", "500": "#0a9df0", "600": "#0680c8", "700": "#0966a0", "800": "#0b5280", "900": "#0c4266", "950": "#072840"},
-            cyan: {"50": "#e6fcff", "100": "#bff7ff", "200": "#85efff", "300": "#3de3ff", "400": "#00d2f5", "500": "#00b4e0", "600": "#0090b8", "700": "#007091", "800": "#005a73", "900": "#00445a", "950": "#002a38"},
+            rose: {"50": "#fff1ec", "100": "#ffdcd0", "200": "#ffb9a1", "300": "#ff8a66", "400": "#ff6238", "500": "#f23a10", "600": "#cf2a08", "700": "#a82106", "800": "#821a06", "900": "#601405", "950": "#380c03"},
+            pink: {"50": "#fff1ec", "100": "#ffdcd0", "200": "#ffb9a1", "300": "#ff8a66", "400": "#ff6238", "500": "#f23a10", "600": "#cf2a08", "700": "#a82106", "800": "#821a06", "900": "#601405", "950": "#380c03"},
+            red: {"50": "#fff1ec", "100": "#ffdcd0", "200": "#ffb9a1", "300": "#ff8a66", "400": "#ff6238", "500": "#f23a10", "600": "#cf2a08", "700": "#a82106", "800": "#821a06", "900": "#601405", "950": "#380c03"},
+            amber: {"50": "#fff8e6", "100": "#ffecbf", "200": "#ffd980", "300": "#ffc24d", "400": "#f5a020", "500": "#d97200", "600": "#b85c00", "700": "#944800", "800": "#733800", "900": "#542a00", "950": "#301800"},
+            orange: {"50": "#fff4e8", "100": "#ffe2c2", "200": "#ffc58a", "300": "#ffa04d", "400": "#ff8226", "500": "#f05a00", "600": "#cc4800", "700": "#a33900", "800": "#802d00", "900": "#5e2200", "950": "#361300"},
+            yellow: {"50": "#fff8e6", "100": "#ffecbf", "200": "#ffd980", "300": "#ffc24d", "400": "#f5a020", "500": "#d97200", "600": "#b85c00", "700": "#944800", "800": "#733800", "900": "#542a00", "950": "#301800"},
+            emerald: {"50": "#e8fffb", "100": "#c2fff4", "200": "#8ff5e3", "300": "#5eead4", "400": "#1fc8b2", "500": "#09907f", "600": "#077a6c", "700": "#066659", "800": "#054e45", "900": "#04382f", "950": "#022019"},
+            teal: {"50": "#e8fffb", "100": "#c2fff4", "200": "#8ff5e3", "300": "#5eead4", "400": "#1fc8b2", "500": "#09907f", "600": "#077a6c", "700": "#066659", "800": "#054e45", "900": "#04382f", "950": "#022019"},
+            green: {"50": "#e8fffb", "100": "#c2fff4", "200": "#8ff5e3", "300": "#5eead4", "400": "#1fc8b2", "500": "#09907f", "600": "#077a6c", "700": "#066659", "800": "#054e45", "900": "#04382f", "950": "#022019"},
+            lime: {"50": "#e8fffb", "100": "#c2fff4", "200": "#8ff5e3", "300": "#5eead4", "400": "#1fc8b2", "500": "#09907f", "600": "#077a6c", "700": "#066659", "800": "#054e45", "900": "#04382f", "950": "#022019"},
+            sky: {"50": "#eaf7ff", "100": "#cdeeff", "200": "#9ddfff", "300": "#5fcdff", "400": "#2db4f5", "500": "#0a8fe0", "600": "#0678c0", "700": "#0766a0", "800": "#0b5280", "900": "#0c4266", "950": "#072840"},
+            cyan: {"50": "#e6fcff", "100": "#bff7ff", "200": "#85efff", "300": "#4de3ff", "400": "#14c6ee", "500": "#0a8fb8", "600": "#077a9e", "700": "#066583", "800": "#05516b", "900": "#043f54", "950": "#022734"},
             slate: {"50": "#f4f8ff", "100": "#e6eefc", "200": "#cfdcf5", "300": "#a9bde0", "400": "#7d93bd", "500": "#53668f", "600": "#2a3a63", "700": "#172444", "800": "#0c1630", "900": "#060c1f", "950": "#030612"},
             gray: {"50": "#f4f8ff", "100": "#e6eefc", "200": "#cfdcf5", "300": "#a9bde0", "400": "#7d93bd", "500": "#53668f", "600": "#2a3a63", "700": "#172444", "800": "#0c1630", "900": "#060c1f", "950": "#030612"},
           }
@@ -1217,11 +1217,11 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     body.hero-glow-bg {
       background-color: #030718 !important;
       background-image:
-        radial-gradient(ellipse 90% 40% at 50% 108%, rgba(255,106,10,.34) 0, rgba(255,106,10,0) 70%),
-        radial-gradient(ellipse 60% 35% at 0% 100%, rgba(255,70,20,.22) 0, rgba(255,70,20,0) 70%),
-        radial-gradient(ellipse 70% 40% at 100% 0%, rgba(30,120,255,.28) 0, rgba(30,120,255,0) 70%),
-        radial-gradient(ellipse 60% 45% at 0% 0%, rgba(20,80,210,.25) 0, rgba(20,80,210,0) 70%),
-        linear-gradient(180deg, #030718 0%, #061440 38%, #0a2260 68%, #1a2058 86%, #3a1c3e 100%) !important;
+        radial-gradient(ellipse 90% 40% at 50% 108%, rgba(255,106,10,.24) 0, rgba(255,106,10,0) 70%),
+        radial-gradient(ellipse 60% 35% at 0% 100%, rgba(255,70,20,.15) 0, rgba(255,70,20,0) 70%),
+        radial-gradient(ellipse 70% 40% at 100% 0%, rgba(30,120,255,.17) 0, rgba(30,120,255,0) 70%),
+        radial-gradient(ellipse 60% 45% at 0% 0%, rgba(20,80,210,.15) 0, rgba(20,80,210,0) 70%),
+        linear-gradient(180deg, #02050f 0%, #040c2c 38%, #071846 68%, #121740 88%, #2a1532 100%) !important;
       background-attachment: fixed !important;
     }
     [class*="bg-slate-9"], [class*="bg-slate-8"] { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
@@ -1231,6 +1231,15 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     h1, h2, h3 { text-shadow: 0 0 18px rgba(90,170,255,.30); }
     input, select, textarea { caret-color: #ff8a3d; }
     ::selection { background: rgba(255,120,30,.55); color: #fff; }
+
+    /* More contrast: deeper panels, brighter information */
+    body.hero-glow-bg [class*="bg-slate-9"] { background-color: rgba(2,6,20,.90) !important; }
+    body.hero-glow-bg [class*="bg-slate-8"] { background-color: rgba(6,14,38,.86) !important; }
+    .text-slate-500 { color: #9bb2e6 !important; }
+    .text-slate-400 { color: #c3d3f5 !important; }
+    .text-slate-300 { color: #e0eaff !important; }
+    .text-slate-200 { color: #f1f6ff !important; }
+    th { color: #f1f6ff; }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -2996,7 +3005,7 @@ Add New Stop
   </div>
 
   <!-- Background watermark -->
-  <div class="no-print" aria-hidden="true" style="position: fixed; inset: 2.5%; z-index: 20; pointer-events: none; background: url('watermark.png') center center / contain no-repeat; opacity: 0.12;"></div>
+  <div class="no-print" aria-hidden="true" style="position: fixed; inset: 2.5%; z-index: 20; pointer-events: none; background: url('watermark.png') center center / contain no-repeat; opacity: 0.096;"></div>
 
   <!-- Notification Toast -->
   <div class="no-print mobile-settings-link" style="text-align:center;padding:18px 0 28px"><button type="button" onclick="openSettings()" style="color:#93a3b9;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0">Settings</button></div>
@@ -10920,7 +10929,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     if (document.getElementById('mrpLock') || !get() || skip) return;
     var o = document.createElement('div'); o.id = 'mrpLock';
     o.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#0b1127;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
-    o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.18;pointer-events:none"></div>'
+    o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.144;pointer-events:none"></div>'
       + '<div style="position:relative;width:100%;max-width:340px;text-align:center;background:rgba(17,26,54,.92);border:1px solid #324256;border-radius:16px;padding:24px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:6px">My Route Pro</div><div style="color:#93a3b9;font-size:13px;margin-bottom:16px">Locked</div>'
       + '<button id="mrpUnlock" type="button" style="width:100%;padding:13px;border-radius:10px;background:#00e6c7;border:2px solid #14ffe0;color:#04210f;font-weight:900;font-size:16px">Unlock with Face ID</button>'
       + '<button id="mrpUsePw" type="button" style="display:block;width:100%;margin-top:10px;padding:12px;border-radius:10px;background:#0b1127;border:1px solid #475569;color:#e2e8f0;font-weight:700;font-size:14px">Use password instead</button>'
