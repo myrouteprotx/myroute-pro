@@ -12032,7 +12032,7 @@ html.mrp-introing body > *:not(#mrpIntro){visibility:hidden !important}
   var IW = 1672, IH = 941, K = window.__MRP_K || .75;
   function start() {
     var root = document.createElement('div'); root.id = 'mrpIntro';
-    root.innerHTML = '<video playsinline webkit-playsinline preload="auto" src="intro-end.mp4?v=16"></video><canvas></canvas><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#9654; Tap to begin</button>';
+    root.innerHTML = '<video playsinline webkit-playsinline preload="auto" src="intro-end.mp4?v=17"></video><canvas></canvas><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#9654; Tap to begin</button>';
     document.body.appendChild(root); document.documentElement.classList.add('mrp-introing');
     var v = root.querySelector('video'), cv = root.querySelector('canvas'), snd = root.querySelector('.snd'), done = false, cut = false, raf = 0, t0 = 0, began = false, spoke = false, spokeDone = false;
     var ctx = cv.getContext('2d'), W = 0, H = 0, S0 = 1;
