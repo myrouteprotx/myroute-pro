@@ -2777,7 +2777,7 @@ Add New Stop
       <div class="mt-4">
         <img id="cardImg" alt="Business card photo" class="hidden w-full rounded-2xl border border-slate-700 bg-slate-800">
         <div id="cardEmpty" class="py-10 text-center text-xs text-slate-400 rounded-2xl border border-dashed border-slate-700 bg-slate-800/40">
-          No photo yet. Tap the button below to take one or pick one from your photos.
+          No photo yet. Drag a picture here, copy one and press Ctrl+V to paste it, or use the button below to take or choose a photo.
         </div>
         <p id="cardStatus" class="text-xs text-slate-300 font-semibold mt-3 min-h-[1rem]"></p>
         <input type="file" id="cardFileInput" accept="image/*" class="hidden">
@@ -8713,10 +8713,14 @@ Add New Stop
       });
     }
 
-    document.getElementById('cardFileInput').addEventListener('change', async (e) => {
+    document.getElementById('cardFileInput').addEventListener('change', (e) => {
       const file = e.target.files && e.target.files[0];
       e.target.value = '';
+      handleCardFile(file);
+    });
+    async function handleCardFile(file) {
       if (!file || !cardStopId) return;
+      if (file.type && file.type.indexOf('image/') !== 0) { setCardStatus('That is not a picture. Drop or paste an image.'); return; }
       const stopId = cardStopId;
       const api = await getAssets();
       if (!api) {
@@ -8741,7 +8745,28 @@ Add New Stop
       } catch (err) {
         setCardStatus('Upload failed: ' + ((err && (err.message || err.code)) || 'please try again'));
       }
-    });
+    }
+    // Drag a picture onto the box, or copy a picture and press Ctrl+V (Cmd+V) while the box is open
+    (function () {
+      const zone = document.getElementById('cardModal');
+      const box = zone.firstElementChild;
+      ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, (e) => { if (cardModal.classList.contains('hidden')) return; e.preventDefault(); box.style.outline = '3px dashed #34d399'; }));
+      ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, (e) => { if (ev === 'dragleave' && zone.contains(e.relatedTarget)) return; box.style.outline = ''; }));
+      zone.addEventListener('drop', (e) => {
+        if (cardModal.classList.contains('hidden')) return;
+        e.preventDefault();
+        const f = e.dataTransfer && Array.from(e.dataTransfer.files || []).find(x => x.type.indexOf('image/') === 0);
+        if (f) handleCardFile(f); else setCardStatus('No picture found in what you dropped.');
+      });
+      document.addEventListener('paste', (e) => {
+        if (cardModal.classList.contains('hidden')) return;
+        const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
+        const it = items.find(x => x.type && x.type.indexOf('image/') === 0);
+        if (!it) return;
+        e.preventDefault(); e.stopPropagation();
+        handleCardFile(it.getAsFile());
+      }, true);
+    })();
 
     async function removeCardPhoto() {
       const item = visits.find(v => v.id === cardStopId);
