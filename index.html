@@ -1289,7 +1289,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     #detailBody .dt-grid > div:has(img), #detailBody .dt-grid > div:has(textarea) { grid-column:1 / -1; }
     #detailBody .dt-grid > .dt-photorow { padding:0 !important; border-radius:0 !important; }
     #detailBody .dt-grid > div:has([data-df="visitDate"]) { grid-column-start:1; }
-    #detailBody #detailGroupBox { max-width:700px; justify-self:start; width:100%; }
+    @media (min-width: 1500px) { #detailBody .dt-grid { grid-template-columns:repeat(5,minmax(0,1fr)) !important; } }
+    @media (min-width: 1500px) { #detailBody .dt-grid > div > .flex { flex-wrap:nowrap; } #detailBody .dt-grid > div > .flex > span[style*="inline-flex"] { flex-wrap:nowrap !important; gap:5px !important; } #detailBody .dt-grid > div > .flex a, #detailBody .dt-grid > div > .flex button { min-width:0 !important; padding:6px 12px !important; } }
     #detailBody .dt-photorow { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
     #detailBody .dt-photorow > div { flex:0 1 auto; width:fit-content; max-width:100%; padding:8px 10px; border-radius:12px; }
     #detailBody .dt-photorow img { height:176px; width:auto; max-width:100%; }
@@ -5160,6 +5161,15 @@ Add New Stop
     let detailDirty = new Set();
     // Photos added from the details page (uploaded now, attached to the record when Save is pressed)
     let detailAdds = [], detailAddCtx = null, detailAddBusy = false;
+    /* wide screens: the Add photos box is as tall as the left block, from the top boxes down to the bottom of the linked-property bar (or Notes) */
+    function detailFitPhotos() {
+      const box = document.getElementById('detailDropBox'), grid = document.querySelector('#detailBody .dt-grid'); if (!box || !grid) return;
+      if (!window.matchMedia('(min-width: 1500px)').matches) { box.style.height = ''; box.style.overflow = ''; return; }
+      let a = document.getElementById('detailGroupBox'); if (!a) { const ta = grid.querySelector('textarea'); a = ta && ta.closest('.rounded-2xl'); }
+      if (!a) return;
+      const h = a.getBoundingClientRect().bottom - grid.getBoundingClientRect().top; if (h > 120) { box.style.height = Math.round(h) + 'px'; box.style.overflow = 'auto'; }
+    }
+    window.addEventListener('resize', () => { try { detailFitPhotos(); } catch (e) {} });
     function detailPhotoBox(kind, id, inner) {
       detailAdds = []; detailAddCtx = { kind, id };
       const single = kind !== 'visit';
@@ -5352,6 +5362,12 @@ Add New Stop
       document.getElementById('detailKind').style.display = kind === 'visit' ? 'none' : '';
       document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${kind === 'visit' ? followUpTopBtn(id) : ''}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="dt-wrap"><div class="dt-left"><div class="dt-grid grid gap-2 grid-cols-1">${html}</div></div><aside class="dt-right"><div style="margin-bottom:12px">${detailPhotoBox(kind, id, detailPhotoInner)}</div>${window.prodNotesHtml ? window.prodNotesHtml(kind, id) : ''}</aside></div>`;
       detailDirty = new Set();
+      try {
+        const g = document.querySelector('#detailBody .dt-grid');
+        if (window.__dtRO) { try { window.__dtRO.disconnect(); } catch (e) {} }
+        if (g && window.ResizeObserver) { window.__dtRO = new ResizeObserver(() => detailFitPhotos()); window.__dtRO.observe(g); }
+        detailFitPhotos();
+      } catch (e) {}
       if (kind === 'visit') {
         detailGroupRender();
         ensureContactList();
