@@ -11824,7 +11824,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 (function () {
   try { if (localStorage.getItem('mrp_intro_off') === '1' && location.hash !== '#intro') return; } catch (e) {}
   var START = 5.0;   /* the movie picks up here: the lightning is over and the logo is forming */
-  var PRE = 6.2;     /* seconds of map, pins, neon route and camera run before the movie */
+  var PRE = 7.0;     /* seconds of map, pins, neon route and camera run before the movie */
   var IW = 1672, IH = 941, K = .75;
   function start() {
     var root = document.createElement('div'); root.id = 'mrpIntro';
@@ -11846,12 +11846,13 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     v.addEventListener('loadedmetadata', seek);
 
     /* ---------- the map, pins and route (coordinates are on the 1672 x 941 map picture) ---------- */
-    var PINS = [ { b: [155, 187], c: [152, 112], R: 95, a: .25 }, { b: [400, 403], c: [398, 295], R: 150, a: .65 }, { b: [725, 240], c: [722, 170], R: 105, a: 1.05 }, { b: [1290, 672], c: [1305, 415], R: 330, a: 1.45 } ];
+    var PINS = [ { b: [155, 187], c: [152, 112], R: 95, a: 1.4 }, { b: [400, 403], c: [398, 295], R: 150, a: 3.5 }, { b: [725, 240], c: [722, 170], R: 105, a: 4.5 }, { b: [1290, 672], c: [1305, 415], R: 330, a: 6.0 } ];
+    var RL = [[-70, 216], [60, 196], [155, 187]];
     var RA = [[155,187],[220,200],[290,208],[298,228],[250,248],[200,266],[206,286],[260,306],[340,336],[400,400]];
     var RB = [[400,400],[440,362],[520,330],[600,308],[664,292],[668,270],[630,262],[690,246],[725,240]];
     var RC = [[400,400],[470,408],[560,420],[640,432],[698,452],[690,482],[640,492],[652,508],[720,522],[900,562],[1100,612],[1220,652],[1290,674]];
     var CAM = RA.concat(RC.slice(1));
-    var TA = [2.0, 3.0], TB = [3.0, 3.6], TC = [3.0, 4.1];
+    var TL = [.5, 1.4], TA = [1.4, 3.5], TB = [3.5, 4.5], TC = [3.5, 6.0];   /* when the laser is on each stretch; a pin only lights when the laser reaches it */
     function rnd(n) { var x = Math.sin(n * 91.7) * 43758.5453; return x - Math.floor(x); }
     function cl(x) { return Math.max(0, Math.min(1, x)); }
     function plen(p) { var l = 0; for (var i = 1; i < p.length; i++) l += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return l; }
@@ -11862,13 +11863,12 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function stepMask(tt) {
       mx.globalCompositeOperation = 'lighten';
       PINS.forEach(function (p, k) {
-        var r = cl((tt - p.a) / .8); if (r <= 0) return;
-        var x = p.b[0] + (p.c[0] - p.b[0]) * r, y = p.b[1] + (p.c[1] - p.b[1]) * r;
-        put(x, y, p.R * (.5 + .75 * r), 0); if (r > .3) put(p.b[0], p.b[1], p.R * 1.25 * cl((r - .3) / .7), .4);
+        var r = cl((tt - p.a) / 1.1); if (r <= 0) return;
+        var top = p.c[1] - p.R * .55, y = p.b[1] + (top - p.b[1]) * r, x = p.b[0] + (p.c[0] - p.b[0]) * r;
+        put(x, y, p.R * .62, 0); put(p.b[0], p.b[1], p.R * 1.2 * cl(r * 2), .4);
       });
-      [[RA, TA], [RB, TB], [RC, TC]].forEach(function (g) { var f = cl((tt - g[1][0]) / (g[1][1] - g[1][0])); if (f <= 0) return; var h = pat(g[0], f); put(h[0], h[1], 95, 0); });
+      [[RL, TL], [RA, TA], [RB, TB], [RC, TC]].forEach(function (g) { var f = cl((tt - g[1][0]) / (g[1][1] - g[1][0])); if (f <= 0) return; var h = pat(g[0], f); put(h[0], h[1], 85, 0); });
       mx.globalCompositeOperation = 'source-over';
-      if (tt > 4.0) { mx.fillStyle = 'rgba(255,255,255,' + Math.min(.2, (tt - 4.0) * .12) + ')'; mx.fillRect(0, 0, mkc.width, mkc.height); }
     }
     function advance(t) {
       if (lastT < 0 || t < lastT) { mx.setTransform(1, 0, 0, 1, 0, 0); mx.globalCompositeOperation = 'source-over'; mx.fillStyle = '#000'; mx.fillRect(0, 0, mkc.width, mkc.height); mx.setTransform(K, 0, 0, K, 0, 0); lastT = 0; }
@@ -11880,31 +11880,24 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function draw(t) {
       advance(t);
       sx.setTransform(K, 0, 0, K, 0, 0); sx.globalCompositeOperation = 'source-over'; sx.globalAlpha = 1;
-      sx.drawImage(img, 0, 0, IW, IH); sx.fillStyle = 'rgba(0,3,10,.955)'; sx.fillRect(0, 0, IW, IH);
+      sx.drawImage(img, 0, 0, IW, IH); sx.fillStyle = 'rgba(0,3,10,.94)'; sx.fillRect(0, 0, IW, IH);
       lx.setTransform(K, 0, 0, K, 0, 0); lx.globalCompositeOperation = 'source-over'; lx.clearRect(0, 0, IW, IH); lx.drawImage(img, 0, 0, IW, IH);
       lx.setTransform(1, 0, 0, 1, 0, 0); lx.globalCompositeOperation = 'multiply'; lx.drawImage(mkc, 0, 0);
       sx.setTransform(1, 0, 0, 1, 0, 0); sx.globalCompositeOperation = 'lighter'; sx.drawImage(lt, 0, 0); sx.setTransform(K, 0, 0, K, 0, 0);
       /* pulses where a pin lights, and the bright heads of the racing lines */
       PINS.forEach(function (p, k) {
-        var at = k === 0 ? TA[0] - .3 : k === 1 ? TA[1] : k === 2 ? TB[1] : TC[1], rt = t - at;
-        if (k === 0) rt = t - p.a - .6;
-        if (rt > 0 && rt < 1) { sx.globalAlpha = (1 - rt) * .85; sx.strokeStyle = k === 3 ? 'rgb(255,170,70)' : 'rgb(120,210,255)'; sx.lineWidth = 3 + p.R * .02; sx.beginPath(); sx.ellipse(p.b[0], p.b[1], 30 + rt * p.R * 1.5, 10 + rt * p.R * .5, 0, 0, 7); sx.stroke(); sx.globalAlpha = 1; }
+        var rt = (t - p.a) / 1.3;
+        if (rt > 0 && rt < 1) { sx.globalAlpha = (1 - rt) * (1 - rt) * .9; sx.strokeStyle = 'rgb(130,215,255)'; sx.lineWidth = 2 + p.R * .018; sx.beginPath(); sx.ellipse(p.b[0], p.b[1], 24 + rt * p.R * 1.5, 8 + rt * p.R * .5, 0, 0, 7); sx.stroke(); sx.globalAlpha = 1; }
       });
-      [[RA, TA, 0], [RB, TB, 0], [RC, TC, 1]].forEach(function (g) { var f = (t - g[1][0]) / (g[1][1] - g[1][0]); if (f > 0 && f < 1) { var h = pat(g[0], f); head(h[0], h[1], 70, mix(g[2] ? f : 0)); } });
+      [[RL, TL, 0], [RA, TA, 0], [RB, TB, 0], [RC, TC, 1]].forEach(function (g) { var f = (t - g[1][0]) / (g[1][1] - g[1][0]); if (f > 0 && f < 1) { var h = pat(g[0], f); head(h[0], h[1], 62, mix(g[2] ? f : 0)); } });
       /* camera: it speeds up along the finished route and pushes in on the big pin */
-      var p3 = cl((t - 3.7) / 2.5), e = p3 * p3, z = 1 + 1.5 * e * (.4 + .6 * p3), cam = pat(CAM, e), mixp = p3 * p3 * (3 - 2 * p3);
-      var cx = IW / 2 + (cam[0] - IW / 2) * mixp, cy = IH / 2 + (cam[1] - IH / 2) * mixp, hw = W / (2 * S0 * z), hh = H / (2 * S0 * z);
+      var q = cl(t / PRE), z = 1 + .13 * q, cx = IW / 2 + 150 * q, cy = IH / 2 + 12 * q, hw = W / (2 * S0 * z), hh = H / (2 * S0 * z);
       cx = Math.max(hw, Math.min(IW - hw, cx)); cy = Math.max(hh, Math.min(IH - hh, cy));
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
       ctx.setTransform(S0 * z / K, 0, 0, S0 * z / K, W / 2 - cx * S0 * z, H / 2 - cy * S0 * z); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(sc, 0, 0);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      /* blue turns to fire */
-      var og = cl((t - 3.8) / 2); if (og > 0) { ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = 'rgba(255,120,20,' + (og * .45) + ')'; ctx.fillRect(0, 0, W, H); }
-      /* speed streaks */
-      var sp = e * 2; if (sp > .05) { ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; for (var i = 0; i < 46; i++) { var ang = rnd(i) * 6.283, ph = (rnd(i + 50) + t * (1.2 + sp * 2.2)) % 1, r0 = Math.min(W, H) * (.12 + ph * .75), r1 = r0 + Math.min(W, H) * .05 * (1 + sp * 3); ctx.strokeStyle = 'rgba(' + (i % 3 ? '255,170,80' : '130,210,255') + ',' + (Math.min(.55, sp * .35) * (1 - ph * .5)) + ')'; ctx.lineWidth = 1 + rnd(i + 7) * 2; ctx.beginPath(); ctx.moveTo(W / 2 + Math.cos(ang) * r0, H / 2 + Math.sin(ang) * r0 * .8); ctx.lineTo(W / 2 + Math.cos(ang) * r1, H / 2 + Math.sin(ang) * r1 * .8); ctx.stroke(); } }
       ctx.globalCompositeOperation = 'source-over';
       if (t < .5) { ctx.fillStyle = 'rgba(0,0,0,' + (1 - t / .5) + ')'; ctx.fillRect(0, 0, W, H); }
-      var fl = cl((t - (PRE - .55)) / .55); if (fl > 0) { ctx.fillStyle = 'rgba(210,230,255,' + (fl * .85) + ')'; ctx.fillRect(0, 0, W, H); }
     }
     root._draw = draw; root._build = build; root._img = img;
 
@@ -11915,9 +11908,8 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function sounds() {
       try { ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; }
       if (!ac) return;
-      [[660, .25], [784, .65], [880, 1.05], [392, 1.45]].forEach(function (p, i) { tone(p[0], p[1], .9, .1); tone(p[0] * 2, p[1], .5, .04); });
-      [[2.0, 520], [3.0, 700], [3.6, 880], [4.1, 1100]].forEach(function (z) { tone(z[1], z[0], .35, .07, 'triangle'); });
-      sweep(3.6, 2.5); tone(55, PRE - .05, 1.2, .35); tone(110, PRE - .05, .8, .12);
+      [[660, 1.4], [784, 3.5], [880, 4.5], [523, 6.0]].forEach(function (p) { tone(p[0], p[1], 1.2, .1); tone(p[0] * 2, p[1], .7, .035); });
+      tone(110, .5, 6.2, .035, 'sawtooth'); tone(55, PRE - .1, 1.3, .3);
     }
     function speak() {
       if (spoke) return; spoke = true;
