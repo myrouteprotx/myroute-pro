@@ -867,7 +867,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       #reportStudioView > section.no-print > div:nth-child(2) { justify-content: center; }
       #reportStudioView > section.no-print > div:nth-child(2) > div:first-child { display: none !important; }
       #reportStudioView > section.no-print > div:nth-child(2) > div:last-child { width: 100%; justify-content: center; }
-      #reportStudioView .grid > div:has(#repSalesPersonName), #reportStudioView .grid > div:has(#repTerritoryName), #reportStudioView .grid > div:has(#repManagerEmail), #reportStudioView .grid > div:has(#repCompanyName) { display: none !important; }
+      #reportStudioView:not(.rs-details-open) .grid > div:has(#repSalesPersonName), #reportStudioView:not(.rs-details-open) .grid > div:has(#repTerritoryName), #reportStudioView:not(.rs-details-open) .grid > div:has(#repManagerEmail), #reportStudioView:not(.rs-details-open) .grid > div:has(#repCompanyName) { display: none !important; }
       #reportStudioView > section.no-print { padding: 14px; gap: 0; }
       #reportStudioView > section.no-print > * { margin-top: 10px; }
       #reportStudioView > section.no-print > :first-child { margin-top: 0; }
@@ -1871,6 +1871,8 @@ Add New Stop
             </button>
           </div>
         </div>
+
+        <button type="button" id="rsDetailsBtn" onclick="document.getElementById('reportStudioView').classList.toggle('rs-details-open'); this.querySelector('span').textContent = document.getElementById('reportStudioView').classList.contains('rs-details-open') ? 'Hide report details' : 'Report details (name, territory, email, company)'" class="md:hidden w-full px-3 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-cyan-600 to-blue-600 border border-white/30 active:scale-95 transition"><span>Report details (name, territory, email, company)</span></button>
 
         <!-- Report Configurations Bar -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
