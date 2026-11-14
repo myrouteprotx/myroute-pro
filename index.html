@@ -6037,9 +6037,14 @@ Add New Stop
     const emailImgCache = new Map();
     async function blobToEmbeddedImage(id) {
       if (emailImgCache.has(id)) return emailImgCache.get(id);
-      const res = await fetch('/_blob/' + id);
-      if (!res.ok) throw new Error('photo not found');
-      const blob = await res.blob();
+      let blob = null;
+      try { const res = await fetch('/_blob/' + id); if (res.ok) { const b0 = await res.blob(); if (b0 && b0.size > 0 && /^image\//.test(b0.type || 'image/')) blob = b0; } } catch (e) {}
+      if (!blob && window.__mrpBlobData) {
+        // After a hard refresh the page cannot use the stored-photo shortcut, so read the photo directly
+        const u = await window.__mrpBlobData(id);
+        if (u) { const r2 = await fetch(u); if (r2.ok) blob = await r2.blob(); }
+      }
+      if (!blob) throw new Error('photo not found');
       const bmp = await createImageBitmap(blob);
       const scale = Math.min(1, 560 / Math.max(bmp.width, bmp.height));
       const c = document.createElement('canvas');
@@ -6072,6 +6077,7 @@ Add New Stop
             const to = out.indexOf('</span></span>', at);
             if (from >= 0 && to > at) out = out.slice(0, from) + out.slice(to + '</span></span>'.length);
           }
+          out = out.replace(new RegExp('<img src="/_blob/' + id + '"[^>]*>', 'g'), '');
         }
       }
       return { html: out, count: ids.length - failed, failed };
