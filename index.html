@@ -1,8 +1,8 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* Add-visit photo boxes: one size, one color, aligned */
-.vp-box{display:block;width:100%;box-sizing:border-box;padding:12px 14px !important;border-radius:16px !important;border:1px solid rgba(148,163,184,.35) !important;background:rgba(30,41,59,.55) !important;margin:0 !important}
+.vp-box{display:block;width:100%;box-sizing:border-box;padding:12px 14px !important;border-radius:16px !important;border:1px solid rgba(147,163,185,.35) !important;background:rgba(29,42,60,.55) !important;margin:0 !important}
 .vp-box > .text-\[11px\]:first-child, #scanBlock .text-\[11px\]:first-child{min-height:2.4em}
-#vpPhotoTake,#vpCardTake,#scanTakeBtn{background:linear-gradient(90deg,#0284c7,#0891b2,#0d9488) !important;color:#fff !important;padding:8px 14px !important;border:0 !important}
+#vpPhotoTake,#vpCardTake,#scanTakeBtn{background:linear-gradient(90deg,#0057c9,#0498b6,#0a8097) !important;color:#fff !important;padding:8px 14px !important;border:0 !important}
 #vpPhotoPick,#vpCardPick,#scanPickBtn{background:#0f172a !important;color:#e2e8f0 !important;border:1px solid #475569 !important;padding:8px 14px !important}
 #vpCardBox + *, #scanWrap{margin-top:12px}
 #scanBlock>div{display:block}
@@ -10,9 +10,9 @@
 @media (max-width:1099px){#visitModal{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;background:rgba(2,6,23,.94) !important}#visitModal *{-webkit-backdrop-filter:none !important;backdrop-filter:none !important}}
 
 /* Top search bar: vibrant red neon circle border */
-#topSearch{border:2px solid #ff1744 !important;box-shadow:0 0 6px #ff1744,0 0 14px rgba(255,23,68,.85),0 0 28px rgba(255,23,68,.55),inset 0 0 8px rgba(255,23,68,.35) !important;color:#fff !important;border-radius:9999px !important}
-#topSearch:focus{box-shadow:0 0 8px #ff1744,0 0 20px #ff1744,0 0 38px rgba(255,23,68,.75),inset 0 0 10px rgba(255,23,68,.5) !important}
-#topSearch::placeholder{color:#cbd5e1 !important;opacity:1 !important}
+#topSearch{border:2px solid #ff4d17 !important;box-shadow:0 0 6px #ff4d17,0 0 14px rgba(255,77,23,.85),0 0 28px rgba(255,77,23,.55),inset 0 0 8px rgba(255,77,23,.35) !important;color:#fff !important;border-radius:9999px !important}
+#topSearch:focus{box-shadow:0 0 8px #ff4d17,0 0 20px #ff4d17,0 0 38px rgba(255,77,23,.75),inset 0 0 10px rgba(255,77,23,.5) !important}
+#topSearch::placeholder{color:#cad4e2 !important;opacity:1 !important}
 
 /* Previous visits sits beside Current status, under its own header */
 .cs-pair{display:flex;gap:18px;align-items:flex-start}
@@ -181,36 +181,36 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       if (!o) {
         o = document.createElement('div'); o.id = 'mrpAuth';
         o.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0b1127;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
-        o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.18;pointer-events:none"></div><div style="position:relative;width:100%;max-width:360px;background:rgba(17,26,54,.92);border:1px solid #334155;border-radius:16px;padding:22px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:4px">My Route Pro</div><div style="color:#94a3b8;font-size:13px;margin-bottom:14px">Sign in to load your stops on this device.</div>'
+        o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.18;pointer-events:none"></div><div style="position:relative;width:100%;max-width:360px;background:rgba(17,26,54,.92);border:1px solid #324256;border-radius:16px;padding:22px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:4px">My Route Pro</div><div style="color:#93a3b9;font-size:13px;margin-bottom:14px">Sign in to load your stops on this device.</div>'
           + '<input id="mrpEmail" type="email" autocomplete="username" placeholder="Email" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:8px">'
           + '<input id="mrpPass" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:10px">'
-          + '<button id="mrpIn" type="button" style="width:100%;padding:13px;border-radius:10px;background:#00e676;border:2px solid #39ff14;color:#04210f;font-weight:900;font-size:16px">Sign in</button>'
+          + '<button id="mrpIn" type="button" style="width:100%;padding:13px;border-radius:10px;background:#00e6c7;border:2px solid #14ffe0;color:#04210f;font-weight:900;font-size:16px">Sign in</button>'
           + '<button id="mrpNew" type="button" style="width:100%;padding:11px;margin-top:8px;border-radius:10px;background:#0b1127;border:1px solid #475569;color:#fff;font-weight:700;font-size:14px">Create account</button>'
-          + '<button id="mrpForgot" type="button" style="display:block;margin:12px auto 0;background:none;border:0;color:#94a3b8;font-size:12px;text-decoration:underline">Forgot password</button>'
-          + '<div id="mrpMsg" style="margin-top:12px;font-size:13px;color:#fda4af;min-height:18px"></div></div>';
+          + '<button id="mrpForgot" type="button" style="display:block;margin:12px auto 0;background:none;border:0;color:#93a3b9;font-size:12px;text-decoration:underline">Forgot password</button>'
+          + '<div id="mrpMsg" style="margin-top:12px;font-size:13px;color:#ffb8a2;min-height:18px"></div></div>';
         document.body.appendChild(o);
       }
       var m = document.getElementById('mrpMsg'); m.textContent = msg || '';
       function val() { return { e: document.getElementById('mrpEmail').value.trim(), p: document.getElementById('mrpPass').value }; }
       document.getElementById('mrpIn').onclick = async function () {
         var v = val(); if (!v.e || !v.p) { m.textContent = 'Enter your email and password.'; return; }
-        m.style.color = '#cbd5e1'; m.textContent = 'Signing in...';
+        m.style.color = '#cad4e2'; m.textContent = 'Signing in...';
         var r = await sb.auth.signInWithPassword({ email: v.e, password: v.p });
-        if (r.error) { m.style.color = '#fda4af'; m.textContent = r.error.message; return; }
+        if (r.error) { m.style.color = '#ffb8a2'; m.textContent = r.error.message; return; }
         o.remove(); resolve(r.data.session);
       };
       document.getElementById('mrpNew').onclick = async function () {
         var v = val(); if (!v.e || v.p.length < 6) { m.textContent = 'Enter an email and a password of at least 6 characters.'; return; }
-        m.style.color = '#cbd5e1'; m.textContent = 'Creating account...';
+        m.style.color = '#cad4e2'; m.textContent = 'Creating account...';
         var r = await sb.auth.signUp({ email: v.e, password: v.p });
-        if (r.error) { m.style.color = '#fda4af'; m.textContent = r.error.message; return; }
+        if (r.error) { m.style.color = '#ffb8a2'; m.textContent = r.error.message; return; }
         if (r.data.session) { o.remove(); resolve(r.data.session); }
-        else { m.style.color = '#86efac'; m.textContent = 'Account created. Check your email to confirm it, then sign in.'; }
+        else { m.style.color = '#83f2e3'; m.textContent = 'Account created. Check your email to confirm it, then sign in.'; }
       };
       document.getElementById('mrpForgot').onclick = async function () {
         var v = val(); if (!v.e) { m.textContent = 'Type your email first.'; return; }
         var r = await sb.auth.resetPasswordForEmail(v.e, { redirectTo: location.origin + location.pathname });
-        m.style.color = r.error ? '#fda4af' : '#86efac'; m.textContent = r.error ? r.error.message : 'Check your email for a reset link.';
+        m.style.color = r.error ? '#ffb8a2' : '#83f2e3'; m.textContent = r.error ? r.error.message : 'Check your email for a reset link.';
       };
     });
   }
