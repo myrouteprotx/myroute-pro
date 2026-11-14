@@ -1182,6 +1182,16 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       #visitsTableBody > tr .note-save, #todayTableBody > tr .note-save, #yesterdayTableBody > tr .note-save { right: calc(13.1% - 139px) !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(7) { right: calc(13.1% - 49px) !important; }
     }
+    /* Desktop: fire, water loss and company lead lists look like the visit lists (wide notes box, icons under the notes) */
+    @media screen and (min-width: 1100px) {
+      table:has(#fireTableBody) tr, table:has(#waterTableBody) tr, table:has(#pcwTableBody) tr { grid-template-columns: minmax(150px,1.3fr) minmax(130px,1fr) minmax(140px,1.2fr) minmax(130px,.9fr) minmax(140px,1fr) minmax(360px,2.1fr) minmax(130px,.9fr) !important; }
+      table:has(#fireTableBody) tbody > tr, table:has(#waterTableBody) tbody > tr, table:has(#pcwTableBody) tbody > tr { position: relative; padding-bottom: 46px; }
+      #fireTableBody > tr > td:nth-child(8), #waterTableBody > tr > td:nth-child(8), #pcwTableBody > tr > td:nth-child(8) { display: block !important; position: absolute !important; right: calc(23.2% - 100px); bottom: 6px; padding: 0 !important; width: auto !important; min-width: 0 !important; z-index: 2; background: transparent; text-align: right !important; }
+      #fireTableBody > tr > td:nth-child(8) > div, #waterTableBody > tr > td:nth-child(8) > div, #pcwTableBody > tr > td:nth-child(8) > div { flex-wrap: nowrap !important; justify-content: flex-end !important; margin: 0 !important; }
+      table:has(#fireTableBody) th:nth-child(8), table:has(#waterTableBody) th:nth-child(8), table:has(#pcwTableBody) th:nth-child(8) { display: none !important; }
+      #fireTableBody > tr > td:nth-child(6) > p, #waterTableBody > tr > td:nth-child(6) > p, #pcwTableBody > tr > td:nth-child(6) > p { display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; min-height: 84px; background: #0b1127; border: 1px solid #475569; border-radius: 8px; padding: 8px 10px; font-size: 14px !important; line-height: 1.35; color: #e2e8f0 !important; }
+      table:has(#fireTableBody) th:nth-child(6), table:has(#waterTableBody) th:nth-child(6), table:has(#pcwTableBody) th:nth-child(6) { text-align: center !important; }
+    }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
