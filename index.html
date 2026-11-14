@@ -1049,7 +1049,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     @media (max-width: 1099px) { .cpill-bulk, #bulkEmailSettingsBtn { display: none !important; } }
     @media (min-width: 1100px) {
       table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6) { white-space: nowrap !important; letter-spacing: 0.02em; }
-      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) { min-width: 270px; width: auto; max-width: none !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) { min-width: 400px; width: auto; max-width: none !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box textarea { width: 100% !important; min-width: 360px; box-sizing: border-box; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(5), table:has(#visitsTableBody) th:nth-child(5), table:has(#todayTableBody) th:nth-child(5), table:has(#yesterdayTableBody) th:nth-child(5) { width: 1% !important; white-space: nowrap; }
       table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6) { text-align: center !important; }
       /* Columns 3, 4 and 5 shrink to fit what is in them, so the space between every column is the same */
