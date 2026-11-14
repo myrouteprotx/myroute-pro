@@ -5362,7 +5362,7 @@ Add New Stop
           + dEdit('Result of visit', kind, id, 'visitResult', v.visitResult || '', 'select', RESULT_OPTIONS.map(r => [r.value, r.label]))
           + dEdit('Address', kind, id, 'streetAddress', v.streetAddress, 'text', null, v.streetAddress ? '<div style="margin-top:8px;font-size:14px">' + addrLinkHtml(v.streetAddress, v.businessName) + '</div>' : '')
           + dEdit('Notes', kind, id, 'notes', v.notes, 'textarea')
-          + dField('Properties they manage', managedItems(v).length ? managedCards(v, 'dark', true) : '') + detailGroupBox(id)
+          + detailGroupBox(id)
           + dField('Follow-up email', followUpBox(v))
           + dField('Calls logged', dCalls(v.calls));
         detailPhotoInner = dPhotoRow(dField('Building photos', dPhotos(visitPhotoIds(v), 'Building')) + dField('Business card', dPhotos([v.cardPhotoId], 'Business card')));
