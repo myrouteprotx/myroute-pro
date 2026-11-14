@@ -1244,6 +1244,19 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     /* Home tiles: only Today's Visits and Reach-Backs Due are shown */
     #tileHot, #tileScheduled { display: none !important; }
     #statCardsSection { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+    /* Projects in Production */
+    #statCardsSection { display: none !important; }
+    #projectsSection { background: rgba(3,9,28,.88); border-color: rgba(70,150,255,.5); box-shadow: 0 0 22px rgba(40,130,255,.22), inset 0 0 26px rgba(40,130,255,.07); backdrop-filter: blur(10px); }
+    .pj-chip { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:999px; font-size:11px; font-weight:800; color:#e6f0ff; background:rgba(14,40,96,.7); border:1px solid rgba(70,150,255,.55); cursor:pointer; transition:.15s; }
+    .pj-chip b { display:inline-block; min-width:20px; text-align:center; padding:1px 6px; border-radius:999px; background:#0a5be0; color:#fff; font-size:11px; }
+    .pj-chip.on { background:linear-gradient(90deg,#0a5be0,#1677ff); border-color:#7fb8ff; box-shadow:0 0 14px rgba(40,130,255,.7); color:#fff; }
+    .pj-chip.on b { background:#f05a00; }
+    .pj-card { position:relative; border-radius:16px; padding:12px 14px; background:linear-gradient(160deg,rgba(10,32,84,.85),rgba(4,12,34,.92)); border:1px solid rgba(70,150,255,.5); box-shadow:0 0 14px rgba(40,130,255,.2); }
+    .pj-type { display:inline-block; font-size:10px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:999px; color:#fff; }
+    .pj-name { font-size:14px; font-weight:900; color:#fff; margin-top:6px; word-break:break-word; }
+    .pj-sub { font-size:11px; color:#c3d3f5; margin-top:2px; word-break:break-word; }
+    .pj-empty { grid-column:1/-1; text-align:center; padding:22px 10px; font-size:13px; font-weight:700; color:#c3d3f5; border:1px dashed rgba(70,150,255,.5); border-radius:14px; }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -1387,6 +1400,19 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       </div>
 
       <!-- High Impact Colorful Dashboard Metric Cards (No Revenue/Pipeline) -->
+      <!-- Projects in Production (replaces the Today's Visits / Reach-Backs tiles) -->
+      <section id="projectsSection" class="rounded-3xl border p-4 sm:p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <h2 class="text-lg sm:text-xl font-black text-white">Projects in Production</h2>
+            <span id="projCount" class="px-2.5 py-0.5 rounded-full text-xs font-black text-white" style="background:linear-gradient(90deg,#f05a00,#ff8226);box-shadow:0 0 12px rgba(255,110,20,.6)">0</span>
+          </div>
+          <div class="text-[11px] text-slate-300 font-semibold">Anything with a Current status, until it reaches Job Closed &ndash; Finalized</div>
+        </div>
+        <div id="projStages" class="flex flex-wrap gap-2 mt-3"></div>
+        <div id="projList" class="grid gap-3 mt-4" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))"></div>
+      </section>
+
       <section id="statCardsSection" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
         <!-- Card 1: Today's Visits -->
@@ -11728,5 +11754,43 @@ function renderIntroToggle() { var b = document.getElementById('introToggleBtn')
 function toggleIntroSetting() { var off = false; try { off = localStorage.getItem('mrp_intro_off') === '1'; localStorage.setItem('mrp_intro_off', off ? '0' : '1'); } catch (e) {} renderIntroToggle(); }
 renderIntroToggle();
 document.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('[onclick*="openSettings"]')) setTimeout(renderIntroToggle, 50); }, true);
+</script>
+<script>
+(function () {
+  var STAGES = function () { return (typeof CURRENT_STATUS_OPTIONS !== 'undefined') ? CURRENT_STATUS_OPTIONS : []; };
+  var TYPES = { visit: ['Visit', '#0a5be0'], fire: ['Fire', '#cf2a08'], water: ['Water', '#0a8fb8'], pcw: ['Company lead', '#d97200'] };
+  var filter = '', lastSig = '';
+  function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function gather() {
+    var out = [];
+    try { visits.forEach(function (v) { if (v.currentStatus) out.push({ kind: 'visit', id: v.id, name: v.businessName || 'Unnamed stop', sub: v.clientName && v.clientName !== 'Contact TBD' ? v.clientName : '', addr: v.streetAddress || '', st: v.currentStatus, date: v.visitDate || '' }); }); } catch (e) {}
+    [['fire', typeof fires !== 'undefined' ? fires : []], ['water', typeof waters !== 'undefined' ? waters : []], ['pcw', typeof pcws !== 'undefined' ? pcws : []]].forEach(function (g) {
+      g[1].forEach(function (f) { if (f.currentStatus) out.push({ kind: g[0], id: f.id, name: f.streetAddress || f.homeownerName || f.ownerName || 'Unnamed property', sub: f.homeownerName || f.ownerName || '', addr: f.streetAddress && (f.homeownerName || f.ownerName) ? f.streetAddress : '', st: f.currentStatus, date: f.visitDate || '' }); });
+    });
+    return out;
+  }
+  function setStatus(kind, id, val) { if (kind === 'visit') changeCurrentStatus(id, val); else leadSetCurrentStatus(kind, id, val); }
+  window.__projSetStatus = setStatus;
+  window.__projFilter = function (st) { filter = (filter === st) ? '' : st; lastSig = ''; render(); };
+  function render() {
+    var box = document.getElementById('projList'), stg = document.getElementById('projStages'); if (!box || !stg) return;
+    var all = gather(), closed = 'Job Closed – Finalized', active = all.filter(function (x) { return x.st !== closed; });
+    var sig = JSON.stringify(all) + '|' + filter; if (sig === lastSig) return; lastSig = sig;
+    document.getElementById('projCount').textContent = active.length;
+    var st = STAGES();
+    stg.innerHTML = st.map(function (n) { var c = all.filter(function (x) { return x.st === n; }).length; return '<span class="pj-chip' + (filter === n ? ' on' : '') + '" role="button" tabindex="0" onclick="__projFilter(this.getAttribute(\'data-s\'))" data-s="' + esc(n) + '">' + esc(n) + '<b>' + c + '</b></span>'; }).join('');
+    var shown = filter ? all.filter(function (x) { return x.st === filter; }) : active;
+    if (!shown.length) { box.innerHTML = '<div class="pj-empty">' + (filter ? 'Nothing in this stage yet.' : 'No projects in production yet. Set a Current status on any visit, fire, water or lead and it shows up here.') + '</div>'; return; }
+    box.innerHTML = shown.map(function (x) {
+      var t = TYPES[x.kind], opts = st.map(function (n) { return '<option value="' + esc(n) + '"' + (n === x.st ? ' selected' : '') + ' style="background:#0a1a44;color:#fff">' + esc(n) + '</option>'; }).join('');
+      return '<div class="pj-card"><span class="pj-type" style="background:' + t[1] + '">' + t[0] + '</span><div class="pj-name">' + esc(x.name) + '</div>'
+        + (x.sub ? '<div class="pj-sub">' + esc(x.sub) + '</div>' : '') + (x.addr ? '<div class="pj-sub">' + esc(x.addr) + '</div>' : '')
+        + (x.date ? '<div class="pj-sub">Visited ' + esc(x.date.slice(5, 7) + '/' + x.date.slice(8, 10) + '/' + x.date.slice(0, 4)) + '</div>' : '')
+        + '<select onchange="__projSetStatus(\'' + x.kind + '\',\'' + esc(x.id) + '\', this.value)" aria-label="Current status" class="mt-2 w-full text-[11px] font-bold rounded-lg px-2.5 py-2 text-white focus:outline-none" style="background:rgba(10,90,224,.35);border:1px solid rgba(110,170,255,.7)">' + opts + '</select></div>';
+    }).join('');
+  }
+  setInterval(function () { try { render(); } catch (e) {} }, 1000);
+  try { render(); } catch (e) {}
+})();
 </script>
 </body></html>
