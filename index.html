@@ -5101,7 +5101,19 @@ Add New Stop
       } else {
         inner = `<input type="${type || 'text'}" ${common} value="${escapeHtml(value || '')}" class="${DETAIL_INPUT}">`;
       }
+      if (field === 'streetAddress' && value && (!type || type === 'text')) {
+        /* the address shows only as the blue Maps link, inside the same box; the text box stays hidden until Edit is tapped */
+        inner = inner.replace('<input ', '<input style="display:none" ');
+        return `<div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-4"><div class="flex items-center justify-between gap-2 mb-1.5"><span class="text-[11px] font-black uppercase tracking-wider text-slate-400">${escapeHtml(label)}</span><button type="button" onclick="dAddrEdit(this)" style="font-size:11px;font-weight:800;color:#8aa4c8;background:none;border:0;padding:2px 4px;cursor:pointer">Edit</button></div><div class="dAddrLink" style="font-size:15px;line-height:1.35;word-break:break-word">${addrLinkHtml(value)}</div>${inner}</div>`;
+      }
       return `<div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-4 ${type === 'textarea' ? 'md:col-span-2 xl:col-span-3' : ''}"><div class="flex items-center justify-between gap-2 mb-1.5"><span class="text-[11px] font-black uppercase tracking-wider text-slate-400">${escapeHtml(label)}</span>${extra || ''}</div>${inner}</div>`;
+    }
+    function dAddrEdit(btn) {
+      const box = btn.closest('.rounded-2xl'), inp = box && box.querySelector('input'), lk = box && box.querySelector('.dAddrLink');
+      if (!inp) return;
+      const show = inp.style.display === 'none';
+      inp.style.display = show ? '' : 'none'; if (lk) lk.style.display = show ? 'none' : ''; btn.textContent = show ? 'Done' : 'Edit';
+      if (show) inp.focus(); else if (lk) lk.innerHTML = addrLinkHtml(inp.value) || escapeHtml(inp.value);
     }
     const D_ACT = { call: ['#2b78dc', '#7db5ff'], maps: ['#d96900', '#ff7b00'], email: ['#d63a0a', '#ff6a3d'] };
     function dAct(type, label, js) {
