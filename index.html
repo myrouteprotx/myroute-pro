@@ -11910,7 +11910,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
       try { ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; }
       if (!ac) return;
       /* a sharp ping each time the laser lights a pin (the first four notes of a rising scale) */
-      [[1319, 2.8], [1568, 4.6], [1760, 5.6], [2093, 7.4]].forEach(function (p) { tone(p[0], p[1], .9, .16, 'sine'); tone(p[0] * 2, p[1], .35, .05, 'sine'); tone(p[0] * 3, p[1], .06, .05, 'triangle'); });
+      [[1319, 2.8], [1568, 4.6], [1760, 5.6], [2093, 7.4]].forEach(function (p) { tone(p[0], p[1], .9, .07, 'sine'); tone(p[0] * 2, p[1], .35, .02, 'sine'); tone(p[0] * 3, p[1], .06, .02, 'triangle'); });
       /* a deep bass hum under the whole map scene */
       try { [[65, .26], [130, .07]].forEach(function (h) { var o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = h[0]; g.gain.setValueAtTime(0, ac.currentTime); g.gain.linearRampToValueAtTime(h[1], ac.currentTime + 1.5); g.gain.setValueAtTime(h[1], ac.currentTime + PRE - .2); g.gain.linearRampToValueAtTime(0, ac.currentTime + PRE + .7); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + PRE + .8); }); } catch (e) {}
     }
