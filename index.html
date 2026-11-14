@@ -247,6 +247,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     return r.data;
   };
   window.__mrpBlobData = async function (id) {
+    if (id === '5075726f436c65616e') return 'puroclean-logo.png';
     try { var rec = await idbGet('b', id); if (rec && rec.blob) return URL.createObjectURL(rec.blob); } catch (e) {}
     if (!sb) return null;
     var r = await sb.from('blobs').select('type,data').eq('id', id).limit(1);
@@ -2814,6 +2815,7 @@ Add New Stop
           <div class="flex flex-wrap gap-2 mt-2">
             <button type="button" onclick="document.getElementById('logoFileInput').click()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Choose image</button>
             <button type="button" onclick="pasteLogoFromClipboard()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Paste image</button>
+            <button type="button" onclick="useBuiltInLogo()" class="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-xl transition">Use the PuroClean logo</button>
             <button type="button" id="logoRemoveBtn" onclick="removeLogo()" class="hidden px-3 py-1.5 text-xs font-bold text-rose-300 border border-rose-500/40 hover:bg-rose-600/30 rounded-xl transition">Remove logo</button>
           </div>
           <p id="logoStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
@@ -4710,6 +4712,12 @@ Add New Stop
       }
     }
 
+    function useBuiltInLogo() {
+      const idEl = document.getElementById('repCompanyLogoId');
+      idEl.value = '5075726f436c65616e';
+      saveSettings(); renderCompany();
+      setLogoStatus('PuroClean logo saved.');
+    }
     async function pasteLogoFromClipboard() {
       try {
         const items = await navigator.clipboard.read();

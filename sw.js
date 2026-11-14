@@ -28,7 +28,8 @@ async function lookup(id) {
 }
 self.addEventListener('fetch', function (e) {
   var m = new URL(e.request.url).pathname.match(/\/_blob\/([0-9a-f]+)$/);
-  if (m) e.respondWith(lookup(m[1]));
+  if (m && m[1] === '5075726f436c65616e') e.respondWith(fetch('puroclean-logo.png'));
+  else if (m) e.respondWith(lookup(m[1]));
 });
 
 self.addEventListener('push', function (e) {
