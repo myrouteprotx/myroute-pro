@@ -6004,13 +6004,28 @@ Add New Stop
     let detailGroupId = '';
     function detailGroupBox(id) {
       detailGroupId = id;
-      return `<div id="detailGroupBox" class="md:col-span-2 xl:col-span-3 rounded-2xl border border-fuchsia-400/60 bg-fuchsia-950/20 p-4">
-        <div class="text-[11px] font-black uppercase tracking-wider text-fuchsia-300 mb-1">Same manager, more than one property?</div>
-        <div class="text-xs text-slate-300 mb-3">Group the properties this person or business card manages. They stay together on the route tracker and on the reports.</div>
-        <div id="detailGroupMembers"></div>
-        <input type="search" id="detailGroupSearch" oninput="detailGroupResults()" placeholder="Search a property, manager, phone or email to add" autocomplete="off" class="${DETAIL_INPUT} mt-3" style="font-size:16px">
-        <div id="detailGroupResults" class="mt-2 space-y-1.5"></div>
+      let linked = 0; try { const v0 = visits.find(x => x.id === id); if (v0 && v0.groupId) linked = Math.max(0, groupMembers(v0.groupId).length - 1); } catch (e) {}
+      return `<div id="detailGroupBox" class="md:col-span-2 xl:col-span-3 rounded-2xl border border-slate-700 bg-slate-900/70">
+        <button type="button" id="detailGroupToggle" onclick="detailGroupToggle()" aria-expanded="false" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;cursor:pointer;padding:0">
+          <span class="text-[13px] font-extrabold text-white">Does this contact manage another property?</span>
+          ${linked ? `<span class="text-[11px] font-black px-2 py-0.5 rounded-full text-white" style="background:#0a5be0">${linked} linked</span>` : ''}
+          <span id="detailGroupArrow" class="ml-auto text-[11px] font-black text-sky-300">Link a property &#9662;</span>
+        </button>
+        <div id="detailGroupBody" style="display:none;margin-top:10px">
+          <div class="text-xs text-slate-300 mb-2">Properties linked here stay together on the route tracker and on the reports.</div>
+          <div id="detailGroupMembers"></div>
+          <input type="search" id="detailGroupSearch" oninput="detailGroupResults()" placeholder="Search a property, manager, phone or email to add" autocomplete="off" class="${DETAIL_INPUT} mt-3" style="font-size:16px">
+          <div id="detailGroupResults" class="mt-2 space-y-1.5"></div>
+        </div>
       </div>`;
+    }
+    function detailGroupToggle() {
+      const body = document.getElementById('detailGroupBody'), btn = document.getElementById('detailGroupToggle'), arrow = document.getElementById('detailGroupArrow'); if (!body) return;
+      const open = body.style.display === 'none';
+      body.style.display = open ? 'block' : 'none';
+      if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (arrow) arrow.innerHTML = open ? 'Hide &#9652;' : 'Link a property &#9662;';
+      if (open) { try { document.getElementById('detailGroupSearch').focus({ preventScroll: true }); } catch (e) {} }
     }
     function detailGroupRender() {
       const v = visits.find(x => x.id === detailGroupId); const box = document.getElementById('detailGroupMembers'); if (!v || !box) return;
