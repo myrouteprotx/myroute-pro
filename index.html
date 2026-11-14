@@ -1459,7 +1459,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       <div id="topSearchWrap" class="flex justify-center px-1">
         <div class="relative w-full max-w-xl">
           <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style="color:#ff8e6b"></i>
-          <input type="search" id="topSearch" autocomplete="off" style="font-size:16px" placeholder="Search name, business, address or phone..." aria-label="Search visits"
+          <input type="search" id="topSearch" autocomplete="off" name="mrp-find-1" data-lpignore="true" data-1p-ignore data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" style="font-size:16px" placeholder="Search name, business, address or phone..." aria-label="Search visits"
             class="w-full pl-11 pr-4 py-2.5 text-sm bg-slate-950 rounded-full text-white placeholder-slate-400 focus:outline-none">
         </div>
       </div>
@@ -1507,7 +1507,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
             <button type="button" onclick="closePastWeeks()" aria-label="Close" class="px-3 py-1.5 text-sm font-black text-white bg-slate-700 hover:bg-slate-600 rounded-xl">Close</button>
           </div>
           <div class="p-4 border-b border-slate-700">
-            <input type="search" id="pastWeeksSearch" oninput="renderPastWeeks()" placeholder="Search a week: 44, October, Oct 26, or a business name" autocomplete="off" class="w-full text-base px-3 py-2.5 bg-slate-950 border border-slate-600 rounded-xl text-white font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-400" style="font-size:16px">
+            <input type="search" id="pastWeeksSearch" oninput="renderPastWeeks()" placeholder="Search a week: 44, October, Oct 26, or a business name" autocomplete="off" name="mrp-find-2" data-lpignore="true" data-1p-ignore data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" class="w-full text-base px-3 py-2.5 bg-slate-950 border border-slate-600 rounded-xl text-white font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-400" style="font-size:16px">
           </div>
           <div id="pastWeeksList" class="overflow-y-auto p-3 space-y-2"></div>
         </div>
@@ -1727,7 +1727,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
           <button type="button" id="addFireVisitBtn" onclick="openFireModal()" class="ml-auto inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-white rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 shadow-lg shadow-red-600/30 hover:from-red-500 transition active:scale-95">
             <i data-lucide="plus" class="w-4 h-4"></i><span>Add fire visit</span>
           </button>
-          <input type="search" id="fireSearch" autocomplete="off" placeholder="Search fire visits: address, name, phone, date" oninput="fireQuery = this.value; renderFires();" class="w-full basis-full text-sm px-4 py-3 rounded-xl bg-slate-900/80 border border-red-500/50 text-white placeholder-red-200/50 focus:outline-none focus:ring-2 focus:ring-red-400" style="font-size:16px">
+          <input type="search" id="fireSearch" autocomplete="off" name="mrp-find-3" data-lpignore="true" data-1p-ignore data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" placeholder="Search fire visits: address, name, phone, date" oninput="fireQuery = this.value; renderFires();" class="w-full basis-full text-sm px-4 py-3 rounded-xl bg-slate-900/80 border border-red-500/50 text-white placeholder-red-200/50 focus:outline-none focus:ring-2 focus:ring-red-400" style="font-size:16px">
         </div>
         <div class="overflow-x-auto">
           <table class="stack w-full text-left text-xs border-collapse">
@@ -1766,7 +1766,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
           <button type="button" id="addWaterVisitBtn" onclick="openWaterModal()" class="ml-auto inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-white rounded-xl bg-gradient-to-r from-sky-600 via-sky-500 to-blue-500 shadow-lg shadow-sky-600/30 hover:from-sky-500 transition active:scale-95">
             <i data-lucide="plus" class="w-4 h-4"></i><span>Add water loss visit</span>
           </button>
-          <input type="search" id="waterSearch" autocomplete="off" placeholder="Search water loss visits: address, name, phone, date" oninput="waterQuery = this.value; renderWaters();" class="w-full basis-full text-sm px-4 py-3 rounded-xl bg-slate-900/80 border border-sky-500/50 text-white focus:outline-none focus:ring-2 focus:ring-sky-400" style="font-size:16px">
+          <input type="search" id="waterSearch" autocomplete="off" name="mrp-find-4" data-lpignore="true" data-1p-ignore data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" placeholder="Search water loss visits: address, name, phone, date" oninput="waterQuery = this.value; renderWaters();" class="w-full basis-full text-sm px-4 py-3 rounded-xl bg-slate-900/80 border border-sky-500/50 text-white focus:outline-none focus:ring-2 focus:ring-sky-400" style="font-size:16px">
         </div>
         <div class="overflow-x-auto">
           <table class="stack w-full text-left text-xs border-collapse">
@@ -1805,7 +1805,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
           <button type="button" id="addPcwBtn" onclick="openPcwModal()" class="ml-auto inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-white rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-500 shadow-lg shadow-emerald-600/30 hover:from-emerald-500 transition active:scale-95">
             <i data-lucide="plus" class="w-4 h-4"></i><span>Add Company Lead</span>
           </button>
-          <input type="search" id="pcwSearch" autocomplete="off" placeholder="Search company leads: address, name, phone, date" oninput="pcwQuery = this.value; renderPcws();" class="w-full basis-full text-sm px-4 py-3 rounded-xl bg-slate-900/80 border border-emerald-500/50 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400" style="font-size:16px">
+          <input type="search" id="pcwSearch" autocomplete="off" name="mrp-find-5" data-lpignore="true" data-1p-ignore data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" placeholder="Search company leads: address, name, phone, date" oninput="pcwQuery = this.value; renderPcws();" class="w-full basis-full text-sm px-4 py-3 rounded-xl bg-slate-900/80 border border-emerald-500/50 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400" style="font-size:16px">
         </div>
         <div class="overflow-x-auto">
           <table class="stack w-full text-left text-xs border-collapse">
@@ -1847,7 +1847,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
             <!-- Search -->
             <div class="relative w-full lg:w-80">
               <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-              <input type="search" id="searchInput" autocomplete="off" style="font-size:16px" placeholder="Search name, business, address or phone..." 
+              <input type="search" id="searchInput" autocomplete="off" name="mrp-find-6" data-lpignore="true" data-1p-ignore data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" style="font-size:16px" placeholder="Search name, business, address or phone..." 
                 class="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
 
@@ -2098,7 +2098,7 @@ Add New Stop
           <label class="block text-[11px] font-bold text-slate-400 mb-1" for="repSearch">Search this report</label>
           <div class="relative">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-300"></i>
-            <input type="search" id="repSearch" autocomplete="off" placeholder="Search name, business, address, phone, email or notes..." style="font-size:16px; padding-left: 2.25rem;" class="w-full pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-semibold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="search" id="repSearch" autocomplete="off" name="mrp-find-7" data-lpignore="true" data-1p-ignore data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" placeholder="Search name, business, address, phone, email or notes..." style="font-size:16px; padding-left: 2.25rem;" class="w-full pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-semibold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
           <div id="repSearchInfo" class="text-[12px] text-slate-300 font-semibold mt-1 min-h-[1rem]"></div>
         </div>
@@ -2875,7 +2875,7 @@ Add New Stop
       </div>
       <div class="mt-4 space-y-2">
         <label class="block text-xs font-bold text-slate-300" for="adminPasswordInput">Enter the administrator password to delete this visit</label>
-        <input type="password" id="adminPasswordInput" inputmode="numeric" autocomplete="off" style="font-size:16px" onkeydown="if (event.key === 'Enter') { confirmAdminDelete(); }" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-rose-500 focus:outline-none">
+        <input type="text" id="adminPasswordInput" inputmode="numeric" autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other" style="font-size:16px;-webkit-text-security:disc" onkeydown="if (event.key === 'Enter') { confirmAdminDelete(); }" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-rose-500 focus:outline-none">
         <p id="adminError" class="text-xs text-rose-400 font-semibold min-h-[1rem]"></p>
       </div>
       <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
@@ -6143,7 +6143,7 @@ Add New Stop
         <div id="detailGroupBody" style="display:none;margin-top:10px">
           <div class="text-xs text-slate-300 mb-2">Properties linked here stay together on the route tracker and on the reports.</div>
           <div id="detailGroupMembers"></div>
-          <input type="search" id="detailGroupSearch" oninput="detailGroupResults()" placeholder="Search a property, manager, phone or email to add" autocomplete="off" class="${DETAIL_INPUT} mt-3" style="font-size:16px">
+          <input type="search" id="detailGroupSearch" oninput="detailGroupResults()" placeholder="Search a property, manager, phone or email to add" autocomplete="off" name="mrp-find-8" data-lpignore="true" data-1p-ignore data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" class="${DETAIL_INPUT} mt-3" style="font-size:16px">
           <div id="detailGroupResults" class="mt-2 space-y-1.5"></div>
         </div>
       </div>`;
