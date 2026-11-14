@@ -259,7 +259,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     var el = e.target; if (!el || el.tagName !== 'IMG' || el.__mrpTried) return;
     var m = String(el.getAttribute('src') || '').match(/\/_blob\/([0-9a-f]+)$/); if (!m) return;
     el.__mrpTried = true;
-    window.__mrpBlobData(m[1]).then(function (u) { if (u) el.src = u; }).catch(function () {});
+    window.__mrpBlobData(m[1]).then(function (u) { if (u) { el.style.display = ''; el.src = u; } }).catch(function () {});
   }, true);
   window.__mrpFn = async function (name, body) { if (!sb) throw new Error('offline'); var r = await sb.functions.invoke(name, { body: body }); if (r.error) { var d = ''; try { var c = r.error.context; if (c && c.status) { d = 'HTTP ' + c.status + ' '; var j = await c.clone().json(); d += (j.error || '') + ' ' + (j.detail || ''); } } catch (x) {} throw new Error((d || r.error.message || 'function_error').trim().slice(0, 140)); } return r.data; };
   window.claude = { use: function (name) { return ready.then(function () { return name === 'db' ? db : name === 'assets' ? assets : null; }); } };
@@ -3386,6 +3386,7 @@ Add New Stop
           if (s.signOffWeek === getISOWeekString()) signOffWeekStamp = s.signOffWeek;
           Object.keys(fields).forEach(id => {
             const el = document.getElementById(id);
+            if (id === 'repCompanyLogoId' && el && (Date.now() - (window.__logoLocalTs || 0) < 180000 || !fields[id])) return; /* never let an old or empty copy wipe the logo */
             if (el && document.activeElement !== el && typeof fields[id] === 'string') el.value = fields[id];
           });
           lsSet(SETTINGS_KEY, JSON.stringify(currentSettings()));
@@ -4670,7 +4671,7 @@ Add New Stop
         cb.style.display = has ? 'flex' : 'none';
         const emblemEl = brand.querySelector(':scope > img');
         const emblemSrc = emblemEl ? emblemEl.getAttribute('src') : '';
-        cb.innerHTML = (logoId ? `<img src="/_blob/${escapeHtml(logoId)}" alt="${escapeHtml(nm || 'Company logo')}" onerror="this.style.display='none'" class="h-11 w-auto max-w-[140px] object-contain rounded-xl bg-white p-1 shadow-lg">` : '')
+        cb.innerHTML = (logoId ? `<img src="/_blob/${escapeHtml(logoId)}" alt="${escapeHtml(nm || 'Company logo')}" class="h-11 w-auto max-w-[140px] object-contain rounded-xl bg-white p-1 shadow-lg">` : '')
           + (nm ? `<span class="hdr-company-name text-xl sm:text-2xl font-black tracking-tight text-white">${escapeHtml(nm)}</span>` : '')
           + (emblemSrc ? `<img src="${emblemSrc}" alt="My Route Pro" aria-hidden="true" class="hdr-logo-right h-11 w-auto max-w-[140px] object-contain rounded-xl shadow-lg">` : '');
         Array.from(brand.children).forEach(ch => {
@@ -4692,7 +4693,7 @@ Add New Stop
             blk.className = 'flex items-center gap-3 mb-2';
             row.parentElement.insertBefore(blk, row);
           }
-          blk.innerHTML = (logoId ? `<img src="/_blob/${escapeHtml(logoId)}" alt="" onerror="this.style.display='none'" style="height:40px; width:auto; max-width:160px; object-fit:contain; background:#ffffff; border-radius:8px; padding:3px;">` : '')
+          blk.innerHTML = (logoId ? `<img src="/_blob/${escapeHtml(logoId)}" alt="" style="height:40px; width:auto; max-width:160px; object-fit:contain; background:#ffffff; border-radius:8px; padding:3px;">` : '')
             + (nm ? `<span class="text-sm sm:text-base font-black tracking-wide text-white">${escapeHtml(nm)}</span>` : '');
         }
       }
@@ -4757,7 +4758,7 @@ Add New Stop
         const res = await api.upload(blob);
         const idEl = document.getElementById('repCompanyLogoId');
         const oldId = idEl.value;
-        idEl.value = res.id;
+        idEl.value = res.id; window.__logoLocalTs = Date.now();
         saveSettings();
         renderCompany();
         if (oldId) { api.delete(oldId).catch(() => {}); }
@@ -4769,7 +4770,7 @@ Add New Stop
 
     function useBuiltInLogo() {
       const idEl = document.getElementById('repCompanyLogoId');
-      idEl.value = '5075726f436c65616e';
+      idEl.value = '5075726f436c65616e'; window.__logoLocalTs = Date.now();
       saveSettings(); renderCompany();
       setLogoStatus('PuroClean logo saved.');
     }
@@ -4794,7 +4795,7 @@ Add New Stop
       const idEl = document.getElementById('repCompanyLogoId');
       const oldId = idEl.value;
       if (!oldId) return;
-      idEl.value = '';
+      idEl.value = ''; window.__logoLocalTs = Date.now();
       saveSettings();
       renderCompany();
       setLogoStatus('Logo removed.');
