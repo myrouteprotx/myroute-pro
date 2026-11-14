@@ -463,10 +463,12 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 
     /* Date boxes in the forms stay inside their box on iPhone (Safari gives them a fixed minimum width otherwise) */
     [id$="Modal"] input[type="date"] {
-      display: block; width: 100%; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box;
+      display: flex; align-items: center; width: 100%; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box;
       -webkit-appearance: none; appearance: none; text-align: left; min-height: 2.5rem;
     }
     [id$="Modal"] input[type="date"]::-webkit-date-and-time-value { text-align: left; min-width: 0; }
+    [id$="Modal"] input[type="date"]::-webkit-datetime-edit { flex: 1 1 auto; }
+    [id$="Modal"] input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; }
     [id$="Modal"] .grid > *, [id$="Modal"] form > * { min-width: 0; }
 
     /* Narrower desktop windows: the visit lists become cards so every button and box stays on screen */
@@ -7628,7 +7630,7 @@ Add New Stop
       const click = (vid && idx !== undefined) ? ` onclick="event.stopPropagation(); openPropPage('${escapeHtml(vid)}', ${idx})" role="button" style="cursor:pointer;` : ' style="';
       const contact = m.contact || '';
       const btn = (vid && idx !== undefined) ? `<button type="button" onclick="event.stopPropagation(); logPropVisit('${escapeHtml(vid)}', ${idx})" style="display:block;width:100%;margin:0 0 6px 0;padding:6px 8px;border-radius:8px;background:#b33c18;border:1px solid rgba(255,255,255,.6);color:#fff;font-size:11px;font-weight:900;cursor:pointer">+ Add as a new stop</button>` : '';
-      return `<div${click}border-radius:10px;padding:8px 10px;margin:0 0 6px 0;${box}">${btn}<div style="color:${t1};font-weight:900;font-size:13px">${escapeHtml(m.name)}</div>`
+      return `<div${click}border-radius:10px;padding:8px 10px;margin:0 0 6px 0;display:flex;flex-direction:column;${box}">${btn}<div style="color:${t1};font-weight:900;font-size:13px">${escapeHtml(m.name)}</div>`
         + (m.address ? `<div style="color:${t2};font-size:11px">${escapeHtml(m.address)}</div>` : '')
         + (m.phone ? `<div style="color:${t2};font-size:11px">${escapeHtml(m.phone)}</div>` : '')
         + (contact ? `<div style="color:${t2};font-size:11px">${m.contactRole || m.contactPhone || m.contactEmail ? 'Manager' : 'Contact'}: ${escapeHtml(contact)}${m.contactRole ? ' &middot; ' + escapeHtml(m.contactRole) : ''}</div>` : '')
@@ -7636,7 +7638,7 @@ Add New Stop
         + (m.contactEmail ? `<div style="color:${t2};font-size:11px;overflow-wrap:anywhere">${escapeHtml(m.contactEmail)}</div>` : '')
         + (m.notes ? `<div style="color:${t2};font-size:11px;white-space:pre-line">${escapeHtml(m.notes)}</div>` : '')
         + (m.visitDate ? `<div style="color:${ac};font-size:11px;font-weight:800">Visited ${escapeHtml(mpDate(m.visitDate))}</div>` : (vid ? `<div style="color:${ac};font-size:10px;font-weight:700">Tap to open and add info</div>` : ''))
-        + ((vid && idx !== undefined) ? `<button type="button" onclick="event.stopPropagation(); deleteProp('${escapeHtml(vid)}', ${idx})" style="display:block;width:100%;margin:8px 0 0 0;padding:6px 8px;border-radius:8px;background:rgba(194,56,14,.25);border:1px solid #fe8f6e;color:#ffd8cc;font-size:11px;font-weight:900;cursor:pointer">Delete this property</button>` : '')
+        + ((vid && idx !== undefined) ? `<div style="flex:1 1 auto;min-height:8px"></div><button type="button" onclick="event.stopPropagation(); deleteProp('${escapeHtml(vid)}', ${idx})" style="display:block;width:100%;margin:0;padding:6px 8px;border-radius:8px;background:rgba(194,56,14,.25);border:1px solid #fe8f6e;color:#ffd8cc;font-size:11px;font-weight:900;cursor:pointer">Delete this property</button>` : '')
         + `</div>`;
     }
     function managedCards(v, mode, clickable) { const fb = (v.clientName && v.clientName !== 'Contact TBD') ? v.clientName : ''; return '<div class="prop-grid">' + managedItems(v).map((m, i) => propCardHtml(propShown(v, m, fb), mode, clickable ? v.id : '', clickable ? i : undefined)).join('') + '</div>'; }
