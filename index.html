@@ -2875,6 +2875,16 @@ Add New Stop
         </div>
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-slate-200">Opening intro movie</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Plays every time you open the app. Turn it off here if you want to go straight in. This setting is for this device only.</div>
+            </div>
+            <button type="button" id="introToggleBtn" onclick="toggleIntroSetting()" class="shrink-0 px-3 py-1.5 text-xs font-black rounded-xl border transition">On</button>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Sync status</div>
           <div id="settingsSyncStatus" class="text-xs text-slate-200 font-semibold mt-1">This device only</div>
         </div>
@@ -11672,9 +11682,8 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 <script>
 (function () {
   var KEY = 'mrp_intro_seen';
-  var DAY = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' }); try { if (localStorage.getItem(KEY) === DAY && location.hash !== '#intro') return; } catch (e) {}
+  try { if (localStorage.getItem('mrp_intro_off') === '1' && location.hash !== '#intro') return; } catch (e) {}
   function start() {
-    try { localStorage.setItem(KEY, DAY); } catch (e) {}
     var root = document.createElement('div'); root.id = 'mrpIntro';
     var logoId = ''; try { var le = document.getElementById('repCompanyLogoId'); logoId = le ? le.value.trim() : ''; } catch (e) {}
     var nm = ''; try { var ne = document.getElementById('repCompanyName'); nm = ne ? ne.value.trim() : ''; } catch (e) {}
@@ -11806,5 +11815,11 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   }
   if (document.readyState === 'complete') setTimeout(waitThenStart, 150); else addEventListener('load', function () { setTimeout(waitThenStart, 150); });
 })();
+</script>
+<script>
+function renderIntroToggle() { var b = document.getElementById('introToggleBtn'); if (!b) return; var off = false; try { off = localStorage.getItem('mrp_intro_off') === '1'; } catch (e) {} b.textContent = off ? 'Off' : 'On'; b.className = 'shrink-0 px-3 py-1.5 text-xs font-black rounded-xl border transition ' + (off ? 'text-slate-300 bg-slate-800 border-slate-600' : 'text-white bg-emerald-600 border-emerald-400'); }
+function toggleIntroSetting() { var off = false; try { off = localStorage.getItem('mrp_intro_off') === '1'; localStorage.setItem('mrp_intro_off', off ? '0' : '1'); } catch (e) {} renderIntroToggle(); }
+renderIntroToggle();
+document.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('[onclick*="openSettings"]')) setTimeout(renderIntroToggle, 50); }, true);
 </script>
 </body></html>
