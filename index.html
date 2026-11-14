@@ -11928,6 +11928,8 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function tick(now) {
       if (done) return;
       var t = (now - t0) / 1000;
+      /* the prepared sound is the master clock, so every ping lands on the exact frame its pin lights */
+      if (pre && !pre.paused && !pre.ended && pre.currentTime > 0.05) t = pre.currentTime;
       if (!cut && t >= PRE) { cut = true; root.classList.add('ready'); seek(); var p = v.play(); if (p && p.catch) p.catch(finish); cv.style.opacity = '0'; /* the narration is inside intro-end.mp4 and starts 0.3 s after the logo is complete */ }
       if (t < PRE + .7) { draw(Math.min(t, PRE + .7)); raf = requestAnimationFrame(tick); } else { cv.style.display = 'none'; }
     }
