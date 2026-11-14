@@ -11682,14 +11682,14 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     for (var k = 0; k < word.length; k++) h += word[k] === ' ' ? '<span class="sp" style="--i:' + k + '">&nbsp;</span>' : '<span style="--i:' + k + '">' + word[k] + '</span>';
     root.innerHTML = '<canvas></canvas><div class="flash"></div><button type="button" class="skip">Skip &rsaquo;</button>'
       + '<div class="ti"><h1>' + h + '</h1><div class="tag">The Smarter Way to Manage Your Market</div>'
-      + '<div class="co"><img alt="" src="' + logoSrc + '"><b></b></div></div>';
-    root.querySelector('.co b').textContent = nm;
+      + '</div>';
     document.body.appendChild(root);
     var cv = root.querySelector('canvas'), cx = cv.getContext('2d'), flash = root.querySelector('.flash');
     var W = 0, H = 0, dpr = Math.min(2, window.devicePixelRatio || 1);
     function size() { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); }
     size(); addEventListener('resize', size);
     var emb = new Image(); var hdr = document.querySelector('img[alt="MyRoute Pro"]'); if (hdr) emb.src = hdr.getAttribute('src');
+    var wm = null, wmi = new Image(); wmi.onload = function () { try { var c = document.createElement('canvas'); c.width = wmi.naturalWidth; c.height = wmi.naturalHeight; var x = c.getContext('2d'); x.drawImage(wmi, 0, 0); var d = x.getImageData(0, 0, c.width, c.height), a = d.data; for (var q = 0; q < a.length; q += 4) { var m = Math.min(a[q], a[q + 1], a[q + 2]), al = Math.min(255, (255 - m) * 1.15) * (a[q + 3] / 255); a[q] = 235; a[q + 1] = 245; a[q + 2] = 255; a[q + 3] = al; } x.putImageData(d, 0, 0); wm = c; } catch (er) {} }; wmi.src = logoSrc;
     var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
     var pts = []; for (var i = 0; i < 7; i++) pts.push({ x: .08 + i * .14 + (rnd() - .5) * .05, y: .16 + Math.sin(i * 1.3) * .09 + rnd() * .09 });
     var cols = ['#22d3ee', '#e879f9', '#34d399', '#fbbf24', '#f472b6', '#60a5fa', '#a3e635'];
@@ -11741,6 +11741,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
       /* finale: scrim, shockwave and the logo */
       var cxm = W / 2, cym = H * .31, R = M * .21;
       var sc = io((s - T_ARR - .8) / 1.8); if (sc > 0) { var vg = cx.createRadialGradient(cxm, H * .45, M * .1, cxm, H * .45, Math.max(W, H) * .8); vg.addColorStop(0, 'rgba(2,8,23,' + (.55 * sc) + ')'); vg.addColorStop(1, 'rgba(2,8,23,' + (.85 * sc) + ')'); cx.fillStyle = vg; cx.fillRect(0, 0, W, H); }
+      if (wm && sc > 0) { var wmw = Math.min(W * .62, 420), wmh = wmw * wm.height / wm.width; cx.globalAlpha = .3 * sc; cx.drawImage(wm, W / 2 - wmw / 2, H * .81 - wmh / 2, wmw, wmh); cx.globalAlpha = 1; }
       if (s > T_LOGO && !flashed) { flashed = true; flash.style.transition = 'none'; flash.style.opacity = '.7'; requestAnimationFrame(function () { flash.style.transition = 'opacity 1.4s ease'; flash.style.opacity = '0'; }); }
       if (s > T_LOGO) { var u = s - T_LOGO, e = ease(u / 1.6);
         cx.globalCompositeOperation = 'lighter';
