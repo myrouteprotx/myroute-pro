@@ -230,11 +230,14 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       session = await showSignIn();
     }
     uid = session.user.id; localStorage.setItem('mrp_uid', uid);
+    try { var md = (session.user && session.user.user_metadata) || {}; if (md.initials) localStorage.setItem('mrp_init_' + uid, String(md.initials)); } catch (e) {}
     saveAuthForWorker(session);
     sb.auth.onAuthStateChange(function (ev, s) { if (s) saveAuthForWorker(s); });
     try { await pull(); listen(); } catch (e) { online = false; }
     scheduleFlush();
   })();
+  window.__mrpGetInitials = function () { try { return localStorage.getItem('mrp_init_' + (uid || localStorage.getItem('mrp_uid') || '')) || ''; } catch (e) { return ''; } };
+  window.__mrpSetInitials = function (v) { v = String(v || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); try { localStorage.setItem('mrp_init_' + (uid || localStorage.getItem('mrp_uid') || ''), v); } catch (e) {} try { if (sb && sb.auth && sb.auth.updateUser) sb.auth.updateUser({ data: { initials: v } }); } catch (e) {} return v; };
   window.__mrpScan = async function (b64, mediaType, mode) {
     if (!sb) throw new Error('offline');
     var r = await sb.functions.invoke('rapid-task', { body: { image: b64, mediaType: mediaType || 'image/jpeg', mode: mode || '' } });
@@ -1336,6 +1339,9 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     .pf-card input { width:100%; font-size:12px; font-weight:700; padding:6px 8px; border-radius:8px; background:#050d22; border:1px solid rgba(110,170,255,.5); color:#fff; }
     .pf-card .pf-meta { display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:10px; font-weight:700; color:#8aa4c8; }
     .pf-card .pf-meta button { font-size:10px; font-weight:800; color:#ff8a7a; background:none; border:0; cursor:pointer; padding:0; }
+    .pn-by, .pf-by { font-weight:900; color:#ff9a3d; white-space:nowrap; }
+    .pf-capline { display:flex; align-items:center; gap:6px; }
+    .pf-capline input { flex:1 1 auto; min-width:0; width:auto; }
     .pf-empty { margin-top:10px; font-size:12px; font-weight:700; color:#8aa4c8; }
     .pn-thumbs img { height:56px; width:auto; border-radius:8px; border:1px solid rgba(110,170,255,.7); background:#000; }
     .pn-list { margin-top:12px; display:flex; flex-direction:column; gap:8px; max-height:58vh; overflow:auto; padding-right:2px; }
@@ -12127,7 +12133,7 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
     if (!n.length) return '';
     return n.map(function (e) {
       return '<div class="pn-item"><div class="pn-meta"><span>' + esc(when(e.ts)) + '</span>' + (e.st ? '<span class="st">' + esc(e.st) + '</span>' : '') + '<button type="button" data-pn-del="' + esc(e.id) + '" onclick="__pnDel(this)">Delete</button></div>'
-        + (e.text ? '<div class="pn-text">' + esc(e.text) + '</div>' : '')
+        + ((e.text || e.by) ? '<div class="pn-text">' + esc(e.text || '') + (e.by ? (e.text ? ' ' : '') + '<span class="pn-by">- ' + esc(e.by) + '</span>' : '') + '</div>' : '')
         + ((e.photos && e.photos.length) ? '<div class="pn-thumbs">' + e.photos.map(function (pid) { return '<a href="/_blob/' + esc(pid) + '" target="_blank" rel="noopener"><img src="/_blob/' + esc(pid) + '" alt="Production photo" loading="lazy"></a>'; }).join('') + '</div>' : '') + '</div>';
     }).join('');
   }
@@ -12150,18 +12156,21 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
     if (!p.length) return '<div class="pf-empty">No photos in this folder yet. Upload or take photos, then add a caption to each.</div>';
     return '<div class="pf-grid">' + p.map(function (e) {
       return '<div class="pf-card"><a href="/_blob/' + esc(e.id) + '" target="_blank" rel="noopener"><img src="/_blob/' + esc(e.id) + '" alt="' + esc(e.caption || 'Project photo') + '" loading="lazy"></a>'
-        + '<input type="text" value="' + esc(e.caption || '') + '" placeholder="Add a caption..." maxlength="200" data-pf="' + esc(e.pid) + '" onchange="__pfCap(this)">'
+        + '<div class="pf-capline"><input type="text" value="' + esc(e.caption || '') + '" placeholder="Add a caption..." maxlength="200" data-pf="' + esc(e.pid) + '" onchange="__pfCap(this)">' + ((e.cby || e.by) ? '<span class="pf-by">- ' + esc(e.cby || e.by) + '</span>' : '') + '</div>'
         + '<div class="pf-meta"><span>' + esc(when(e.ts)) + '</span><button type="button" data-pf-del="' + esc(e.pid) + '" onclick="__pfDel(this)">Delete</button></div></div>';
     }).join('') + '</div>';
   }
   function pfRefresh(kind, id) { var g = document.getElementById('pfGrid'); if (g) g.innerHTML = folderHtml(kind, id); var c = document.getElementById('pfCount'), r = rec(kind, id); if (c) c.textContent = (r && r.prodPhotos) ? r.prodPhotos.length : 0; }
-  window.__pfFiles = async function (inp) {
+  window.__pfFiles = function (inp) {
+    var files0 = Array.prototype.slice.call(inp.files || []); try { inp.value = ''; } catch (e) {} if (!files0.length) return;
+    needInitials(function (ini) { window.__pfDo(files0, ini); });
+  };
+  window.__pfDo = async function (files, ini) {
     var b = box(); if (!b) return; var kind = b.getAttribute('data-pn-kind'), id = b.getAttribute('data-pn-id'), r = rec(kind, id); if (!r) return;
-    var files = Array.prototype.slice.call(inp.files || []); inp.value = ''; if (!files.length) return;
     var api = await getAssets(); if (!api) { showToast('Photo upload is not available right now'); return; }
     showToast('Adding ' + files.length + ' photo' + (files.length > 1 ? 's' : '') + '...');
     if (!Array.isArray(r.prodPhotos)) r.prodPhotos = []; var added = 0, failed = 0, why = '';
-    for (var i = 0; i < files.length; i++) { if (files.length > 3 && i > 0 && i % 3 === 0) showToast('Added ' + i + ' of ' + files.length + ' photos...'); try { var bl = await compressImage(files[i], 1600, .82), res = await api.upload(bl); r.prodPhotos.push({ pid: 'pf' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), id: res.id, ts: new Date().toISOString(), caption: '' }); added++; } catch (e) { failed++; if (!why) why = (e && (e.code || e.message)) ? String(e.code || e.message) : ''; } }
+    for (var i = 0; i < files.length; i++) { if (files.length > 3 && i > 0 && i % 3 === 0) showToast('Added ' + i + ' of ' + files.length + ' photos...'); try { var bl = await compressImage(files[i], 1600, .82), res = await api.upload(bl); r.prodPhotos.push({ pid: 'pf' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), id: res.id, ts: new Date().toISOString(), caption: '', by: ini }); added++; } catch (e) { failed++; if (!why) why = (e && (e.code || e.message)) ? String(e.code || e.message) : ''; } }
     if (added) { persist(kind, r); pfRefresh(kind, id); }
     if (failed) showToast((added ? added + ' added, ' : '') + failed + ' photo' + (failed > 1 ? 's' : '') + ' could not be saved' + (/quota|limit|size|large|space|storage/i.test(why) ? ' (storage limit reached)' : ' (check your connection and try again)'));
     else if (added) showToast(added + ' photo' + (added > 1 ? 's' : '') + ' added. Tap under a photo to add a caption');
@@ -12169,7 +12178,7 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
   window.__pfCap = function (inp) {
     var b = box(); if (!b) return; var kind = b.getAttribute('data-pn-kind'), id = b.getAttribute('data-pn-id'), r = rec(kind, id); if (!r) return;
     var e = (r.prodPhotos || []).filter(function (x) { return x.pid === inp.getAttribute('data-pf'); })[0]; if (!e) return;
-    e.caption = inp.value.trim(); persist(kind, r); showToast('Caption saved');
+    needInitials(function (ini) { e.caption = inp.value.trim(); if (e.caption) e.cby = ini; persist(kind, r); pfRefresh(kind, id); showToast('Caption saved'); });
   };
   window.__pfDel = function (btn) {
     if (btn.getAttribute('data-sure') !== '1') { btn.setAttribute('data-sure', '1'); btn.textContent = 'Tap again to delete'; setTimeout(function () { try { btn.setAttribute('data-sure', '0'); btn.textContent = 'Delete'; } catch (e) {} }, 3000); return; }
@@ -12189,11 +12198,23 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
     var b = box(); if (!b) return; var kind = b.getAttribute('data-pn-kind'), id = b.getAttribute('data-pn-id'), r = rec(kind, id); if (!r) return;
     var ta = document.getElementById('pnText'), text = ta.value.trim();
     if (!text && !pending.length) { showToast('Type a note or add a photo first'); return; }
-    if (!Array.isArray(r.prodNotes)) r.prodNotes = [];
-    r.prodNotes.push({ id: 'pn' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: new Date().toISOString(), st: r.currentStatus || '', text: text, photos: pending.slice() });
-    pending = []; ta.value = ''; document.getElementById('pnPend').innerHTML = '';
-    persist(kind, r); document.getElementById('pnList').innerHTML = listHtml(kind, id); showToast('Production note saved');
+    needInitials(function (ini) {
+      if (!Array.isArray(r.prodNotes)) r.prodNotes = [];
+      r.prodNotes.push({ id: 'pn' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: new Date().toISOString(), st: r.currentStatus || '', text: text, photos: pending.slice(), by: ini });
+      pending = []; ta.value = ''; document.getElementById('pnPend').innerHTML = '';
+      document.getElementById('pnList').innerHTML = listHtml(kind, id); try { persist(kind, r); } catch (e) { console.warn(e); } showToast('Production note saved');
+    });
   };
+  /* who is writing: initials (capitals) are asked once per login, then stamped on every note, photo and caption */
+  function needInitials(cb) {
+    var cur = (window.__mrpGetInitials && window.__mrpGetInitials()) || ''; if (cur) { cb(cur); return; }
+    var m = document.createElement('div'); m.style.cssText = 'position:fixed;inset:0;z-index:99600;background:rgba(0,4,14,.8);display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = '<div style="width:100%;max-width:360px;border-radius:18px;border:1.5px solid rgba(110,170,255,.7);background:#06112b;padding:18px;color:#fff"><div style="font-size:16px;font-weight:900;margin-bottom:6px">Your initials</div><div style="font-size:12px;color:#9bb2e6;font-weight:700;margin-bottom:10px">These are added after every note and photo caption you write so everyone can see who wrote it. You only enter them once.</div><input id="mrpIniIn" maxlength="4" autocomplete="off" placeholder="For example JL" style="width:100%;box-sizing:border-box;text-transform:uppercase;font-size:20px;font-weight:900;letter-spacing:2px;padding:10px 12px;border-radius:12px;background:#02061a;border:1px solid rgba(110,170,255,.7);color:#fff"><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button type="button" id="mrpIniNo" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(110,170,255,.5);background:none;color:#9bb2e6;font-weight:800;cursor:pointer">Cancel</button><button type="button" id="mrpIniOk" style="padding:8px 18px;border-radius:10px;border:0;background:#1677ff;color:#fff;font-weight:900;cursor:pointer">Save</button></div></div>';
+    document.body.appendChild(m); var inp = m.querySelector('#mrpIniIn'); inp.focus();
+    function done() { var v = (window.__mrpSetInitials ? window.__mrpSetInitials(inp.value) : ''); if (!v) { inp.style.borderColor = '#ff6b4a'; return; } m.remove(); cb(v); }
+    m.querySelector('#mrpIniOk').onclick = done; m.querySelector('#mrpIniNo').onclick = function () { m.remove(); };
+    inp.onkeydown = function (e) { if (e.key === 'Enter') done(); };
+  }
   window.__pnDel = function (btn) {
     if (btn.getAttribute('data-sure') !== '1') { btn.setAttribute('data-sure', '1'); btn.textContent = 'Tap again to delete'; setTimeout(function () { try { btn.setAttribute('data-sure', '0'); btn.textContent = 'Delete'; } catch (e) {} }, 3000); return; }
     var b = box(); if (!b) return; var kind = b.getAttribute('data-pn-kind'), id = b.getAttribute('data-pn-id'), r = rec(kind, id); if (!r) return;
