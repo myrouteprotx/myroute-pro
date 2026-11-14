@@ -1282,13 +1282,13 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 
     /* Visit detail page: compact fields on the left, Production Notes on the right */
     #detailBody .dt-wrap { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr); gap:16px; align-items:start; }
-    #detailBody .dt-right { position:sticky; top:74px; }
+    #detailBody .dt-right { position:static; }
     #detailBody .dt-grid { grid-template-columns:repeat(auto-fill,minmax(210px,1fr)) !important; }
     #detailBody .dt-grid > div { padding:8px 10px !important; border-radius:12px !important; }
     #detailBody .dt-grid > .md\:col-span-2 { grid-column:1 / -1 !important; }
     #detailBody .dt-grid > div:has(img), #detailBody .dt-grid > div:has(textarea) { grid-column:1 / -1; }
     #detailBody .dt-grid > .dt-photorow { padding:0 !important; border-radius:0 !important; }
-    #detailBody .dt-grid > div:has(textarea), #detailBody #detailGroupBox, #detailBody #detailDropBox { max-width:700px; justify-self:start; width:100%; }
+    #detailBody .dt-grid > div:has(textarea), #detailBody #detailGroupBox { max-width:700px; justify-self:start; width:100%; }
     #detailBody .dt-photorow { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
     #detailBody .dt-photorow > div { flex:0 1 auto; width:fit-content; max-width:100%; padding:8px 10px; border-radius:12px; }
     #detailBody .dt-photorow img { height:176px; width:auto; max-width:100%; }
@@ -5314,14 +5314,13 @@ Add New Stop
           + dEdit('Job title', kind, id, 'clientRole', v.clientRole)
           + dEdit('Phone', kind, id, 'phone', v.phone, 'tel', null, v.phone ? dCallBtn(v.phone) : '')
           + dEdit('Email', kind, id, 'email', v.email, 'email', null, v.email ? dEmailBtn(v.email, id) : '')
-          + dEdit('Contact preference', kind, id, 'preferredContact', v.preferredContact || 'Phone Call', 'select', PREFERRED_OPTIONS)
           + dEdit('Address', kind, id, 'streetAddress', v.streetAddress, 'text', null, v.streetAddress ? '<div style="margin-top:8px;font-size:14px">' + addrLinkHtml(v.streetAddress, v.businessName) + '</div>' : '')
           + dEdit('Visited on', kind, id, 'visitDate', v.visitDate, 'date')
           + dEdit('When to reach back', kind, id, 'followUpDate', v.followUpDate, 'date')
           + dEdit('Outcome status', kind, id, 'visitStatus', v.visitStatus || 'New Lead', 'select', STATUS_OPTIONS.map(x => [x, x]))
           + dEdit('Result of visit', kind, id, 'visitResult', v.visitResult || '', 'select', RESULT_OPTIONS.map(r => [r.value, r.label]))
           + dEdit('Notes', kind, id, 'notes', v.notes, 'textarea')
-          + dField('Properties they manage', managedItems(v).length ? managedCards(v, 'dark', true) : '') + detailGroupBox(id) + detailPhotoBox(kind, id) + dPhotoRow(dField('Building photos', dPhotos(visitPhotoIds(v), 'Building')) + dField('Business card', dPhotos([v.cardPhotoId], 'Business card')))
+          + dField('Properties they manage', managedItems(v).length ? managedCards(v, 'dark', true) : '') + detailGroupBox(id) + dPhotoRow(dField('Building photos', dPhotos(visitPhotoIds(v), 'Building')) + dField('Business card', dPhotos([v.cardPhotoId], 'Business card')))
           + dField('Follow-up email', followUpBox(v))
           + dField('Calls logged', dCalls(v.calls)) + dField('Previous visit notes', dHistory(v.notesHistory));
         editFn = () => editVisit(id);
@@ -5340,7 +5339,7 @@ Add New Stop
           + dEdit('When to reach back', kind, id, 'followUpDate', f.followUpDate, 'date')
           + dEdit('Outcome', kind, id, 'outcome', f.outcome || '', 'select', outList)
           + dEdit('Notes', kind, id, 'notes', f.notes, 'textarea')
-          + detailPhotoBox(kind, id) + dPhotoRow(dField('Photo', dPhotos([f.photoId], 'Property')))
+          + dPhotoRow(dField('Photo', dPhotos([f.photoId], 'Property')))
           + dField('Weekly reports', c.weekOf(f).length ? escapeHtml(c.weekOf(f).map(w => 'Week ' + parseInt(w.split('-W')[1], 10)).join(', ')) : '')
           + dField('Calls logged', dCalls(f.calls)) + dField('Previous visit notes', dHistory(f.notesHistory));
         editFn = () => window[c.edit](id);
@@ -5348,7 +5347,7 @@ Add New Stop
       document.getElementById('detailKind').textContent = detailName[kind];
       document.getElementById('detailKind').className = 'text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ' + detailTone[kind];
       document.getElementById('detailKind').style.display = kind === 'visit' ? 'none' : '';
-      document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${kind === 'visit' ? followUpTopBtn(id) : ''}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="dt-wrap"><div class="dt-left"><div class="dt-grid grid gap-2 grid-cols-1">${html}</div></div><aside class="dt-right">${window.prodNotesHtml ? window.prodNotesHtml(kind, id) : ''}</aside></div>`;
+      document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${kind === 'visit' ? followUpTopBtn(id) : ''}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="dt-wrap"><div class="dt-left"><div class="dt-grid grid gap-2 grid-cols-1">${html}</div></div><aside class="dt-right"><div style="margin-bottom:12px">${detailPhotoBox(kind, id)}</div>${window.prodNotesHtml ? window.prodNotesHtml(kind, id) : ''}</aside></div>`;
       detailDirty = new Set();
       if (kind === 'visit') {
         detailGroupRender();
