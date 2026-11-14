@@ -1304,6 +1304,19 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     .pn-title span.pn-tag { margin-left:auto; font-size:10px; font-weight:900; padding:3px 9px; border-radius:999px; background:linear-gradient(90deg,#d97200,#f05a00); color:#fff; max-width:60%; text-align:center; }
     .pn-ta { width:100%; margin-top:10px; min-height:84px; resize:vertical; font-size:13px; font-weight:600; color:#fff; background:rgba(2,6,20,.9); border:1px solid rgba(110,170,255,.7); border-radius:12px; padding:9px 11px; outline:none; }
     .pn-ta:focus { box-shadow:0 0 0 2px #1677ff; }
+    /* Production Notes: full width under everything, with room for a big note field, the saved notes and the photo folder */
+    #detailBody .dt-pnwide { margin-top:16px; }
+    #detailBody .dt-pnwide .pn-box { min-height:inherit; box-sizing:border-box; }
+    #detailBody .dt-pnwide .pn-ta { min-height:150px; font-size:14px; }
+    #detailBody .dt-pnwide .pn-list { max-height:none; }
+    #detailBody .dt-pnwide .pf-grid { grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); }
+    #detailBody .dt-pnwide .pf-card img { height:150px; }
+    @media (min-width: 1100px) {
+      #detailBody .dt-pnwide .pn-box { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:24px; align-content:start; }
+      #detailBody .dt-pnwide .pn-box > .pn-title { grid-column:1 / -1; }
+      #detailBody .dt-pnwide .pn-box > .pn-ta, #detailBody .dt-pnwide .pn-box > .pn-thumbs, #detailBody .dt-pnwide .pn-box > .pn-row, #detailBody .dt-pnwide .pn-box > .pn-list { grid-column:1; }
+      #detailBody .dt-pnwide .pn-box > .pf-folder { grid-column:2; grid-row:2 / span 4; margin-top:10px; border-top:0; padding-top:0; }
+    }
     .pn-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
     .pn-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:11px; font-size:12px; font-weight:900; color:#fff; border:2px solid #7fb8ff; background:#0a5be0; cursor:pointer; }
     .pn-btn.alt { background:rgba(10,40,100,.7); border-color:rgba(110,170,255,.7); }
@@ -5163,6 +5176,7 @@ Add New Stop
     let detailAdds = [], detailAddCtx = null, detailAddBusy = false;
     /* wide screens: the Add photos box is as tall as the left block, from the top boxes down to the bottom of the linked-property bar (or Notes) */
     function detailFitPhotos() {
+      try { const pn = document.getElementById('dtPN'); if (pn) { const r = pn.getBoundingClientRect(), m = Math.max(0, Math.round(window.innerHeight - r.top - 24)); pn.style.minHeight = (m > 260 ? m : 0) + 'px'; } } catch (e) {}
       const box = document.getElementById('detailDropBox'), grid = document.querySelector('#detailBody .dt-grid'); if (!box || !grid) return;
       if (!window.matchMedia('(min-width: 1500px)').matches) { box.style.height = ''; box.style.overflow = ''; return; }
       let a = document.getElementById('detailGroupBox'); if (!a) { const ta = grid.querySelector('textarea'); a = ta && ta.closest('.rounded-2xl'); }
@@ -5360,7 +5374,7 @@ Add New Stop
       document.getElementById('detailKind').textContent = detailName[kind];
       document.getElementById('detailKind').className = 'text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ' + detailTone[kind];
       document.getElementById('detailKind').style.display = kind === 'visit' ? 'none' : '';
-      document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${kind === 'visit' ? followUpTopBtn(id) : ''}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="dt-wrap"><div class="dt-left"><div class="dt-grid grid gap-2 grid-cols-1">${html}</div></div><aside class="dt-right"><div style="margin-bottom:12px">${detailPhotoBox(kind, id, detailPhotoInner)}</div>${window.prodNotesHtml ? window.prodNotesHtml(kind, id) : ''}</aside></div>`;
+      document.getElementById('detailBody').innerHTML = `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-1"><h1 id="detailTitle" class="text-2xl sm:text-3xl font-black text-white break-words">${escapeHtml(title)}</h1>${kind === 'visit' ? followUpTopBtn(id) : ''}</div><p class="text-xs text-slate-400 mb-4">Click any box to change it. Changes save as soon as you finish.</p><div class="dt-wrap"><div class="dt-left"><div class="dt-grid grid gap-2 grid-cols-1">${html}</div></div><aside class="dt-right">${detailPhotoBox(kind, id, detailPhotoInner)}</aside></div><div id="dtPN" class="dt-pnwide">${window.prodNotesHtml ? window.prodNotesHtml(kind, id) : ''}</div>`;
       detailDirty = new Set();
       try {
         const g = document.querySelector('#detailBody .dt-grid');
