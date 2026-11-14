@@ -3854,6 +3854,7 @@ Add New Stop
     }
     function openPastWeeks() {
       const m = document.getElementById('pastWeeksModal');
+      if (m.parentNode !== document.body) document.body.appendChild(m);
       document.getElementById('pastWeeksSearch').value = '';
       renderPastWeeks();
       m.classList.remove('hidden');
