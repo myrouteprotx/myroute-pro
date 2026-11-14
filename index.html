@@ -1313,9 +1313,11 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     #detailBody .dt-pnwide .pf-card img { height:150px; }
     @media (min-width: 1100px) {
       #detailBody .dt-pnwide .pn-box { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:24px; align-content:start; }
-      #detailBody .dt-pnwide .pn-box > .pn-title { grid-column:1 / -1; }
+      #detailBody .dt-pnwide .pn-box > .pn-title { grid-column:1; }
       #detailBody .dt-pnwide .pn-box > .pn-ta, #detailBody .dt-pnwide .pn-box > .pn-thumbs, #detailBody .dt-pnwide .pn-box > .pn-row, #detailBody .dt-pnwide .pn-box > .pn-list { grid-column:1; }
-      #detailBody .dt-pnwide .pn-box > .pf-folder { grid-column:2; grid-row:2 / span 4; margin-top:10px; border-top:0; padding-top:0; }
+      #detailBody .dt-pnwide .pn-box { grid-template-rows:repeat(5,auto) 1fr; }
+      #detailBody .dt-pnwide .pn-box > .pf-folder { grid-column:2; grid-row:1 / span 6; margin-top:0; border-top:0; padding-top:0; min-width:0; }
+      #detailBody .dt-pnwide .pn-title, #detailBody .dt-pnwide .pf-head { min-height:38px; }
     }
     .pn-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
     .pn-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:11px; font-size:12px; font-weight:900; color:#fff; border:2px solid #7fb8ff; background:#0a5be0; cursor:pointer; }
@@ -1323,7 +1325,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     .pn-btn.go { background:linear-gradient(90deg,#d97200,#f05a00); border-color:#ffb066; margin-left:auto; }
     .pn-thumbs { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
     .pf-folder { margin-top:14px; border-top:1px solid rgba(110,170,255,.35); padding-top:12px; }
-    .pf-head { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:14px; font-weight:900; color:#fff; }
+    .pf-head { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:15px; font-weight:900; color:#fff; }
     .pf-head .pf-count { font-size:11px; font-weight:900; padding:2px 9px; border-radius:999px; background:#0a5be0; }
     .pf-head .pf-btns { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
     .pf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px; }
@@ -12087,7 +12089,7 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
   function when(iso) { try { return new Date(iso).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return String(iso); } }
   function listHtml(kind, id) {
     var r = rec(kind, id), n = (r && Array.isArray(r.prodNotes)) ? r.prodNotes.slice().reverse() : [];
-    if (!n.length) return '<div class="pn-empty">No production notes yet. Add the first one above.</div>';
+    if (!n.length) return '';
     return n.map(function (e) {
       return '<div class="pn-item"><div class="pn-meta"><span>' + esc(when(e.ts)) + '</span>' + (e.st ? '<span class="st">' + esc(e.st) + '</span>' : '') + '<button type="button" data-pn-del="' + esc(e.id) + '" onclick="__pnDel(this)">Delete</button></div>'
         + (e.text ? '<div class="pn-text">' + esc(e.text) + '</div>' : '')
@@ -12100,9 +12102,9 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
     return '<div class="pn-box" data-pn-kind="' + kind + '" data-pn-id="' + esc(id) + '"><div class="pn-title"><span>&#128193; Production Notes</span>' + (st ? '<span class="pn-tag">' + esc(st) + '</span>' : '') + '</div>'
       + '<textarea class="pn-ta" id="pnText" placeholder="Add a production note..."></textarea>'
       + '<div class="pn-thumbs" id="pnPend"></div>'
-      + '<div class="pn-row"><input type="file" id="pnFile" accept="image/*" multiple style="display:none" onchange="__pnFiles(this)"><button type="button" class="pn-btn alt" onclick="document.getElementById(\'pnFile\').click()">&#128247; Add photos</button><button type="button" class="pn-btn go" onclick="__pnSave()">Save note</button></div>'
+      + '<div class="pn-row"><button type="button" class="pn-btn go" onclick="__pnSave()" style="margin-left:0">Save note</button></div>'
       + '<div class="pn-list" id="pnList">' + listHtml(kind, id) + '</div>'
-      + '<div class="pf-folder"><div class="pf-head"><span>&#128193; Project Photos</span><span class="pf-count" id="pfCount">' + ((r && r.prodPhotos) ? r.prodPhotos.length : 0) + '</span><span class="pf-btns">'
+      + '<div class="pf-folder" ondragover="event.preventDefault()" ondrop="event.preventDefault();__pfFiles({ files: event.dataTransfer.files, value: \'\' })"><div class="pf-head"><span>&#128193; Project Photos</span><span class="pf-count" id="pfCount">' + ((r && r.prodPhotos) ? r.prodPhotos.length : 0) + '</span><span class="pf-btns">'
       + '<input type="file" id="pfFile" accept="image/*" multiple style="display:none" onchange="__pfFiles(this)"><input type="file" id="pfCam" accept="image/*" capture="environment" style="display:none" onchange="__pfFiles(this)">'
       + '<button type="button" class="pn-btn alt" onclick="document.getElementById(\'pfCam\').click()">&#128247; Take photo</button><button type="button" class="pn-btn" onclick="document.getElementById(\'pfFile\').click()">&#11014; Upload photos</button></span></div>'
       + '<div id="pfGrid">' + folderHtml(kind, id) + '</div></div></div>';
@@ -12123,9 +12125,11 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
     var files = Array.prototype.slice.call(inp.files || []); inp.value = ''; if (!files.length) return;
     var api = await getAssets(); if (!api) { showToast('Photo upload is not available right now'); return; }
     showToast('Adding ' + files.length + ' photo' + (files.length > 1 ? 's' : '') + '...');
-    if (!Array.isArray(r.prodPhotos)) r.prodPhotos = []; var added = 0;
-    for (var i = 0; i < files.length; i++) { try { var bl = await compressImage(files[i], 1600, .82), res = await api.upload(bl); r.prodPhotos.push({ pid: 'pf' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), id: res.id, ts: new Date().toISOString(), caption: '' }); added++; } catch (e) { showToast('One photo could not be added'); } }
-    if (added) { persist(kind, r); pfRefresh(kind, id); showToast(added + ' photo' + (added > 1 ? 's' : '') + ' added. Tap under a photo to add a caption'); }
+    if (!Array.isArray(r.prodPhotos)) r.prodPhotos = []; var added = 0, failed = 0, why = '';
+    for (var i = 0; i < files.length; i++) { if (files.length > 3 && i > 0 && i % 3 === 0) showToast('Added ' + i + ' of ' + files.length + ' photos...'); try { var bl = await compressImage(files[i], 1600, .82), res = await api.upload(bl); r.prodPhotos.push({ pid: 'pf' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), id: res.id, ts: new Date().toISOString(), caption: '' }); added++; } catch (e) { failed++; if (!why) why = (e && (e.code || e.message)) ? String(e.code || e.message) : ''; } }
+    if (added) { persist(kind, r); pfRefresh(kind, id); }
+    if (failed) showToast((added ? added + ' added, ' : '') + failed + ' photo' + (failed > 1 ? 's' : '') + ' could not be saved' + (/quota|limit|size|large|space|storage/i.test(why) ? ' (storage limit reached)' : ' (check your connection and try again)'));
+    else if (added) showToast(added + ' photo' + (added > 1 ? 's' : '') + ' added. Tap under a photo to add a caption');
   };
   window.__pfCap = function (inp) {
     var b = box(); if (!b) return; var kind = b.getAttribute('data-pn-kind'), id = b.getAttribute('data-pn-id'), r = rec(kind, id); if (!r) return;
