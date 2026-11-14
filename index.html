@@ -698,6 +698,14 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     }
 
     #rmLegend .rm-chip { font-size: 13px !important; }
+    /* Desktop: Route Map buttons are colored and all one size */
+    @media screen and (min-width: 768px) {
+      #rmStreets, #rmLocBtn, #rmFitBtn, #rmAllBtn { display: inline-flex !important; align-items: center; justify-content: center; gap: 6px; width: 10.5rem; height: 2.4rem; padding: 0 10px !important; box-sizing: border-box; font-size: 12px !important; font-weight: 900 !important; color: #fff !important; border-radius: 12px !important; white-space: nowrap; }
+      #rmStreets { background: rgba(99,102,241,.60) !important; border: 2px solid #a5b4fc !important; box-shadow: 0 0 10px rgba(129,140,248,.7); }
+      #rmLocBtn { background: rgba(16,185,129,.60) !important; border: 2px solid #6ee7b7 !important; box-shadow: 0 0 10px rgba(52,211,153,.7); }
+      #rmFitBtn { background: rgba(245,158,11,.65) !important; border: 2px solid #fcd34d !important; box-shadow: 0 0 10px rgba(251,191,36,.7); }
+      #rmAllBtn { background: rgba(244,63,94,.60) !important; border: 2px solid #fda4af !important; box-shadow: 0 0 10px rgba(251,113,133,.7); }
+    }
     /* Phone: Route Map buttons and filter chips use the same glowing pill look as the week box */
     @media screen and (max-width: 767px) {
       #rmBtnGroup { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px !important; width: 100%; }
