@@ -1207,10 +1207,10 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     #hdrActions #undoDock .dock-btn { padding: 9px 14px !important; border-radius: 12px !important; font-size: 12px !important; }
     @media screen and (max-width: 767px) {
       /* Mobile: Go back and Settings float at the bottom right of the screen */
-      #hdrActions #undoDock { position: fixed !important; left: auto !important; right: max(12px, env(safe-area-inset-right, 0px)) !important; bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important; top: auto !important; z-index: 50 !important; display: inline-grid !important; grid-template-columns: auto auto !important; width: auto !important; gap: 8px; }
-      #hdrActions #undoDock #undoLabel { display: none !important; }
-      #hdrActions #undoDock #undoBtn { padding: 9px 14px !important; font-size: 12px !important; }
-      #hdrActions #undoDock #settingsDockBtn { display: inline-flex !important; padding: 9px 12px !important; }
+      #undoDock { position: fixed !important; left: auto !important; right: max(12px, env(safe-area-inset-right, 0px)) !important; bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important; top: auto !important; z-index: 50 !important; display: inline-grid !important; grid-template-columns: auto auto !important; width: auto !important; gap: 8px; }
+      #undoDock #undoLabel { display: none !important; }
+      #undoDock #undoBtn { padding: 9px 14px !important; font-size: 12px !important; }
+      #undoDock #settingsDockBtn { display: inline-flex !important; padding: 9px 12px !important; }
     }
   </style>
 </head>
@@ -11637,7 +11637,14 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 </script>
 <script>
 (function () {
-  function mv() { var d = document.getElementById('undoDock'), h = document.getElementById('hdrActions'); if (d && h && d.parentNode !== h) { d.classList.remove('fixed', 'bottom-5', 'left-5'); h.insertBefore(d, h.firstChild); } }
+  function mv() {
+    var d = document.getElementById('undoDock'), h = document.getElementById('hdrActions'); if (!d || !h) return;
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      /* phone: sits on the page itself so it stays fixed at the bottom right of the screen */
+      if (d.parentNode !== document.body) document.body.appendChild(d);
+    } else if (d.parentNode !== h) { d.classList.remove('fixed', 'bottom-5', 'left-5'); h.insertBefore(d, h.firstChild); }
+  }
+  window.addEventListener('resize', mv);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mv); else mv();
 })();
 </script>
