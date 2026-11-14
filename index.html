@@ -11824,8 +11824,8 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 (function () {
   try { if (localStorage.getItem('mrp_intro_off') === '1' && location.hash !== '#intro') return; } catch (e) {}
   var START = 0;   /* intro-end.mp4 is the original movie from the logo build onward, with the narration moved to after the logo is complete */
-  var PRE = 8.0;     /* seconds of map, pins, neon route and camera run before the movie */
-  var IW = 1672, IH = 941, K = .75;
+  var PRE = 7.0;     /* seconds of map, pins, neon route and camera run before the movie */
+  var IW = 1672, IH = 941, K = window.__MRP_K || .75;
   function start() {
     var root = document.createElement('div'); root.id = 'mrpIntro';
     root.innerHTML = '<video playsinline webkit-playsinline preload="auto" src="intro-end.mp4"></video><canvas></canvas><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#9654; Tap to begin</button>';
@@ -11846,13 +11846,14 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     v.addEventListener('loadedmetadata', seek);
 
     /* ---------- the map, pins and route (coordinates are on the 1672 x 941 map picture) ---------- */
-    var PINS = [ { b: [155, 187], c: [152, 112], R: 95, a: 2.8 }, { b: [400, 403], c: [398, 295], R: 150, a: 4.6 }, { b: [725, 240], c: [722, 170], R: 105, a: 5.6 }, { b: [1290, 672], c: [1305, 415], R: 330, a: 7.4 } ];
+    var PINS = [ { b: [155, 187], c: [152, 112], R: 95, a: 2.4 }, { b: [400, 403], c: [398, 295], R: 150, a: 3.733 }, { b: [725, 240], c: [722, 170], R: 105, a: 4.433 }, { b: [900, 562], c: [900, 450], R: 120, a: 5.0, proc: true, h: 300 }, { b: [1290, 672], c: [1305, 415], R: 330, a: 6.3 } ];
     var RL = [[-70, 216], [60, 196], [155, 187]];
     var RA = [[155,187],[220,200],[290,208],[298,228],[250,248],[200,266],[206,286],[260,306],[340,336],[400,400]];
     var RB = [[400,400],[440,362],[520,330],[600,308],[664,292],[668,270],[630,262],[690,246],[725,240]];
-    var RC = [[400,400],[470,408],[560,420],[640,432],[698,452],[690,482],[640,492],[652,508],[720,522],[900,562],[1100,612],[1220,652],[1290,674]];
-    var CAM = RA.concat(RC.slice(1));
-    var TL = [2.0, 2.8], TA = [2.8, 4.6], TB = [4.6, 5.6], TC = [4.6, 7.4];   /* when the laser is on each stretch; a pin only lights when the laser reaches it */
+    var RC1 = [[400,400],[470,408],[560,420],[640,432],[698,452],[690,482],[640,492],[652,508],[720,522],[900,562]];
+    var RC2 = [[900,562],[1100,612],[1220,652],[1290,674]];
+    
+    var TL = [1.6, 2.4], TA = [2.4, 3.733], TB = [3.733, 4.433], TC1 = [3.733, 5.0], TC2 = [5.0, 6.3];   /* when the laser is on each stretch; a pin only lights when the laser reaches it */
     function rnd(n) { var x = Math.sin(n * 91.7) * 43758.5453; return x - Math.floor(x); }
     function cl(x) { return Math.max(0, Math.min(1, x)); }
     function plen(p) { var l = 0; for (var i = 1; i < p.length; i++) l += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return l; }
@@ -11867,14 +11868,28 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
         var top = p.c[1] - p.R * .55, y = p.b[1] + (top - p.b[1]) * r, x = p.b[0] + (p.c[0] - p.b[0]) * r;
         put(x, y, p.R * .62, 0); put(p.b[0], p.b[1], p.R * 1.2 * cl(r * 2), .4);
       });
-      [[RL, TL], [RA, TA], [RB, TB], [RC, TC]].forEach(function (g) { var f = cl((tt - g[1][0]) / (g[1][1] - g[1][0])); if (f <= 0) return; var h = pat(g[0], f); put(h[0], h[1], 85, 0); });
+      [[RL, TL], [RA, TA], [RB, TB], [RC1, TC1], [RC2, TC2]].forEach(function (g) { var f = cl((tt - g[1][0]) / (g[1][1] - g[1][0])); if (f <= 0) return; var h = pat(g[0], f); put(h[0], h[1], 85, 0); });
       mx.globalCompositeOperation = 'source-over';
-      if (tt > 7.4) { mx.fillStyle = 'rgba(255,255,255,' + Math.min(.12, (tt - 7.4) * .1) + ')'; mx.fillRect(0, 0, IW, IH); }
+      if (tt > 7.0) { mx.fillStyle = 'rgba(255,255,255,' + Math.min(.12, (tt - 7.0) * .08) + ')'; mx.fillRect(0, 0, IW, IH); }
     }
     function advance(t) {
       if (lastT < 0 || t < lastT) { mx.setTransform(1, 0, 0, 1, 0, 0); mx.globalCompositeOperation = 'source-over'; mx.fillStyle = '#000'; mx.fillRect(0, 0, mkc.width, mkc.height); mx.setTransform(K, 0, 0, K, 0, 0); lastT = 0; }
       for (var tt = lastT; tt < t; tt += 1 / 30) stepMask(tt);
       lastT = t;
+    }
+    /* a wireframe pin drawn in the same style as the ones on the map picture */
+    var PS = null;
+    function pinSprite() {
+      var S = 300, c = mk(S, Math.round(S * 1.3)), s = c.getContext('2d'), cx = S / 2, rad = S * .36, cy = 14 + rad;
+      function path() { s.beginPath(); s.arc(cx, cy, rad, Math.PI * .78, Math.PI * 2.22); s.lineTo(cx, S * 1.26); s.closePath(); }
+      var rg = s.createRadialGradient(cx, cy, 0, cx, cy, S * .5); rg.addColorStop(0, 'rgba(60,150,255,.5)'); rg.addColorStop(.6, 'rgba(60,150,255,.15)'); rg.addColorStop(1, 'rgba(60,150,255,0)'); s.fillStyle = rg; s.fillRect(0, 0, S, S);
+      path(); s.fillStyle = 'rgba(40,110,255,.2)'; s.fill();
+      s.save(); path(); s.clip(); s.strokeStyle = 'rgba(150,210,255,.6)'; s.lineWidth = 1.1;
+      var pts = []; for (var n = 0; n < 36; n++) pts.push([cx + (rnd(n + 200) - .5) * rad * 2.1, 14 + rnd(n + 300) * S * 1.2]);
+      for (var u = 0; u < pts.length; u++) for (var w = u + 1; w < pts.length; w++) if (Math.hypot(pts[u][0] - pts[w][0], pts[u][1] - pts[w][1]) < S * .26) { s.beginPath(); s.moveTo(pts[u][0], pts[u][1]); s.lineTo(pts[w][0], pts[w][1]); s.stroke(); }
+      s.fillStyle = '#cfeaff'; pts.forEach(function (q) { s.beginPath(); s.arc(q[0], q[1], 1.8, 0, 7); s.fill(); }); s.restore();
+      [[9, .22], [5, .45], [2.4, 1]].forEach(function (L) { path(); s.strokeStyle = 'rgba(110,190,255,' + L[1] + ')'; s.lineWidth = L[0]; s.stroke(); s.beginPath(); s.arc(cx, cy, rad * .42, 0, 7); s.strokeStyle = 'rgba(190,230,255,' + L[1] + ')'; s.stroke(); });
+      return c;
     }
     function head(x, y, r, c) { sx.save(); var g = sx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(.22, 'rgba(' + c + ',.7)'); g.addColorStop(1, 'rgba(' + c + ',0)'); sx.fillStyle = g; sx.fillRect(x - r, y - r, r * 2, r * 2); sx.restore(); }
     function mix(f) { return Math.round(70 + 185 * f) + ',' + Math.round(170 - 30 * f) + ',' + Math.round(255 - 215 * f); }
@@ -11885,12 +11900,20 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
       lx.setTransform(K, 0, 0, K, 0, 0); lx.globalCompositeOperation = 'source-over'; lx.clearRect(0, 0, IW, IH); lx.drawImage(img, 0, 0, IW, IH);
       lx.setTransform(1, 0, 0, 1, 0, 0); lx.globalCompositeOperation = 'multiply'; lx.drawImage(mkc, 0, 0);
       sx.setTransform(1, 0, 0, 1, 0, 0); sx.globalCompositeOperation = 'lighter'; sx.drawImage(lt, 0, 0); sx.setTransform(K, 0, 0, K, 0, 0);
+      /* the extra pin: a faint dark outline until the laser touches its base, then it fills from the bottom up */
+      PINS.forEach(function (p) {
+        if (!p.proc) return; if (!PS) PS = pinSprite();
+        var h = p.h, w = h / 1.3, y0 = p.b[1] - h * .969, r = cl((t - p.a) / 1.1);
+        sx.globalCompositeOperation = 'lighter'; sx.globalAlpha = .045; sx.drawImage(PS, p.b[0] - w / 2, y0, w, h);
+        if (r > 0) { var yt = p.b[1] - h * .969 * r; sx.save(); sx.beginPath(); sx.rect(p.b[0] - w, yt, w * 2, p.b[1] - yt + 30); sx.clip(); sx.globalAlpha = .95; sx.drawImage(PS, p.b[0] - w / 2, y0, w, h); sx.restore(); if (r < 1) { var g = sx.createRadialGradient(p.b[0], yt, 0, p.b[0], yt, w * .6); g.addColorStop(0, 'rgba(190,235,255,.55)'); g.addColorStop(1, 'rgba(60,150,255,0)'); sx.globalAlpha = 1; sx.fillStyle = g; sx.fillRect(p.b[0] - w, yt - w * .6, w * 2, w * 1.2); } }
+        sx.globalAlpha = 1; sx.globalCompositeOperation = 'source-over';
+      });
       /* pulses where a pin lights, and the bright heads of the racing lines */
       PINS.forEach(function (p, k) {
         var rt = (t - p.a) / 1.3;
         if (rt > 0 && rt < 1) { sx.globalAlpha = (1 - rt) * (1 - rt) * .9; sx.strokeStyle = 'rgb(130,215,255)'; sx.lineWidth = 2 + p.R * .018; sx.beginPath(); sx.ellipse(p.b[0], p.b[1], 24 + rt * p.R * 1.5, 8 + rt * p.R * .5, 0, 0, 7); sx.stroke(); sx.globalAlpha = 1; }
       });
-      [[RL, TL, 0], [RA, TA, 0], [RB, TB, 0], [RC, TC, 1]].forEach(function (g) { var f = (t - g[1][0]) / (g[1][1] - g[1][0]); if (f > 0 && f < 1) { var h = pat(g[0], f); head(h[0], h[1], 62, mix(g[2] ? f : 0)); } });
+      [[RL, TL, 0, 0], [RA, TA, 0, 0], [RB, TB, 0, 0], [RC1, TC1, 1, 0], [RC2, TC2, 1, .5]].forEach(function (g) { var f = (t - g[1][0]) / (g[1][1] - g[1][0]); if (f > 0 && f < 1) { var h = pat(g[0], f); head(h[0], h[1], 62, mix(g[2] ? g[3] + f * .5 : 0)); } });
       /* camera: it speeds up along the finished route and pushes in on the big pin */
       var q = cl(t / PRE), z = 1 + .1 * q, cx = IW / 2 + 110 * q, cy = IH / 2 + 8 * q, hw = W / (2 * S0 * z), hh = H / (2 * S0 * z);
       cx = Math.max(hw, Math.min(IW - hw, cx)); cy = Math.max(hh, Math.min(IH - hh, cy));
