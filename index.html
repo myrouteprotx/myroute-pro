@@ -8495,7 +8495,7 @@ Add New Stop
     async function setSigPhoto(file) {
       if (!file) return; const st = document.getElementById('sgStatus');
       const api = await getAssets(); if (!api) { st.textContent = 'Photo saving is not available in this view.'; return; }
-      try { st.textContent = 'Saving photo...'; const blob = await compressImage(file, 500, 0.85); const res = await api.upload(blob); readProfile(); emailSignature.photoId = res.id; emailSignature.text = document.getElementById('sgText').value; emailSignature.on = document.getElementById('sgOn').checked; saveSignature(); openSignatureEditor(); }
+      try { st.textContent = 'Saving photo...'; const blob = await compressImage(file, 1600, 0.9); const res = await api.upload(blob); readProfile(); emailSignature.photoId = res.id; emailSignature.text = document.getElementById('sgText').value; emailSignature.on = document.getElementById('sgOn').checked; saveSignature(); openSignatureEditor(); }
       catch (e) { st.textContent = 'Could not save the photo: ' + ((e && (e.message || e.code)) || 'try again'); }
     }
     function clearSigPhoto() { readProfile(); emailSignature.photoId = ''; emailSignature.text = document.getElementById('sgText').value; emailSignature.on = document.getElementById('sgOn').checked; saveSignature(); openSignatureEditor(); }
@@ -8515,7 +8515,7 @@ Add New Stop
     async function setSigPhotoInline(file) {
       if (!file) return; const st = document.getElementById('fuSigStatus');
       const api = await getAssets(); if (!api) { if (st) st.textContent = 'Photo saving is not available in this view.'; return; }
-      try { if (st) st.textContent = 'Saving photo...'; const blob = await compressImage(file, 500, 0.85); const res = await api.upload(blob); stashFollowUp(); emailSignature.photoId = res.id; saveSignature(); if (fuVisitId) openFollowUp(fuVisitId); }
+      try { if (st) st.textContent = 'Saving photo...'; const blob = await compressImage(file, 1600, 0.9); const res = await api.upload(blob); stashFollowUp(); emailSignature.photoId = res.id; saveSignature(); if (fuVisitId) openFollowUp(fuVisitId); }
       catch (e) { if (st) st.textContent = 'Could not save the photo: ' + ((e && (e.message || e.code)) || 'try again'); }
     }
     function stashFollowUp() { const g = (i) => { const e = document.getElementById(i); return e ? e.value : null; }; if (document.getElementById('fuBody')) fuDraft = { vid: fuVisitId, tpl: g('fuTpl'), to: g('fuTo'), subject: g('fuSubject'), body: g('fuBody'), sig: g('fuSig'), sigOn: document.getElementById('fuSigOn') ? document.getElementById('fuSigOn').checked : null }; }
