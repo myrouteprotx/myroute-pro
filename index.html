@@ -8592,7 +8592,7 @@ Add New Stop
         + `<div style="display:flex;gap:8px;margin-top:14px"><button type="button" id="fuSendBtn" onclick="sendFollowUp('outlookweb')" style="flex:1;padding:14px 16px;border-radius:10px;background:#00e6c7;border:2px solid #14ffe0;color:#04210f;font-weight:900;font-size:16px;letter-spacing:.2px">Send to Outlook</button></div><div id="fuSendStatus" style="color:#cad4e2;font-size:13px;margin-top:8px;min-height:1rem"></div>`);
     }
     // Signature picture for emails: shrunk to a sensible size so it never fills the whole email
-    const SIG_W = 300;
+    const SIG_W = 765; // 75% of the size the signature used to show at in the email (about 1020 px)
     async function sigShrunk(id) {
       const src = await blobToEmbeddedImage(id);
       return await new Promise(res => {
