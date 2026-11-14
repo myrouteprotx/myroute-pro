@@ -11812,6 +11812,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 <style>
 #mrpIntro{position:fixed;inset:0;z-index:99000;background:#000;overflow:hidden;transition:opacity .9s ease}
 #mrpIntro.out{opacity:0;pointer-events:none}
+html.mrp-introing body > *:not(#mrpIntro){visibility:hidden !important}
 #mrpIntro video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;opacity:0;transition:opacity .6s ease}
 @media (min-aspect-ratio: 4/3){#mrpIntro video{object-fit:cover}}
 #mrpIntro.ready video{opacity:1}
@@ -11829,7 +11830,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   function start() {
     var root = document.createElement('div'); root.id = 'mrpIntro';
     root.innerHTML = '<video playsinline webkit-playsinline preload="auto" src="intro-end.mp4"></video><canvas></canvas><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#9654; Tap to begin</button>';
-    document.body.appendChild(root);
+    document.body.appendChild(root); document.documentElement.classList.add('mrp-introing');
     var v = root.querySelector('video'), cv = root.querySelector('canvas'), snd = root.querySelector('.snd'), done = false, cut = false, raf = 0, t0 = 0, began = false, spoke = false, spokeDone = false;
     var ctx = cv.getContext('2d'), W = 0, H = 0, S0 = 1;
     var img = new Image(); img.src = 'intro-map.jpg';
@@ -11837,7 +11838,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var sc = mk(Math.round(IW * K), Math.round(IH * K)), sx = sc.getContext('2d'), mkc = mk(sc.width, sc.height), mx = mkc.getContext('2d'), lt = mk(sc.width, sc.height), lx = lt.getContext('2d'), stamp = mk(256, 256);
     var sg = stamp.getContext('2d'), gr = sg.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.2, 'rgba(255,255,255,.85)'); gr.addColorStop(.45, 'rgba(255,255,255,.5)'); gr.addColorStop(.7, 'rgba(255,255,255,.17)'); gr.addColorStop(.88, 'rgba(255,255,255,.04)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); sg.fillStyle = gr; sg.fillRect(0, 0, 256, 256);
     var voiceTimer = 0;
-    function finish() { if (done) return; done = true; cancelAnimationFrame(raf); clearTimeout(voiceTimer); try { speechSynthesis.cancel(); } catch (e) {} try { if (pre) pre.pause(); } catch (e) {} try { v.pause(); } catch (e) {} root.classList.add('out'); setTimeout(function () { if (root.parentNode) root.parentNode.removeChild(root); }, 950); }
+    function finish() { if (done) return; done = true; cancelAnimationFrame(raf); clearTimeout(voiceTimer); try { speechSynthesis.cancel(); } catch (e) {} try { if (pre) pre.pause(); } catch (e) {} try { v.pause(); } catch (e) {} document.documentElement.classList.remove('mrp-introing'); root.classList.add('out'); setTimeout(function () { if (root.parentNode) root.parentNode.removeChild(root); }, 950); }
     root.querySelector('.skip').addEventListener('click', function (e) { e.stopPropagation(); finish(); });
     root.addEventListener('click', finish);
     v.addEventListener('ended', function () { var n = 0, w = setInterval(function () { n += 200; if ((spokeDone || !spoke) && n >= 500 || n >= 4000) { clearInterval(w); finish(); } }, 200); });
@@ -11857,9 +11858,9 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function cl(x) { return Math.max(0, Math.min(1, x)); }
     function plen(p) { var l = 0; for (var i = 1; i < p.length; i++) l += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return l; }
     function pat(p, f) { var tot = plen(p) * cl(f), l = 0; for (var i = 1; i < p.length; i++) { var d = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (l + d >= tot) { var t = (tot - l) / (d || 1); return [p[i - 1][0] + (p[i][0] - p[i - 1][0]) * t, p[i - 1][1] + (p[i][1] - p[i - 1][1]) * t]; } l += d; } return p[p.length - 1].slice(); }
-    function build() { W = cv.width = Math.round(innerWidth * Math.min(devicePixelRatio || 1, 2)); H = cv.height = Math.round(innerHeight * Math.min(devicePixelRatio || 1, 2)); S0 = Math.max(W / IW, H / IH); lastT = -1; }
+    function build() { W = cv.width = Math.round(innerWidth * Math.min(devicePixelRatio || 1, 1.25)); H = cv.height = Math.round(innerHeight * Math.min(devicePixelRatio || 1, 1.25)); S0 = Math.max(W / IW, H / IH); lastT = -1; }
     function put(x, y, r, sy) { mx.save(); mx.translate(x, y); if (sy) mx.scale(1, sy); mx.drawImage(stamp, -r, -r, r * 2, r * 2); mx.restore(); }
-    var lastT = -1;
+    var lastT = -1, bD = null, bL = null;
     function stepMask(tt) {
       mx.globalCompositeOperation = 'lighten';
       PINS.forEach(function (p, k) {
@@ -11895,8 +11896,9 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function draw(t) {
       advance(t);
       sx.setTransform(K, 0, 0, K, 0, 0); sx.globalCompositeOperation = 'source-over'; sx.globalAlpha = 1;
-      sx.drawImage(img, 0, 0, IW, IH); sx.fillStyle = 'rgba(0,3,10,.972)'; sx.fillRect(0, 0, IW, IH);
-      lx.setTransform(K, 0, 0, K, 0, 0); lx.globalCompositeOperation = 'source-over'; lx.clearRect(0, 0, IW, IH); lx.drawImage(img, 0, 0, IW, IH);
+      if (!bD) { bD = mk(sc.width, sc.height); bL = mk(sc.width, sc.height); var bx = bD.getContext('2d'); bx.drawImage(img, 0, 0, sc.width, sc.height); bx.fillStyle = 'rgba(0,3,10,.972)'; bx.fillRect(0, 0, sc.width, sc.height); bL.getContext('2d').drawImage(img, 0, 0, sc.width, sc.height); }
+      sx.setTransform(1, 0, 0, 1, 0, 0); sx.drawImage(bD, 0, 0); sx.setTransform(K, 0, 0, K, 0, 0);
+      lx.setTransform(1, 0, 0, 1, 0, 0); lx.globalCompositeOperation = 'source-over'; lx.drawImage(bL, 0, 0);
       lx.setTransform(1, 0, 0, 1, 0, 0); lx.globalCompositeOperation = 'multiply'; lx.drawImage(mkc, 0, 0);
       sx.setTransform(1, 0, 0, 1, 0, 0); sx.globalCompositeOperation = 'lighter'; sx.drawImage(lt, 0, 0); sx.setTransform(K, 0, 0, K, 0, 0);
       /* the extra pin: a faint dark outline until the laser touches its base, then it fills from the bottom up */
@@ -11917,7 +11919,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
       var q = cl(t / PRE), z = 1 + .1 * q, cx = IW / 2 + 110 * q, cy = IH / 2 + 8 * q, hw = W / (2 * S0 * z), hh = H / (2 * S0 * z);
       cx = Math.max(hw, Math.min(IW - hw, cx)); cy = Math.max(hh, Math.min(IH - hh, cy));
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-      ctx.setTransform(S0 * z / K, 0, 0, S0 * z / K, W / 2 - cx * S0 * z, H / 2 - cy * S0 * z); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(sc, 0, 0);
+      ctx.setTransform(S0 * z / K, 0, 0, S0 * z / K, W / 2 - cx * S0 * z, H / 2 - cy * S0 * z); ctx.imageSmoothingQuality = 'low'; ctx.drawImage(sc, 0, 0);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
       if (t < .5) { ctx.fillStyle = 'rgba(0,0,0,' + (1 - t / .5) + ')'; ctx.fillRect(0, 0, W, H); }
