@@ -8591,12 +8591,22 @@ Add New Stop
         + `<div style="color:#93a3b9;font-size:11px;margin-top:6px">Names are filled in from this visit. Edit anything here before sending. Changes here only apply to this email.</div>`
         + `<div style="display:flex;gap:8px;margin-top:14px"><button type="button" id="fuSendBtn" onclick="sendFollowUp('outlookweb')" style="flex:1;padding:14px 16px;border-radius:10px;background:#00e6c7;border:2px solid #14ffe0;color:#04210f;font-weight:900;font-size:16px;letter-spacing:.2px">Send to Outlook</button></div><div id="fuSendStatus" style="color:#cad4e2;font-size:13px;margin-top:8px;min-height:1rem"></div>`);
     }
+    // Signature picture for emails: shrunk to a sensible size so it never fills the whole email
+    const SIG_W = 300;
+    async function sigShrunk(id) {
+      const src = await blobToEmbeddedImage(id);
+      return await new Promise(res => {
+        const im = new Image();
+        im.onload = () => { try { const w = Math.min(im.naturalWidth || SIG_W * 2, SIG_W * 2), h = Math.round((im.naturalHeight || w) * w / (im.naturalWidth || w)); const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, h); x.drawImage(im, 0, 0, w, h); res(c.toDataURL('image/jpeg', 0.9)); } catch (e) { res(src); } };
+        im.onerror = () => res(src); im.src = src;
+      });
+    }
     async function copyRich(v, to, subject, body) {
       const esc = escapeHtml;
       const paras = esc(body).replace(/\r?\n/g, '<br>');
       let photo = '';
-      if (emailSignature.on && emailSignature.photoId) { try { photo = `<div style="margin-top:8px;text-align:${sigAlign()}"><img src="${await blobToEmbeddedImage(emailSignature.photoId)}" alt="" style="max-width:220px;height:auto;display:inline-block"></div>`; } catch (e) {} }
-      const html = `<div style="font-family:Calibri,Arial,sans-serif;font-size:14px;color:#111">${paras}${photo}</div>`;
+      if (emailSignature.on && emailSignature.photoId) { try { photo = `<div style="margin-top:12px;text-align:${sigAlign()}"><img src="${await sigShrunk(emailSignature.photoId)}" alt="" width="${SIG_W}" style="width:${SIG_W}px;max-width:100%;height:auto;display:inline-block"></div>`; } catch (e) {} }
+      const html = `<div style="font-family:Calibri,Arial,sans-serif;font-size:16px;line-height:1.5;color:#111">${paras}${photo}</div>`;
       const text = (to ? 'To: ' + to + '\n' : '') + 'Subject: ' + subject + '\n\n' + body;
       try {
         if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
@@ -8639,12 +8649,12 @@ Add New Stop
         const sigPhoto = (sigEl && sigEl.checked && emailSignature.photoId) ? emailSignature.photoId : '';
         const libFiles = files.filter(f => f.id !== sigPhoto);
         const attachments = []; let total = 0;
-        if (sigPhoto) { const c = await blobToB64('/_blob/' + sigPhoto); total += c.length; attachments.push({ content: c, filename: 'signature.png', mimeType: sigPhoto === LOGO_ID ? 'image/png' : 'image/jpeg', inline: true }); }
+        if (sigPhoto) { const du = await sigShrunk(sigPhoto); const c = String(du).split(',')[1] || ''; total += c.length; attachments.push({ content: c, filename: 'signature.jpg', mimeType: 'image/jpeg', inline: true }); }
         for (const f of libFiles) { const c = await blobToB64('/_blob/' + f.id); total += c.length; attachments.push({ content: c, filename: f.name, mimeType: f.type || 'application/octet-stream' }); }
         if (total > 900000) throw Object.assign(new Error('Attachments are too large to send from here. Remove a file or use Open in Mail.'), { local: true });
         const esc = escapeHtml;
-        const parts = body.split(/\n{2,}/).map(b => '<p style="margin:0 0 12px">' + esc(b).replace(/\r?\n/g, '<br>') + '</p>').join('');
-        const html = '<div style="font-family:Calibri,Arial,sans-serif;font-size:14px;color:#111">' + parts + (sigPhoto ? '<div style="margin-top:12px;text-align:' + sigAlign() + '"><img src="cid:att0" alt="" width="160" style="width:160px;height:auto;display:inline-block"></div>' : '') + '</div>';
+        const parts = body.split(/\n{2,}/).map(b => '<p style="margin:0 0 14px">' + esc(b).replace(/\r?\n/g, '<br>') + '</p>').join('');
+        const html = '<div style="font-family:Calibri,Arial,sans-serif;font-size:16px;line-height:1.5;color:#111">' + parts + (sigPhoto ? '<div style="margin-top:12px;text-align:' + sigAlign() + '"><img src="cid:att0" alt="" width="' + SIG_W + '" style="width:' + SIG_W + 'px;max-width:100%;height:auto;display:inline-block"></div>' : '') + '</div>';
         const input = { to: [to], subject, body, htmlBody: html }; if (attachments.length) input.attachments = attachments;
         await mcp.callTool('Gmail', 'send_message', input, { cache: false });
         log('Gmail');
