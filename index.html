@@ -11909,8 +11909,8 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function sounds() {
       try { ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; }
       if (!ac) return;
-      [[660, 2.8], [784, 4.6], [880, 5.6], [523, 7.4]].forEach(function (p) { tone(p[0], p[1], 1.2, .1); tone(p[0] * 2, p[1], .7, .035); });
-      tone(110, 2.0, 6.0, .03, 'sawtooth');
+      /* only a deep bass hum under the map scene: no chimes or effects */
+      try { [[65, .26], [130, .07]].forEach(function (h) { var o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = h[0]; g.gain.setValueAtTime(0, ac.currentTime); g.gain.linearRampToValueAtTime(h[1], ac.currentTime + 1.5); g.gain.setValueAtTime(h[1], ac.currentTime + PRE - .2); g.gain.linearRampToValueAtTime(0, ac.currentTime + PRE + .7); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + PRE + .8); }); } catch (e) {}
     }
     function speak() {
       if (spoke) return; spoke = true;
