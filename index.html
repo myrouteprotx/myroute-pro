@@ -743,6 +743,20 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       #addFireVisitBtn { width: 100%; margin-left: 0 !important; justify-content: center; min-height: 48px; font-size: 14px !important; border-radius: 14px !important; }
     }
 
+
+    /* Homepage tiles open Fire / Water Loss / Company Leads on their own page (the original sections are only shown there) */
+    body:not(.room-on) #firesSection, body:not(.room-on) #watersSection, body:not(.room-on) #pcwsSection { display: none !important; }
+    body.room-on #routeTrackerView > *:not(#roomBack):not(#firesSection):not(#watersSection):not(#pcwsSection) { display: none !important; }
+    body.room-fire #watersSection, body.room-fire #pcwsSection, body.room-water #firesSection, body.room-water #pcwsSection, body.room-leads #firesSection, body.room-leads #watersSection { display: none !important; }
+    #roomBack { display: none; }
+    body.room-on #roomBack { display: flex; }
+    .room-tile { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 12px; border-width: 1.5px; border-style: solid; border-radius: 18px; color: #fff; text-align: left; cursor: pointer; transition: transform .12s, filter .12s; }
+    .room-tile:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .room-ico { flex: none; width: 36px; height: 36px; border-radius: 12px; border-width: 1px; border-style: solid; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 6px 14px -4px var(--tw-shadow-color, rgba(0,0,0,.4)); }
+    .room-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+    .room-name { font-size: 13px; font-weight: 800; color: #fff; }
+    .room-count { font-size: 18px; font-weight: 900; }
+    @media (max-width: 640px) { .room-tile { flex-direction: column; text-align: center; gap: 4px; padding: 8px 4px; } .room-name { font-size: 11px; } .room-count { font-size: 16px; } .room-ico { width: 30px; height: 30px; } }
     #fireSearch::placeholder { color: #ffffff !important; opacity: 1 !important; }
     #fireSearch { color: #ffffff !important; }
 
@@ -1711,6 +1725,25 @@ body.mrp-modal-open *{animation-play-state:paused !important}
         <div id="yesterdayOthers" class="hidden px-3 sm:px-4 pb-4 pt-3 space-y-2 border-t border-slate-700/60"></div>
         <div id="yesterdayEmptyState" class="hidden py-8 text-center px-4 text-xs text-slate-400">No visits were logged yesterday.</div>
       </section>
+
+      <!-- Fire / Water / Leads tiles: each opens its full original section on its own page -->
+      <div id="roomTiles" class="grid grid-cols-3 gap-2 sm:gap-3">
+        <button type="button" id="roomTileFire" onclick="openRoom('firesSection')" class="room-tile" style="border-color:rgba(239,68,68,.6);background:linear-gradient(90deg,rgba(185,28,28,.5),rgba(69,10,10,.5),rgba(30,41,59,.4));box-shadow:0 10px 25px -8px rgba(220,38,38,.45)">
+          <span class="room-ico bg-red-600 border-red-300/50 shadow-red-600/40"><i data-lucide="flame" class="w-5 h-5 fire-flame"></i></span>
+          <span class="room-txt"><span class="room-name">Fire Visits</span><span class="room-count text-red-100" id="roomCountFire">0</span></span>
+        </button>
+        <button type="button" id="roomTileWater" onclick="openRoom('watersSection')" class="room-tile" style="border-color:rgba(14,165,233,.6);background:linear-gradient(90deg,rgba(3,105,161,.5),rgba(8,47,73,.5),rgba(30,41,59,.4));box-shadow:0 10px 25px -8px rgba(2,132,199,.45)">
+          <span class="room-ico bg-sky-600 border-sky-300/50 shadow-sky-600/40"><i data-lucide="droplets" class="w-5 h-5 water-flame"></i></span>
+          <span class="room-txt"><span class="room-name">Water Loss Visits</span><span class="room-count text-sky-100" id="roomCountWater">0</span></span>
+        </button>
+        <button type="button" id="roomTileLeads" onclick="openRoom('pcwsSection')" class="room-tile" style="border-color:rgba(16,185,129,.6);background:linear-gradient(90deg,rgba(4,120,87,.5),rgba(2,44,34,.5),rgba(30,41,59,.4));box-shadow:0 10px 25px -8px rgba(5,150,105,.45)">
+          <span class="room-ico bg-emerald-600 border-emerald-300/50 shadow-emerald-600/40"><i data-lucide="thumbs-up" class="w-5 h-5 pcw-flame"></i></span>
+          <span class="room-txt"><span class="room-name">Company Leads</span><span class="room-count text-emerald-100" id="roomCountLeads">0</span></span>
+        </button>
+      </div>
+      <div id="roomBack" class="items-center gap-3">
+        <button type="button" onclick="closeRoom()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black text-white bg-slate-800 border border-slate-500 hover:bg-slate-700">&#8592; Back to Dashboard</button>
+      </div>
 
       <!-- Fire Visits: every fire scene visited to date -->
       <section id="firesSection" class="bg-slate-800/80 backdrop-blur-xl border border-red-500/60 rounded-3xl shadow-xl overflow-hidden">
@@ -4829,7 +4862,27 @@ Add New Stop
       showFilteredList('ALL', 'ALL', 'Showing all visits');
     }
 
-    function goToSectionById(id) { switchMainTab('tracker'); setTimeout(() => scrollToEl(id), 60); }
+    function goToSectionById(id) { switchMainTab('tracker'); if (id === 'firesSection' || id === 'watersSection' || id === 'pcwsSection') { setTimeout(() => openRoom(id), 30); return; } setTimeout(() => scrollToEl(id), 60); }
+    // Dedicated pages: the original Fire / Water Loss / Company Leads sections are shown alone, with a Back to Dashboard bar
+    let roomScrollY = 0;
+    function openRoom(id) {
+      const cls = { firesSection: 'room-fire', watersSection: 'room-water', pcwsSection: 'room-leads' }[id]; if (!cls) return;
+      if (!document.body.classList.contains('room-on')) roomScrollY = window.scrollY;
+      document.body.classList.remove('room-fire', 'room-water', 'room-leads');
+      document.body.classList.add('room-on', cls);
+      window.scrollTo({ top: 0 });
+    }
+    function closeRoom() {
+      document.body.classList.remove('room-on', 'room-fire', 'room-water', 'room-leads');
+      window.scrollTo({ top: roomScrollY });
+    }
+    // Live counts on the tiles follow the numbers the sections already compute
+    (function () {
+      const map = [['fireCountBadge', 'roomCountFire'], ['waterCountBadge', 'roomCountWater'], ['pcwCountBadge', 'roomCountLeads']];
+      function sync() { map.forEach(m => { const b = document.getElementById(m[0]), t = document.getElementById(m[1]); if (b && t) { const n = parseInt(b.textContent, 10); t.textContent = isNaN(n) ? '0' : String(n); } }); }
+      window.addEventListener('DOMContentLoaded', () => { sync(); map.forEach(m => { const b = document.getElementById(m[0]); if (b) new MutationObserver(sync).observe(b, { childList: true, characterData: true, subtree: true }); }); });
+      if (document.readyState !== 'loading') { sync(); map.forEach(m => { const b = document.getElementById(m[0]); if (b) new MutationObserver(sync).observe(b, { childList: true, characterData: true, subtree: true }); }); }
+    })();
     function goToHotLeads() { showFilteredList('Hot Lead', 'ALL', 'Showing all hot leads. Change the filter to see everything again.'); }
     function goToScheduled() { showFilteredList('ALL', 'SCHEDULED', 'Showing all scheduled outreaches. Change the filter to see everything again.'); }
 
@@ -11201,8 +11254,8 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   var KEY = 'mrp_layout_v1';
   var ITEMS = [
     ['weekBanner', 'Current Week summary'], ['statCardsSection', 'Dashboard cards'], ['radarSection', 'Follow-up reminders'],
-    ['todaySection', "Today's Visits"], ['firesSection', 'Fire Visits'], ['watersSection', 'Water Loss Visits'],
-    ['pcwsSection', 'Company Leads'], ['visitsSection', 'Route Marketing Visits']
+    ['todaySection', "Today's Visits"], ['roomTiles', 'Fire / Water Loss / Leads tiles'],
+    ['visitsSection', 'Route Marketing Visits']
   ];
   var dragEl = null, arranging = false;
   function isDesktop() { try { return window.matchMedia('(min-width: 1100px)').matches; } catch (e) { return false; } }
@@ -11215,6 +11268,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var box = el('routeTrackerView'); if (!box || !order || !order.length) return;
     var have = ITEMS.map(function (i) { return i[0]; }).filter(function (id) { return el(id); });
     var seq = order.filter(function (id) { return have.indexOf(id) >= 0; });
+    if (seq.indexOf('roomTiles') < 0) { var ri = Math.max(seq.indexOf('todaySection'), seq.indexOf('yesterdaySection')); if (ri < 0) ri = seq.length - 1; var vi = seq.indexOf('visitsSection'); seq.splice(vi >= 0 ? vi : ri + 1, 0, 'roomTiles'); }
     have.forEach(function (id) { if (seq.indexOf(id) < 0) seq.push(id); });
     var kids = Array.prototype.slice.call(box.children), last = null;
     kids.forEach(function (c) { if (have.indexOf(c.id) >= 0) last = c; });
