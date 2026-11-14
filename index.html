@@ -11665,6 +11665,8 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 #mrpIntro .co img{height:44px;width:auto;max-width:130px;object-fit:contain;background:#fff;border-radius:10px;padding:3px;box-shadow:0 0 22px rgba(255,255,255,.35)}
 #mrpIntro .co b{font-size:clamp(13px,3.6vw,20px);font-weight:800;color:#fff;letter-spacing:.04em}
 #mrpIntro .skip{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:max(14px,env(safe-area-inset-top,0px));z-index:3;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-weight:800;font-size:12px;padding:8px 14px;border-radius:999px;backdrop-filter:blur(6px)}
+#mrpIntro .snd{position:absolute;left:50%;bottom:max(26px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:3;border:1px solid rgba(125,211,252,.6);background:rgba(8,20,48,.75);color:#e0f2fe;font-weight:800;font-size:13px;padding:11px 20px;border-radius:999px;backdrop-filter:blur(6px);box-shadow:0 0 18px rgba(56,189,248,.45);animation:mrpP 1.6s ease-in-out infinite}
+@keyframes mrpP{50%{box-shadow:0 0 30px rgba(56,189,248,.9)}}
 #mrpIntro .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
 </style>
 <script>
@@ -11680,7 +11682,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var logoSrc = logoId && logoId !== '5075726f436c65616e' ? '/_blob/' + logoId : 'puroclean-logo.png';
     var word = 'MyRoute Pro', h = '';
     for (var k = 0; k < word.length; k++) h += word[k] === ' ' ? '<span class="sp" style="--i:' + k + '">&nbsp;</span>' : '<span style="--i:' + k + '">' + word[k] + '</span>';
-    root.innerHTML = '<canvas></canvas><div class="flash"></div><button type="button" class="skip">Skip &rsaquo;</button>'
+    root.innerHTML = '<canvas></canvas><div class="flash"></div><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#128266; Tap for sound</button>'
       + '<div class="ti"><h1>' + h + '</h1><div class="tag">The Smarter Way to Manage Your Market</div>'
       + '</div>';
     document.body.appendChild(root);
@@ -11697,6 +11699,38 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var DUR = 10000, t0 = performance.now(), done = false, goT = false, flashed = false;
     function ease(x) { x = Math.max(0, Math.min(1, x)); return 1 - Math.pow(1 - x, 3); }
     function P(t) { var f = t * (pts.length - 1), a = Math.floor(f), b = Math.min(pts.length - 1, a + 1), u = f - a; var pa = pts[a], pb = pts[b]; var s = u * u * (3 - 2 * u); return { x: (pa.x + (pb.x - pa.x) * s) * W, y: (pa.y + (pb.y - pa.y) * s) * H }; }
+
+    /* ---------- sound: synthesized score plus a woman's voice ---------- */
+    var ac = null, master = null, audioOn = false, vTimers = [];
+    function nowS() { return (performance.now() - t0) / 1000; }
+    function pickVoice() { var vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [], pref = /samantha|ava|allison|susan|karen|moira|tessa|victoria|serena|zira|jenny|aria|female|google us english|google uk english female/i, en = vs.filter(function (v) { return /^en/i.test(v.lang); }); return en.filter(function (v) { return pref.test(v.name); })[0] || en[0] || null; }
+    function say(text, when) { if (!window.speechSynthesis) return; vTimers.push(setTimeout(function () { try { var u = new SpeechSynthesisUtterance(text), v = pickVoice(); if (v) u.voice = v; u.lang = 'en-US'; u.rate = .86; u.pitch = 1.08; u.volume = .95; speechSynthesis.speak(u); } catch (e) {} }, Math.max(0, (when - nowS()) * 1000))); }
+    function startAudio() {
+      if (audioOn || !ac) return; audioOn = true;
+      var n0 = ac.currentTime, s0 = nowS(); function T(ts) { return n0 + Math.max(0, ts - s0); }
+      master = ac.createGain(); master.gain.value = .55; master.connect(ac.destination);
+      master.gain.setValueAtTime(.55, T(8.4)); master.gain.linearRampToValueAtTime(0, T(9.6));
+      function noiseBuf() { var b = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate), d = b.getChannelData(0); for (var q = 0; q < d.length; q++) d[q] = Math.random() * 2 - 1; return b; }
+      var nb = noiseBuf();
+      function whoosh(t1, dur, f1, f2, vol) { if (t1 + dur < s0) return; var src = ac.createBufferSource(); src.buffer = nb; var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.2; var g = ac.createGain(); var a = T(t1); bp.frequency.setValueAtTime(f1, a); bp.frequency.exponentialRampToValueAtTime(f2, a + dur); g.gain.setValueAtTime(0, a); g.gain.linearRampToValueAtTime(vol, a + dur * .6); g.gain.linearRampToValueAtTime(0, a + dur); src.connect(bp); bp.connect(g); g.connect(master); src.start(a, 0, dur + .1); }
+      /* sub-bass rumble that grows */
+      var o = ac.createOscillator(), og = ac.createGain(); o.type = 'sine'; o.frequency.value = 46; og.gain.setValueAtTime(0, T(0)); og.gain.linearRampToValueAtTime(.5, T(5.8)); og.gain.linearRampToValueAtTime(0, T(6.1)); o.connect(og); og.connect(master); o.start(T(0)); o.stop(T(6.2));
+      var o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = 'triangle'; o2.frequency.value = 92; g2.gain.setValueAtTime(0, T(0.5)); g2.gain.linearRampToValueAtTime(.12, T(5.8)); g2.gain.linearRampToValueAtTime(0, T(6.1)); o2.connect(g2); g2.connect(master); o2.start(T(0.5)); o2.stop(T(6.2));
+      /* soft futuristic pulses */
+      for (var k3 = 0; k3 < 14; k3++) { var tp = 1.4 + k3 * .34; if (tp < s0) continue; var po = ac.createOscillator(), pg = ac.createGain(); po.type = 'sine'; po.frequency.value = k3 % 2 ? 330 : 247; pg.gain.setValueAtTime(0, T(tp)); pg.gain.linearRampToValueAtTime(.05 + k3 * .003, T(tp) + .03); pg.gain.exponentialRampToValueAtTime(.0005, T(tp) + .3); po.connect(pg); pg.connect(master); po.start(T(tp)); po.stop(T(tp) + .35); }
+      whoosh(.2, 1.3, 300, 2500, .22); whoosh(1.5, 1.4, 400, 3600, .3); whoosh(3.2, 1.2, 500, 4200, .2);
+      /* riser into the reveal */
+      var rs = ac.createOscillator(), rg = ac.createGain(); rs.type = 'sawtooth'; rs.frequency.setValueAtTime(140, T(4.5)); rs.frequency.exponentialRampToValueAtTime(1100, T(6)); var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; rg.gain.setValueAtTime(0, T(4.5)); rg.gain.linearRampToValueAtTime(.07, T(5.95)); rg.gain.linearRampToValueAtTime(0, T(6.02)); rs.connect(lp); lp.connect(rg); rg.connect(master); rs.start(T(4.5)); rs.stop(T(6.1));
+      /* controlled bass impact at the logo */
+      if (s0 < 6.3) { var im = ac.createOscillator(), ig = ac.createGain(); im.type = 'sine'; im.frequency.setValueAtTime(110, T(6)); im.frequency.exponentialRampToValueAtTime(32, T(6.9)); ig.gain.setValueAtTime(0, T(6)); ig.gain.linearRampToValueAtTime(.95, T(6.01)); ig.gain.exponentialRampToValueAtTime(.001, T(7.8)); im.connect(ig); ig.connect(master); im.start(T(6)); im.stop(T(7.9)); whoosh(6, .9, 3000, 300, .25); }
+      /* narrator */
+      say('My Route Pro.', 4.7); say('The smarter way to manage your market.', 6.35);
+    }
+    function stopAudio() { vTimers.forEach(clearTimeout); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {} try { if (ac && ac.state !== 'closed') setTimeout(function () { try { ac.close(); } catch (e) {} }, 200); } catch (e) {} }
+    var sndBtn = root.querySelector('.snd');
+    try { var AC = window.AudioContext || window.webkitAudioContext; if (AC) { ac = new AC(); } } catch (e) { ac = null; }
+    if (ac) { setTimeout(function () { if (done) return; if (ac.state === 'running') startAudio(); else if (nowS() < 4) sndBtn.style.display = ''; }, 120); }
+    sndBtn.addEventListener('click', function (ev) { ev.stopPropagation(); sndBtn.style.display = 'none'; try { if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.speak(new SpeechSynthesisUtterance('')); } } catch (e) {} ac.resume().then(function () { startAudio(); }).catch(function () {}); });
     function io(x) { x = Math.max(0, Math.min(1, x)); return x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
     function lerp(a, b, t) { return a + (b - a) * t; }
     var RT = []; for (i = 0; i < 11; i++) RT.push({ a: (i - 5) * 1.15 + (rnd() - .5) * .5, b: .5 + rnd() * 1.1, c: .12 + rnd() * .2, p: rnd() * 6.28, hue: i % 3 === 0 ? '#60a5fa' : i % 3 === 1 ? '#22d3ee' : '#3b82f6' });
@@ -11760,7 +11794,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
       if (t >= DUR) { finish(); return; }
       requestAnimationFrame(frame);
     }
-    function finish() { if (done) return; done = true; root.classList.add('out'); setTimeout(function () { if (root.parentNode) root.parentNode.removeChild(root); }, 950); removeEventListener('resize', size); }
+    function finish() { if (done) return; done = true; try { stopAudio(); } catch (e) {} root.classList.add('out'); setTimeout(function () { if (root.parentNode) root.parentNode.removeChild(root); }, 950); removeEventListener('resize', size); }
     root.querySelector('.skip').addEventListener('click', finish);
     root.addEventListener('click', finish);
     requestAnimationFrame(frame);
