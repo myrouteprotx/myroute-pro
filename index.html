@@ -11214,7 +11214,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
   }
   function build() {
     if (!L) return '';
-    var cols = L.order.map(function (k) { return 'minmax(0,' + L.w[k - 1] + 'fr)'; }).join(' ');
+    var cols = L.order.map(function (k) { return 'minmax(' + (k === 6 ? '440px' : '0') + ',' + L.w[k - 1] + 'fr)'; }).join(' ');
     var c = '@media (min-width: 1100px) {';
     c += S('') + '{display:block !important;width:100% !important;min-width:0 !important;table-layout:auto !important}';
     c += S('thead') + ',' + S('tbody') + '{display:block !important;width:100%}';
