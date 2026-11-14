@@ -1240,6 +1240,10 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     .text-slate-300 { color: #e0eaff !important; }
     .text-slate-200 { color: #f1f6ff !important; }
     th { color: #f1f6ff; }
+
+    /* Home tiles: only Today's Visits and Reach-Backs Due are shown */
+    #tileHot, #tileScheduled { display: none !important; }
+    #statCardsSection { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
