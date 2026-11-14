@@ -1109,7 +1109,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     .vdate.vd-reach { background: rgba(220,38,38,.32) !important; border-color: #f87171 !important; margin-top: 6px; }
     .vdate.vd-reach.vdate-overdue { border-color: #fecaca !important; background: rgba(220,38,38,.5) !important; box-shadow: 0 0 0 2px #ef4444; }
     @media screen and (min-width: 1100px) {
-      table:has(#visitsTableBody) tr, table:has(#todayTableBody) tr, table:has(#yesterdayTableBody) tr { grid-template-columns: minmax(150px,1.3fr) minmax(150px,1.2fr) minmax(150px,1fr) minmax(150px,1fr) minmax(220px,2fr) minmax(150px,.9fr) !important; }
+      table:has(#visitsTableBody) tr, table:has(#todayTableBody) tr, table:has(#yesterdayTableBody) tr { grid-template-columns: minmax(150px,1.3fr) minmax(150px,1.2fr) minmax(150px,1fr) minmax(150px,1fr) minmax(220px,1.4fr) minmax(440px,2.1fr) !important; }
     }
     @media (max-width: 1099px) { #visitsTableBody td:nth-child(3)::before, #todayTableBody td:nth-child(3)::before, #yesterdayTableBody td:nth-child(3)::before { content: "Visited on / Reach back" !important; text-align: center; } }
 
@@ -1179,8 +1179,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       table:has(#visitsTableBody) th:nth-child(6), table:has(#todayTableBody) th:nth-child(6), table:has(#yesterdayTableBody) th:nth-child(6) { width: 28% !important; min-width: 0 !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) { min-width: 0 !important; }
       :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(6) .note-box textarea { margin-left: auto !important; margin-right: auto !important; }
-      #visitsTableBody > tr .note-save, #todayTableBody > tr .note-save, #yesterdayTableBody > tr .note-save { right: 130px !important; }
-      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(7) { right: 220px !important; }
+      #visitsTableBody > tr .note-save, #todayTableBody > tr .note-save, #yesterdayTableBody > tr .note-save { right: calc(13.1% - 139px) !important; }
+      :is(#visitsTableBody, #todayTableBody, #yesterdayTableBody) > tr > td:nth-child(7) { right: calc(13.1% - 49px) !important; }
     }
   </style>
 </head>
