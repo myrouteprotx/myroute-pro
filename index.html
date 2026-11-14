@@ -11823,12 +11823,12 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 <script>
 (function () {
   try { if (localStorage.getItem('mrp_intro_off') === '1' && location.hash !== '#intro') return; } catch (e) {}
-  var START = 5.0;   /* the movie picks up here: the lightning is over and the logo is forming */
+  var START = 0;   /* intro-end.mp4 is the original movie from the logo build onward, with the narration moved to after the logo is complete */
   var PRE = 8.0;     /* seconds of map, pins, neon route and camera run before the movie */
   var IW = 1672, IH = 941, K = .75;
   function start() {
     var root = document.createElement('div'); root.id = 'mrpIntro';
-    root.innerHTML = '<video playsinline webkit-playsinline preload="auto" src="intro.mp4"></video><canvas></canvas><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#9654; Tap to begin</button>';
+    root.innerHTML = '<video playsinline webkit-playsinline preload="auto" src="intro-end.mp4"></video><canvas></canvas><button type="button" class="skip">Skip &rsaquo;</button><button type="button" class="snd" style="display:none">&#9654; Tap to begin</button>';
     document.body.appendChild(root);
     var v = root.querySelector('video'), cv = root.querySelector('canvas'), snd = root.querySelector('.snd'), done = false, cut = false, raf = 0, t0 = 0, began = false, spoke = false, spokeDone = false;
     var ctx = cv.getContext('2d'), W = 0, H = 0, S0 = 1;
@@ -11929,7 +11929,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     function tick(now) {
       if (done) return;
       var t = (now - t0) / 1000;
-      if (!cut && t >= PRE) { cut = true; root.classList.add('ready'); seek(); var p = v.play(); if (p && p.catch) p.catch(finish); cv.style.opacity = '0'; voiceTimer = setTimeout(speak, 1500);   /* the voice starts only once the whole logo is on screen */ }
+      if (!cut && t >= PRE) { cut = true; root.classList.add('ready'); seek(); var p = v.play(); if (p && p.catch) p.catch(finish); cv.style.opacity = '0'; /* the narration is inside intro-end.mp4 and starts 0.3 s after the logo is complete */ }
       if (t < PRE + .7) { draw(Math.min(t, PRE + .7)); raf = requestAnimationFrame(tick); } else { cv.style.display = 'none'; }
     }
     function go() { if (began || done) return; began = true; build(); sounds(); t0 = performance.now(); raf = requestAnimationFrame(tick); }
