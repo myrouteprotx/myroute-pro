@@ -7479,7 +7479,12 @@ Add New Stop
 
     function switchMainTab(tab) {
       const views = { tracker: 'routeTrackerView', map: 'routeMapView', report: 'reportStudioView' };
-      Object.keys(views).forEach(k => document.getElementById(views[k]).classList.toggle('hidden', k !== tab));
+      Object.keys(views).forEach(k => { const el = document.getElementById(views[k]); el.classList.toggle('hidden', k !== tab); el.style.display = (k === tab) ? '' : 'none'; });
+      // The Report Studio is its own page: it gets its own address (#report), and the browser Back button returns to the home page
+      try {
+        if (tab === 'report' && location.hash !== '#report') history.pushState({ mrpTab: 'report' }, '', '#report');
+        else if (tab !== 'report' && location.hash === '#report') history.pushState({ mrpTab: tab }, '', location.pathname + location.search);
+      } catch (e) {}
 
       const idle = "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-700/60";
       const active = {
@@ -7493,6 +7498,12 @@ Add New Stop
       if (tab === 'report') renderVibrantReport();
       if (tab === 'map') { renderRouteMap(); if (!RM.autoLoc && RM.watch === null && !RM.me) { RM.autoLoc = true; if (window.matchMedia('(min-width:1024px)').matches) { rmUseOffice().then(ok => { if (!ok) { try { rmLocate(); } catch (e) {} } }).catch(() => { try { rmLocate(); } catch (e) {} }); } else { try { rmLocate(); } catch (e) {} } } }
     }
+
+    window.addEventListener('popstate', function () {
+      const onReport = !document.getElementById('reportStudioView').classList.contains('hidden');
+      if (location.hash === '#report' && !onReport) switchMainTab('report');
+      else if (location.hash !== '#report' && onReport) switchMainTab('tracker');
+    });
 
     // Modal Operations
     const visitModal = document.getElementById('visitModal');
