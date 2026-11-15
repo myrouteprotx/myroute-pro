@@ -7475,9 +7475,7 @@ Add New Stop
       if (window.ResizeObserver) new ResizeObserver(() => { if (rmIsOpen()) rmDraw(); }).observe(stage);
     }
     rmInit();
-    // Mouse wheel over the page must only scroll it: block the browser's Ctrl+wheel / pinch page zoom (the map keeps its own wheel zoom)
-    window.addEventListener('wheel', function (e) { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
-    ['gesturestart', 'gesturechange'].forEach(function (n) { document.addEventListener(n, function (e) { e.preventDefault(); }); });
+    // Browser page zoom (Ctrl + mouse wheel, Ctrl +/-, pinch) is left alone so it works normally.
 
     function switchMainTab(tab) {
       const views = { tracker: 'routeTrackerView', map: 'routeMapView', report: 'reportStudioView' };
