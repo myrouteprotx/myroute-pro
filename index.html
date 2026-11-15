@@ -25,7 +25,7 @@
 @media (max-width:1099px){.cs-pair{flex-direction:column;gap:8px}.cs-pair .cs-b{flex:0 0 auto;margin-left:0;text-align:left}.pv-none{line-height:1.6}.pv-label{display:block}thead .cs-pair .cs-b{display:none}}
 
 /* Add-visit form on phones: scroll inside the form, reach the top and bottom, no page scrolling behind it, no animations competing */
-#visitModal > div{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#visitModal > div{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y pinch-zoom}
 @media (max-width:1099px){#visitModal > div{max-height:calc(100vh - 24px) !important;max-height:calc(100dvh - 24px) !important}}
 body.mrp-modal-open{overflow:hidden !important}
 body.mrp-modal-open *{animation-play-state:paused !important}
@@ -411,8 +411,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     @media screen and (max-width: 1099px) { .prop-incell { display: block; } .prop-row { display: none !important; } }
     /* Settings window: it scrolls by itself and the page behind stays still (fixes the frozen screen on iPhone) */
     body.mrp-noscroll { overflow: hidden !important; }
-    #settingsModal { overscroll-behavior: contain; touch-action: none; }
-    #settingsPanel { max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+    #settingsModal { overscroll-behavior: contain; touch-action: pan-y pinch-zoom; }
+    #settingsPanel { max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y pinch-zoom; }
     @media screen and (max-width: 767px) {
       /* Keep the page still: it scrolls up and down only, never sideways */
       html, body { overflow-x: hidden; max-width: 100%; width: 100%; overscroll-behavior-x: none; touch-action: pan-y pinch-zoom; }
