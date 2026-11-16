@@ -47,10 +47,11 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   var SB_KEY = 'sb_publishable_-Tc0Yl6WAYnmVAJV-hYRXQ_HwLeW4Dj';
   var KEY = 'mrp_db_v1', PEND = 'mrp_pending_v1', PBLOB = 'mrp_pending_blobs_v1', SYNCED = 'mrp_synced_uid';
   var store = {}, pending = {}, pendingBlobs = [], listeners = {}, sb = null, uid = null, online = true;
+  var viewOnly = false, dataOwner = null; // a viewer account sees the owner's data, and nothing it changes is ever saved
   function ls(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   store = ls(KEY, {}); pending = ls(PEND, {}); pendingBlobs = ls(PBLOB, []);
-  function persist() { lsSet(KEY, store); lsSet(PEND, pending); lsSet(PBLOB, pendingBlobs); }
+  function persist() { if (viewOnly) return; lsSet(KEY, store); lsSet(PEND, pending); lsSet(PBLOB, pendingBlobs); }
   function clone(x) { return x === undefined ? undefined : JSON.parse(JSON.stringify(x)); }
 
   /* ---------- local document store with live listeners ---------- */
@@ -67,6 +68,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   function on(k, f, build) { (listeners[k] = listeners[k] || []).push(f); setTimeout(function () { f(build()); }, 0); return function () { listeners[k] = listeners[k].filter(function (x) { return x !== f; }); }; }
   function write(path, val) {
     if (val === null) delete store[path]; else store[path] = clone(val);
+    if (viewOnly) { notify(path); return Promise.resolve(); }
     pending[path] = val === null ? null : clone(val);
     persist(); notify(path); scheduleFlush();
     return Promise.resolve();
@@ -100,6 +102,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   function toDataUrl(blob) { return new Promise(function (res, rej) { var f = new FileReader(); f.onload = function () { res(f.result); }; f.onerror = function () { rej(f.error); }; f.readAsDataURL(blob); }); }
   function newId() { return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
   async function putPhoto(id, blob) {
+    if (viewOnly) return;
     await idbPut('b', id, { blob: blob, type: blob.type });
     if (pendingBlobs.indexOf(id) < 0) { pendingBlobs.push(id); persist(); }
     scheduleFlush();
@@ -120,7 +123,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   function setStatus(t) { var e = document.getElementById('mrpSyncStatus'); if (e) e.textContent = t; }
   function scheduleFlush() { clearTimeout(timer); timer = setTimeout(flush, 400); }
   async function flush() {
-    if (flushing || !sb || !uid) return;
+    if (viewOnly || flushing || !sb || !uid) return;
     flushing = true;
     try {
       var paths = Object.keys(pending);
@@ -148,11 +151,11 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   async function pull() {
     var rows = [], from = 0;
     while (true) {
-      var r = await sb.from('docs').select('path,data').eq('owner', uid).range(from, from + 999);
+      var r = await sb.from('docs').select('path,data').eq('owner', dataOwner || uid).range(from, from + 999);
       if (r.error) throw r.error; rows = rows.concat(r.data || []); if (!r.data || r.data.length < 1000) break; from += 1000;
     }
     var remote = {}; rows.forEach(function (x) { remote[x.path] = x.data; });
-    var first = localStorage.getItem(SYNCED) !== uid;
+    var first = !viewOnly && localStorage.getItem(SYNCED) !== uid;
     var changed = {};
     Object.keys(remote).forEach(function (p) { if (pending[p] === undefined && JSON.stringify(store[p]) !== JSON.stringify(remote[p])) { store[p] = remote[p]; changed[p] = 1; } });
     if (first) {
@@ -165,9 +168,9 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     persist(); Object.keys(changed).forEach(notify); scheduleFlush();
   }
   function listen() {
-    sb.channel('mrp-docs-' + uid).on('postgres_changes', { event: '*', schema: 'public', table: 'docs', filter: 'owner=eq.' + uid }, function (m) {
+    sb.channel('mrp-docs-' + uid).on('postgres_changes', { event: '*', schema: 'public', table: 'docs', filter: 'owner=eq.' + (dataOwner || uid) }, function (m) {
       var rec = m.eventType === 'DELETE' ? m.old : m.new; if (!rec || !rec.path) return;
-      if (pending[rec.path] !== undefined) return;
+      if (!viewOnly && pending[rec.path] !== undefined) return;
       if (m.eventType === 'DELETE') delete store[rec.path]; else store[rec.path] = rec.data;
       persist(); notify(rec.path);
     }).subscribe();
@@ -229,7 +232,20 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       if (!navigator.onLine && localStorage.getItem('mrp_uid')) { uid = localStorage.getItem('mrp_uid'); return; }
       session = await showSignIn();
     }
-    uid = session.user.id; localStorage.setItem('mrp_uid', uid);
+    uid = session.user.id;
+    // Viewer accounts (listed in the private 'viewers' table) see the owner's data, can click around, and nothing is ever saved
+    try {
+      var vq = await sb.from('viewers').select('owner').eq('viewer', uid).maybeSingle();
+      if (vq && vq.data && vq.data.owner) { viewOnly = true; dataOwner = vq.data.owner; store = {}; pending = {}; pendingBlobs = []; }
+    } catch (e) {}
+    if (viewOnly) {
+      try { localStorage.removeItem(KEY); localStorage.removeItem(PEND); localStorage.removeItem(PBLOB); localStorage.removeItem(SYNCED); } catch (e) {}
+      window.__mrpViewOnly = true;
+      var vb = document.createElement('div');
+      vb.style.cssText = 'position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:99998;background:#0b1127;color:#fff;border:1px solid #00e6c7;border-radius:999px;padding:7px 16px;font:800 12px system-ui,sans-serif;box-shadow:0 4px 18px rgba(0,0,0,.5);pointer-events:none;white-space:nowrap';
+      vb.textContent = 'View only: you can click around, nothing is saved';
+      (document.body ? Promise.resolve() : new Promise(function (r) { document.addEventListener('DOMContentLoaded', r); })).then(function () { document.body.appendChild(vb); });
+    } else localStorage.setItem('mrp_uid', uid);
     try { var md = (session.user && session.user.user_metadata) || {}; if (md.initials) localStorage.setItem('mrp_init_' + uid, String(md.initials)); } catch (e) {}
     saveAuthForWorker(session);
     sb.auth.onAuthStateChange(function (ev, s) { if (s) saveAuthForWorker(s); });
