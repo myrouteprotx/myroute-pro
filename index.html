@@ -88,6 +88,22 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 #mrpTeamList,#mrpTeamList *{font-size:12px}
 #mrpTeamMsg{font-size:12px!important;margin:0 0 6px!important}
 #settingsPanel #mrpTeamCard button[onclick="mrpTeamAdd()"]{background:#1d4ed8!important;border:1px solid #60a5fa!important;color:#fff!important}
+#homeAddrCard{--acc:#8b5cf6!important}
+#homeAddrCard .hrow{padding:8px 0;border-bottom:1px solid rgba(139,92,246,.35)}
+#homeAddrCard .hrow-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+#homeAddrCard input.hl,#homeAddrCard input.ha{width:100%;font-size:12px;padding:8px 10px;background:#0b1127;border:1px solid #475569;border-radius:12px;color:#fff}
+#homeAddrCard input.hl{font-weight:800;flex:1;min-width:0}
+#homeAddrCard input.hl:focus,#homeAddrCard input.ha:focus{outline:2px solid #8b5cf6;border-color:#8b5cf6}
+#homeAddrCard .hdef{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap}
+#homeAddrCard .hsug{position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:40;background:#0b1127;border:1px solid #8b5cf6;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+#homeAddrCard .hsug.hidden{display:none}
+#homeAddrCard .hopt{display:block;width:100%;text-align:left;padding:8px 10px;font-size:12px;color:#fff;border-bottom:1px solid #1e293b;background:transparent}
+#homeAddrCard .hopt:hover{background:#312e81}
+#homeAddrCard .hnone{padding:8px 10px;font-size:12px;color:#94a3b8}
+#settingsPanel #homeAddrCard button{width:auto!important;min-height:0!important;height:auto!important}
+#settingsPanel #homeAddrCard button.hdel{width:28px!important;height:28px!important;padding:0!important;font-size:18px!important;line-height:1;background:transparent!important;border:1px solid #475569!important;color:#fca5a5!important;border-radius:10px!important;flex:none}
+#settingsPanel #homeAddrCard button.hsave{height:32px!important;padding:0 22px!important;font-size:12px!important;font-weight:800!important;background:#16a34a!important;border:1px solid #4ade80!important;color:#fff!important;border-radius:10px!important}
+#settingsPanel #homeAddrCard button.hopt{padding:8px 10px!important;font-size:12px!important;border:0!important;border-bottom:1px solid #1e293b!important;background:transparent!important;border-radius:0!important;display:block!important}
 </style>
 </head><body>
 <!DOCTYPE html>
@@ -3282,17 +3298,11 @@ Add New Stop
           <button type="button" id="mrpLockBtn" onclick="window.__mrpLockToggle()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Turn on Face ID lock</button>
         </div>
 
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+        <div id="homeAddrCard" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Route start and finish addresses</div>
-          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">"Plan my route" leaves from and returns to your default address. Add your office below, then tap "Make default" next to it. <span id="homeAddrStatus" class="font-bold text-emerald-300"></span></div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">"Plan my route" leaves from and returns to your default address. Click an address to edit it, pick the default, then tap Save. <span id="homeAddrStatus" class="font-bold text-emerald-300"></span></div>
           <div id="homeAddrList" class="mb-2"></div>
-          <input type="text" id="homeLabelInput" placeholder="Name, for example Office" class="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white mb-2">
-          <div class="relative mb-2">
-            <input type="text" id="homeAddrInput" placeholder="Start typing a street address" autocomplete="off" oninput="homeSuggest(this.value)" class="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white">
-            <div id="homeSug" class="hidden absolute left-0 right-0 mt-1 rounded-xl border border-slate-600 bg-slate-900 overflow-hidden" style="z-index:30"></div>
-          </div>
-          <div class="text-[10px] text-slate-500 mb-2">Suggestions are United States addresses from OpenStreetMap as you type. Tap one to fill it in.</div>
-          <button type="button" onclick="addHomeAddr()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Add address</button>
+          <div class="flex justify-end"><button type="button" id="homeSaveBtn" onclick="homeSaveAll()" class="hsave">Save</button></div>
         </div>
 
         <div class="mrp-admin-only p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
@@ -4419,34 +4429,51 @@ Add New Stop
       try { localStorage.setItem(HOME_KEY, JSON.stringify(d)); } catch (e) {}
       try { dbHandle.doc('meta/home').set({ data: JSON.stringify(d), at: new Date().toISOString() }); } catch (e) {}
     }
-    function homeRender() {
-      const box = document.getElementById('homeAddrList'); if (!box) return;
-      const d = homeData();
-      box.innerHTML = d.list.length ? d.list.map((e, i) => '<div class="flex items-center gap-2 py-2 border-b border-slate-700"><div class="flex-1 min-w-0"><div class="text-xs font-black text-white">' + escapeHtml(e.label || 'Address') + (i === d.def ? ' <span class="text-emerald-300">(default)</span>' : '') + '</div><div class="text-[11px] text-slate-400 break-words">' + escapeHtml(e.addr) + '</div></div>'
-        + (i === d.def ? '' : '<button type="button" onclick="homeMakeDefault(' + i + ')" class="px-2 py-1 text-[11px] font-bold text-white bg-slate-800 border border-slate-600 rounded-lg">Make default</button>')
-        + '<button type="button" onclick="homeRemove(' + i + ')" class="px-2 py-1 text-[11px] font-bold text-red-300 bg-slate-800 border border-slate-600 rounded-lg">Remove</button></div>').join('')
-        : '<div class="text-[11px] text-slate-500 mb-1">No addresses saved yet.</div>';
+    let HD = null;
+    function homeRowHtml(i, e, isNew, def) {
+      const ph = isNew ? 'Add a new address: start typing a street address' : 'Start typing a street address';
+      return '<div class="hrow" data-i="' + i + '"><div class="hrow-top"><input type="text" class="hl" value="' + escapeHtml(e.label || '') + '" placeholder="' + (isNew ? 'Name for the new address, for example Office' : 'Name, for example Office') + '" oninput="homeEdit(' + i + ',\'label\',this.value)">'
+        + (isNew ? '' : '<label class="hdef"><input type="radio" name="homeDef" ' + (i === def ? 'checked ' : '') + 'onchange="homeSetDef(' + i + ')"> Default</label><button type="button" class="hdel" title="Delete this address" aria-label="Delete this address" onclick="homeDel(' + i + ')">&times;</button>')
+        + '</div><div class="relative"><input type="text" class="ha" value="' + escapeHtml(e.addr || '') + '" placeholder="' + ph + '" autocomplete="off" oninput="homeEdit(' + i + ',\'addr\',this.value);homeAc(this,' + i + ')"><div class="hsug hidden"></div></div></div>';
     }
+    function homeDraw() {
+      const box = document.getElementById('homeAddrList'); if (!box || !HD) return;
+      box.innerHTML = HD.list.map((e, i) => homeRowHtml(i, e, false, HD.def)).join('') + homeRowHtml(-1, HD.add, true, HD.def);
+    }
+    function homeRender() {
+      const d = homeData();
+      HD = { list: d.list.map(e => ({ label: e.label || '', addr: e.addr || '', lat: e.lat == null ? null : e.lat, lng: e.lng == null ? null : e.lng, o: e.addr || '' })), def: d.def, add: { label: '', addr: '', lat: null, lng: null } };
+      homeDraw();
+    }
+    function homeTarget(i) { return i < 0 ? HD.add : HD.list[i]; }
+    function homeEdit(i, k, v) { if (!HD) return; const t = homeTarget(i); if (!t) return; t[k] = v; if (k === 'addr') { t.lat = null; t.lng = null; } }
+    function homeSetDef(i) { if (HD) HD.def = i; }
+    function homeDel(i) {
+      if (!HD || !HD.list[i]) return;
+      HD.list.splice(i, 1); if (HD.def >= HD.list.length) HD.def = 0; else if (HD.def > i) HD.def--;
+      homeDraw(); homeStatus('Removed. Tap Save to keep this change.');
+    }
+    function homeSaveAll() {
+      if (!HD) return;
+      const out = [];
+      HD.list.forEach((e, k) => {
+        let addr = (e.addr || '').replace(/\s+/g, ' ').trim(); let lat = e.lat, lng = e.lng;
+        if (!addr) { addr = e.o || ''; if (addr) { lat = null; lng = null; } }
+        if (!addr) return;
+        out.push({ label: (e.label || '').trim() || (k === 0 ? 'Office' : 'Address ' + (out.length + 1)), addr, lat, lng });
+      });
+      const na = (HD.add.addr || '').replace(/\s+/g, ' ').trim();
+      if (na) out.push({ label: (HD.add.label || '').trim() || (out.length ? 'Address ' + (out.length + 1) : 'Office'), addr: na, lat: HD.add.lat, lng: HD.add.lng });
+      const d = { list: out, def: out.length ? Math.min(Math.max(HD.def, 0), out.length - 1) : 0 };
+      homeSave(d); homeRender(); homeStatus(out.length ? 'Saved.' : 'Nothing to save yet.');
+    }
+    function homeSug_hide(box) { if (box) { box.classList.add('hidden'); box.innerHTML = ''; } }
     function fillHomeInput() {
       homeRender();
       if (homeData().list.length) return;
       try { dbHandle.doc('meta/home').get().then(d => { if (d && d.exists) { const x = d.data(); if (x && x.data) { localStorage.setItem(HOME_KEY, x.data); homeRender(); } } }); } catch (e) {}
     }
     function homeStatus(t) { const st = document.getElementById('homeAddrStatus'); if (st) st.textContent = t; }
-    function homeMakeDefault(i) { const d = homeData(); d.def = i; homeSave(d); homeRender(); homeStatus('Default changed.'); }
-    function homeRemove(i) { const d = homeData(); d.list.splice(i, 1); if (d.def >= d.list.length) d.def = 0; homeSave(d); homeRender(); homeStatus('Removed.'); }
-    function addHomeAddr() {
-      const inp = document.getElementById('homeAddrInput'), lab = document.getElementById('homeLabelInput');
-      const addr = (inp.value || '').replace(/\s+/g, ' ').trim();
-      if (!addr) { homeStatus('Type an address first.'); return; }
-      const d = homeData();
-      const pick = inp._pick && inp._pick.addr === addr ? inp._pick : null;
-      d.list.push({ label: (lab.value || '').trim() || (d.list.length ? 'Address ' + (d.list.length + 1) : 'Office'), addr, lat: pick ? pick.lat : null, lng: pick ? pick.lng : null });
-      if (d.list.length === 1) d.def = 0;
-      homeSave(d); homeRender(); inp.value = ''; lab.value = ''; inp._pick = null; homeSug_hide();
-      homeStatus(d.list.length === 1 ? 'Saved, and set as your default.' : 'Saved. Tap Make default to use it.');
-    }
-    function homeSug_hide() { const b = document.getElementById('homeSug'); if (b) { b.classList.add('hidden'); b.innerHTML = ''; } }
     function photonLine(f) {
       const p = (f && f.properties) || {};
       if (p.countrycode !== 'US' || !p.street && !p.name) return null;
@@ -4460,26 +4487,26 @@ Add New Stop
       return { addr: [line1, tail].filter(Boolean).join(', '), lat: c[1], lng: c[0] };
     }
     let homeSugTimer = null, homeSugSeq = 0;
-    function homeSuggest(q) {
+    function homeAc(inp, idx) {
       clearTimeout(homeSugTimer);
-      const inp = document.getElementById('homeAddrInput'); if (inp) inp._pick = null;
-      q = (q || '').trim();
-      if (q.length < 4) { homeSug_hide(); return; }
+      const box = inp.parentNode.querySelector('.hsug');
+      const q = (inp.value || '').trim();
+      if (q.length < 3) { homeSug_hide(box); return; }
       homeSugTimer = setTimeout(async () => {
         const seq = ++homeSugSeq;
         try {
-          const r = await fetch('https://photon.komoot.io/api/?lang=en&limit=8&bbox=-179,17,-65,72&q=' + encodeURIComponent(q));
+          const r = await fetch('https://photon.komoot.io/api/?lang=en&limit=10&bbox=-179,17,-65,72&q=' + encodeURIComponent(q));
           const j = await r.json();
-          if (seq !== homeSugSeq) return;
+          if (seq !== homeSugSeq || document.activeElement !== inp) return;
           const seen = {}; const items = (j.features || []).map(photonLine).filter(x => x && !seen[x.addr] && (seen[x.addr] = 1)).slice(0, 6);
-          const box = document.getElementById('homeSug'); if (!box) return;
-          if (!items.length) { box.innerHTML = '<div class="px-3 py-2 text-[11px] text-slate-400">No matching United States address yet. You can still type the full address and tap Add address.</div>'; box.classList.remove('hidden'); return; }
-          box.innerHTML = items.map((x, i) => '<button type="button" data-i="' + i + '" class="block w-full text-left px-3 py-2 text-xs text-white hover:bg-slate-700 border-b border-slate-800">' + escapeHtml(x.addr) + '</button>').join('');
+          if (!items.length) { box.innerHTML = '<div class="hnone">No matching address yet. Keep typing, or enter the full address and tap Save.</div>'; box.classList.remove('hidden'); return; }
+          box.innerHTML = items.map((x, i) => '<button type="button" data-i="' + i + '" class="hopt">' + escapeHtml(x.addr) + '</button>').join('');
           box.classList.remove('hidden');
-          box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { const x = items[+b.dataset.i]; inp.value = x.addr; inp._pick = x; homeSug_hide(); }));
-        } catch (e) { homeSug_hide(); }
-      }, 450);
+          box.querySelectorAll('button').forEach(b => b.addEventListener('mousedown', ev => { ev.preventDefault(); const x = items[+b.dataset.i]; inp.value = x.addr; const t = homeTarget(idx); if (t) { t.addr = x.addr; t.lat = x.lat; t.lng = x.lng; } homeSug_hide(box); }));
+        } catch (e) { homeSug_hide(box); }
+      }, 350);
     }
+    document.addEventListener('focusout', e => { if (e.target && e.target.classList && e.target.classList.contains('ha')) setTimeout(() => homeSug_hide(e.target.parentNode.querySelector('.hsug')), 200); });
     document.addEventListener('DOMContentLoaded', () => { setTimeout(fillHomeInput, 1500); });
     document.addEventListener('keydown', e => {
       if (e.key !== 'Escape') return;
@@ -4766,7 +4793,7 @@ Add New Stop
       if (rpBusy) return;
       const home = homeAddr();
       if (!home) {
-        rpShow('<div class="text-sm font-black mb-2">Add your office address first</div><div class="text-xs text-slate-300 mb-3">Open Settings, scroll to the box named "Route start and finish addresses", type a name such as Office, start typing the address and pick it from the list, then tap Add address. Then tap Plan my route again.</div><button type="button" onclick="rpClose();openSettings && openSettings()" class="px-3 py-2 text-xs font-black bg-purple-600 rounded-xl mr-2">Open Settings</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
+        rpShow('<div class="text-sm font-black mb-2">Add your office address first</div><div class="text-xs text-slate-300 mb-3">Open Settings, scroll to the box named "Route start and finish addresses", in the empty address box at the bottom type a name such as Office, start typing the address and pick it from the list, then tap the green Save button. Then tap Plan my route again.</div><button type="button" onclick="rpClose();openSettings && openSettings()" class="px-3 py-2 text-xs font-black bg-purple-600 rounded-xl mr-2">Open Settings</button><button type="button" onclick="rpClose()" class="px-3 py-2 text-xs font-black bg-slate-700 rounded-xl">Close</button>');
         return;
       }
       const all = Array.isArray(over) ? over : routeAll().filter(isOnRoute);
