@@ -7136,12 +7136,14 @@ Add New Stop
           + (placed ? (legTxt(legFor(n)) ? `<span class="shrink-0 text-[10px] font-bold text-slate-400">${escapeHtml(legTxt(legFor(n)))}</span>` : '') : '<span class="shrink-0 text-[10px] font-black text-amber-300">Not on map yet</span>') + '</button>'
           + `<span class="shrink-0 flex gap-1">${arrow(v, -1, i > 0, '&#9650;', 'Move up')}${arrow(v, 1, i < R.stops.length - 1, '&#9660;', 'Move down')}</span></div>`;
       }).join('');
+      const bar = R.dirty ? `<div class="flex items-center justify-between gap-2 flex-wrap px-3 py-2 mt-2 rounded-xl" style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.6)"><span class="text-[11px] font-black text-amber-200">The order has changed and is not saved yet.</span><span class="flex gap-2"><button type="button" onclick="rmRouteSave()" class="px-3 py-1.5 rounded-lg text-[11px] font-black text-white" style="background:#059669;border:1px solid #6ee7b7">Save order</button><button type="button" onclick="rmRouteRevert()" class="px-3 py-1.5 rounded-lg text-[11px] font-black text-slate-100 bg-slate-800 border border-slate-500">Revert to original</button></span></div>` : '';
       const rows = (R.office ? bookend('leave', null) : '') + rows0 + (R.office ? bookend('return', lg[nGeo]) : '') + (R.office ? '' : '<p class="text-[11px] text-amber-300 font-semibold">Add your Office address in Settings (Route start and finish addresses) to show leaving and returning.</p>');
       el.innerHTML = `<div class="flex items-center justify-between gap-3 flex-wrap"><h3 class="text-sm font-black text-white flex items-center gap-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#00e6c7"></span>Route for ${escapeHtml(R.label)} <span class="text-cyan-300">(${R.stops.length} stops)</span></h3>`
         + `<button type="button" onclick="rmRouteClear()" class="px-2.5 py-1 rounded-lg text-[11px] font-black text-rose-200 bg-rose-950/60 border border-rose-800/70">Clear route</button></div>`
-        + `<p class="text-[10px] text-slate-400 font-semibold mt-1">In visiting order. Use the up and down arrows to change the order and the line on the map follows. Tap a name to jump to it.</p><div class="mt-2 space-y-1.5 max-h-80 overflow-y-auto">${rows}</div>`;
+        + `<p class="text-[10px] text-slate-400 font-semibold mt-1">In visiting order. Use the up and down arrows to change the order and the line on the map follows. Nothing is kept until you press Save order. Tap a name to jump to it.</p>${bar}<div class="mt-2 space-y-1.5 max-h-80 overflow-y-auto">${rows}</div>`;
     }
     function rmRouteClear() {
+      if (RM.route && RM.route.dirty && !confirm('The route order has changed and is not saved. Leave without saving?\n\nOK = leave without saving. Cancel = stay.')) return;
       RM.route = null; try { rmEl('routeMapView').classList.remove('rm-routing'); } catch (e) {}
       const t = rmEl('rmRouteBtnText'); if (t) t.textContent = 'Show a route';
       renderRouteMap(); rmFit(false);
@@ -7193,21 +7195,35 @@ Add New Stop
         }
       } catch (e) {}
     }
-    // Move one stop up or down in the route: the order is saved, the numbers change and the line is redrawn
+    // Move one stop up or down in the route. This is only a draft until Save order is pressed; Revert puts the original order back.
+    function rmRouteRenumber(R) { let n = 0; R.num = {}; R.stops.forEach(v => { if (rmHasGeo(v)) R.num[v.id] = ++n; }); R.road = null; R.legs = null; R.info = ''; }
+    function rmRouteRedraw() { rmDraw(); rmSummary(); rmNear(); clearTimeout(RM.roadT); RM.roadT = setTimeout(rmRoadFetch, 600); }
     function rmRouteMove(id, dir) {
       const R = RM.route; if (!R) return;
-      const ids = R.stops.map(v => v.id), i = ids.indexOf(id), j = i + dir;
-      if (i < 0 || j < 0 || j >= ids.length) return;
-      const t = ids[i]; ids[i] = ids[j]; ids[j] = t;
-      const all = routeAll(), changed = [];
-      ids.forEach((x, k) => { const v = all.find(o => o.id === x); if (v && v.routeSeq !== k + 1) { v.routeSeq = k + 1; changed.push(v); } });
+      const i = R.stops.findIndex(v => v.id === id), j = i + dir;
+      if (i < 0 || j < 0 || j >= R.stops.length) return;
+      if (!R.origIds) R.origIds = R.stops.map(v => v.id);
+      const t = R.stops[i]; R.stops[i] = R.stops[j]; R.stops[j] = t;
+      R.dirty = R.stops.map(v => v.id).join() !== R.origIds.join();
+      rmRouteRenumber(R); rmRouteRedraw();
+    }
+    function rmRouteSave() {
+      const R = RM.route; if (!R || !R.dirty) return;
+      const changed = [];
+      R.stops.forEach((v, k) => { if (v.routeSeq !== k + 1) { v.routeSeq = k + 1; changed.push(v); } });
       try { routePersist(changed); } catch (e) {}
-      const o = rmRouteDays().find(d => d.date === R.date);
-      if (o) R.stops = o.list;
-      let n = 0; R.num = {}; R.stops.forEach(v => { if (rmHasGeo(v)) R.num[v.id] = ++n; });
-      R.road = null; R.legs = null; R.info = '';
-      rmDraw(); rmSummary(); rmNear();
-      clearTimeout(RM.roadT); RM.roadT = setTimeout(rmRoadFetch, 600);
+      R.dirty = false; R.origIds = null;
+      const o = rmRouteDays().find(d => d.date === R.date); if (o) R.stops = o.list;
+      rmRouteRenumber(R); rmRouteRedraw();
+      showToast('Route order saved');
+    }
+    function rmRouteRevert() {
+      const R = RM.route; if (!R || !R.origIds) return;
+      const by = {}; R.stops.forEach(v => { by[v.id] = v; });
+      R.stops = R.origIds.map(id => by[id]).filter(Boolean);
+      R.dirty = false; R.origIds = null;
+      rmRouteRenumber(R); rmRouteRedraw();
+      showToast('Back to the original order');
     }
     function rmRouteLine() {
       const R = RM.route; if (!R) return '';
