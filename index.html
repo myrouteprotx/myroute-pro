@@ -7789,9 +7789,10 @@ Add New Stop
 
       // The mouse wheel no longer zooms the map (it scrolls the page as normal). Zoom with the plus and minus buttons.
 
+      // Double-click zooms in; hold Control while double-clicking to zoom out
       svg.addEventListener('dblclick', e => {
         const r = svg.getBoundingClientRect();
-        rmZoomAt(e.clientX - r.left, e.clientY - r.top, 2);
+        rmZoomAt(e.clientX - r.left, e.clientY - r.top, (e.ctrlKey || e.metaKey) ? 0.5 : 2);
       });
 
       svg.addEventListener('keydown', e => {
