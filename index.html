@@ -2090,9 +2090,10 @@ Add New Stop
           <div id="rmPlaceBanner" class="rm-place hidden"></div>
         </div>
 
+        <div id="rmCard" class="px-4 sm:px-5 py-4 border-t border-slate-700/70"></div>
         <div id="rmNear" class="hidden px-4 sm:px-5 py-4 border-t border-slate-700/70"></div>
 
-        <div id="rmCard" class="px-4 sm:px-5 py-4 border-t border-slate-700/70"></div>
+        
       </section>
 
       <section id="rmUnplaced" class="hidden rounded-3xl border border-amber-500/40 bg-slate-800/80 shadow-xl p-4 sm:p-5"></section>
@@ -6236,6 +6237,7 @@ Add New Stop
         `;
       };
 
+      window.__mrpRowTemplate = rowTemplate;
       todayBody.innerHTML = todayList.map(rowTemplate).join('');
       yesterdayBody.innerHTML = yesterdayList.map(rowTemplate).join('');
 
@@ -7298,12 +7300,46 @@ Add New Stop
       return isNaN(d) ? s : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
+
+    // The selected pin opens as the very same visit row shown on the Route Tracker page
+    let rmRowCssDone = false;
+    function rmCloneRowCss() {
+      if (rmRowCssDone) return; rmRowCssDone = true;
+      const walk = (list, parent) => {
+        const todo = [];
+        for (let i = 0; i < list.length; i++) {
+          const r = list[i];
+          if (r.cssRules && r.type !== 1) { try { walk(r.cssRules, r); } catch (e) {} continue; }
+          if (r.type === 1 && r.selectorText && r.selectorText.indexOf('todayTableBody') > -1) todo.push([i, r]);
+        }
+        for (let k = todo.length - 1; k >= 0; k--) {
+          const [i, r] = todo[k];
+          const txt = r.cssText, brace = txt.indexOf('{');
+          const nsel = r.selectorText.replace(/#todayTableBody/g, '#rmVisitBody');
+          try { (parent || r.parentStyleSheet).insertRule(nsel + ' ' + txt.slice(brace), i + 1); } catch (e) {}
+        }
+      };
+      for (const sh of Array.from(document.styleSheets)) { try { walk(sh.cssRules, null); } catch (e) {} }
+    }
+    function rmRowCard(sel) {
+      rmCloneRowCss();
+      const src = document.getElementById('todayTableBody');
+      const tb = src && src.closest('table');
+      const thead = tb && tb.querySelector('thead') ? tb.querySelector('thead').outerHTML : '';
+      const btn = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black transition active:scale-95';
+      return `<div class="flex items-center justify-between gap-2 mb-2"><div class="text-[11px] font-black uppercase tracking-wider text-slate-400">Selected visit</div>`
+        + `<div class="flex gap-2"><button type="button" onclick="rmStartPlace('${escapeHtml(sel.id)}')" class="${btn} text-slate-200 bg-slate-900 border border-slate-700">Move pin</button>`
+        + `<button type="button" onclick="rmClear()" class="${btn} text-slate-200 bg-slate-900 border border-slate-700">Close</button></div></div>`
+        + (sel.geoApprox ? '<div class="text-[11px] text-amber-300 font-semibold mb-2">This pin is an approximate spot. Use Move pin to place it exactly.</div>' : '')
+        + `<div class="overflow-x-auto"><table class="stack w-full text-left text-xs border-collapse">${thead}<tbody id="rmVisitBody" class="divide-y divide-slate-700/60 bg-slate-800/40">${window.__mrpRowTemplate(sel)}</tbody></table></div>`;
+    }
     function rmCard() {
       const el = rmEl('rmCard');
       if (!el) return;
       const sel = RM.selId ? visits.find(v => v.id === RM.selId) : null;
       let h = '';
-      if (sel) {
+      if (sel && window.__mrpRowTemplate) { h += rmRowCard(sel); }
+      else if (sel) {
         const q = encodeURIComponent(String(sel.streetAddress || '').trim());
         const btn = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition active:scale-95';
         h += `<div class="flex items-start justify-between gap-3">
