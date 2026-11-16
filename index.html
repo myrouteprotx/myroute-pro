@@ -56,6 +56,20 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 #settingsPanel > .mt-4 > div.p-3 a{height:40px;width:200px;max-width:100%;display:inline-flex!important;align-items:center;justify-content:center;border-radius:12px}
 #settingsPanel button.bg-slate-800:not([aria-label]),#settingsPanel button.bg-slate-700:not([aria-label]){background:#0e7490;border:1px solid #67e8f9;color:#fff}
 #settingsPanel [aria-label="Close settings"]{color:#fff!important;background:#334155;border:1px solid #64748b;border-radius:12px;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}
+@media (min-width:1200px){
+  #settingsPanel > .mt-4{grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:start!important}
+  #settingsPanel > .mt-4 > :nth-child(-n+5){align-self:stretch}
+  #settingsPanel > .mt-4 > :nth-child(1){grid-column:1;grid-row:1}
+  #settingsPanel > .mt-4 > :nth-child(4){grid-column:1;grid-row:2}
+  #settingsPanel > .mt-4 > :nth-child(2){grid-column:2;grid-row:1}
+  #settingsPanel > .mt-4 > :nth-child(3){grid-column:2;grid-row:2}
+  #settingsPanel > .mt-4 > :nth-child(5){grid-column:3;grid-row:1 / span 2}
+}
+@media (min-width:900px) and (max-width:1199px){
+  #settingsPanel > .mt-4 > :nth-child(5){grid-column:1 / -1}
+}
+@media (min-width:900px){#settingsPanel > .mt-4 > :nth-child(-n+4){min-height:112px}}
+#settingsPanel > .mt-4 > div.p-3 > label{color:#e2e8f0}
 </style>
 </head><body>
 <!DOCTYPE html>
@@ -3149,20 +3163,20 @@ Add New Stop
       </div>
 
       <div class="mt-4 space-y-3.5">
-        <div>
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <label class="block text-xs font-bold text-slate-300 mb-1" for="setRepName">Sales Representative</label>
           <input type="text" id="setRepName" placeholder="e.g. Your Name" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
         </div>
-        <div>
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <label class="block text-xs font-bold text-slate-300 mb-1" for="setTerritory">Territory / Route Name</label>
           <input type="text" id="setTerritory" placeholder="e.g. Houston" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
         </div>
-        <div>
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <label class="block text-xs font-bold text-slate-300 mb-1" for="setManagerEmail">Manager Recipient Email</label>
           <input type="email" multiple id="setManagerEmail" placeholder="name@company.com, name2@company.com" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
         </div>
 
-        <div>
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <label class="block text-xs font-bold text-slate-300 mb-1" for="setCompanyName">Company you work for</label>
           <input type="text" id="setCompanyName" placeholder="Company name" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
         </div>
@@ -3182,15 +3196,7 @@ Add New Stop
           <p id="logoStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
         </div>
 
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <div class="text-xs font-bold text-slate-200">Opening intro movie</div>
-              <div class="text-[11px] text-slate-400 mt-0.5">Plays every time you open the app. Turn it off here if you want to go straight in. This setting is for this device only.</div>
-            </div>
-            <button type="button" id="introToggleBtn" onclick="toggleIntroSetting()" class="shrink-0 px-3 py-1.5 text-xs font-black rounded-xl border transition">On</button>
-          </div>
-        </div>
+        
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Sync status</div>
@@ -3218,6 +3224,16 @@ Add New Stop
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Account</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Everything you do is saved online as you go and shows up on your other devices. <span id="mrpSyncStatus" class="font-bold text-emerald-300"></span></div>
           <button type="button" onclick="window.__mrpSignOut()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Sign out of this device</button>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-slate-200">Opening intro movie</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Plays every time you open the app. Turn it off here if you want to go straight in. This setting is for this device only.</div>
+            </div>
+            <button type="button" id="introToggleBtn" onclick="toggleIntroSetting()" class="shrink-0 px-3 py-1.5 text-xs font-black rounded-xl border transition">On</button>
+          </div>
         </div>
 
         <div id="mrpTeamCard" style="display:none" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
