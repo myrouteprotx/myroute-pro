@@ -7122,16 +7122,19 @@ Add New Stop
     function rmRouteList(el) {
       const R = RM.route; if (!R) return;
       el.classList.remove('hidden');
-      const rows = R.stops.map(v => {
+      const arrow = (v, dir, ok, ch, label) => `<button type="button" ${ok ? `onclick="rmRouteMove('${escapeHtml(v.id)}', ${dir})"` : 'disabled'} title="${label}" aria-label="${label}" style="width:28px;height:28px;border-radius:8px;font-size:13px;font-weight:900;line-height:1;background:#0f172a;border:1px solid ${ok ? '#60a5fa' : '#334155'};color:${ok ? '#fff' : '#475569'}">${ch}</button>`;
+      const rows = R.stops.map((v, i) => {
         const n = R.num[v.id], placed = rmHasGeo(v);
-        return `<button type="button" ${placed ? `onclick="rmGoTo('${escapeHtml(v.id)}')"` : 'disabled'} class="w-full flex items-center gap-3 text-left px-3 py-2 rounded-xl bg-slate-900/70 border border-slate-700 hover:border-cyan-500/60 transition">`
+        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-slate-900/70 border border-slate-700">`
+          + `<button type="button" ${placed ? `onclick="rmGoTo('${escapeHtml(v.id)}')"` : 'disabled'} class="flex-1 min-w-0 flex items-center gap-3 text-left">`
           + `<span class="shrink-0 w-6 h-6 rounded-full text-[11px] font-black flex items-center justify-center" style="background:${placed ? '#fff' : '#475569'};color:${placed ? '#0b1020' : '#e2e8f0'}">${placed ? n : '–'}</span>`
           + `<span class="min-w-0 flex-1"><span class="block text-xs font-extrabold text-white truncate">${escapeHtml(v.businessName || 'Visit')}</span><span class="block text-[11px] text-slate-400 truncate">${escapeHtml(v.streetAddress || v.clientName || '')}</span></span>`
-          + (placed ? '' : '<span class="shrink-0 text-[10px] font-black text-amber-300">Not on map yet</span>') + '</button>';
+          + (placed ? '' : '<span class="shrink-0 text-[10px] font-black text-amber-300">Not on map yet</span>') + '</button>'
+          + `<span class="shrink-0 flex gap-1">${arrow(v, -1, i > 0, '&#9650;', 'Move up')}${arrow(v, 1, i < R.stops.length - 1, '&#9660;', 'Move down')}</span></div>`;
       }).join('');
       el.innerHTML = `<div class="flex items-center justify-between gap-3 flex-wrap"><h3 class="text-sm font-black text-white flex items-center gap-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#00e6c7"></span>Route for ${escapeHtml(R.label)} <span class="text-cyan-300">(${R.stops.length} stops)</span></h3>`
         + `<button type="button" onclick="rmRouteClear()" class="px-2.5 py-1 rounded-lg text-[11px] font-black text-rose-200 bg-rose-950/60 border border-rose-800/70">Clear route</button></div>`
-        + `<p class="text-[10px] text-slate-400 font-semibold mt-1">In visiting order. Tap a property to jump to it on the map.</p><div class="mt-2 space-y-1.5 max-h-80 overflow-y-auto">${rows}</div>`;
+        + `<p class="text-[10px] text-slate-400 font-semibold mt-1">In visiting order. Use the up and down arrows to change the order and the line on the map follows. Tap a name to jump to it.</p><div class="mt-2 space-y-1.5 max-h-80 overflow-y-auto">${rows}</div>`;
     }
     function rmRouteClear() {
       RM.route = null; try { rmEl('routeMapView').classList.remove('rm-routing'); } catch (e) {}
@@ -7157,14 +7160,19 @@ Add New Stop
       const pts = geo.concat(RM.route.office ? [RM.route.office] : []);
       renderRouteMap();
       rmFitBounds(Math.min(...pts.map(p => p.lat)), Math.max(...pts.map(p => p.lat)), Math.min(...pts.map(p => p.lng)), Math.max(...pts.map(p => p.lng)), 0.8);
+      rmRoadFetch();
+    }
+
+    async function rmRoadFetch() {
+      const my = RM.route; if (!my) return;
       // follow the roads when the free routing service answers; otherwise the straight-line version stays
       try {
-        const seq = (RM.route.office ? [RM.route.office] : []).concat(geo, RM.route.office ? [RM.route.office] : []);
+        const sig = my.stops.map(v => v.id).join(); const geo = my.stops.filter(rmHasGeo);
+        const seq = (my.office ? [my.office] : []).concat(geo, my.office ? [my.office] : []);
         if (seq.length > 1 && seq.length <= 60) {
-          const my = RM.route;
           const url = 'https://router.project-osrm.org/route/v1/driving/' + seq.map(p => p.lng.toFixed(5) + ',' + p.lat.toFixed(5)).join(';') + '?overview=full&geometries=geojson';
           const r = await fetch(url); const j = r.ok ? await r.json() : null;
-          if (j && j.routes && j.routes[0] && RM.route === my) {
+          if (j && j.routes && j.routes[0] && RM.route === my && sig === my.stops.map(v => v.id).join()) {
             my.road = j.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
             const mi = j.routes[0].distance / 1609.34, mins = Math.round(j.routes[0].duration / 60);
             my.info = Math.round(mi) + ' mi driving, about ' + (mins >= 60 ? Math.floor(mins / 60) + ' hr ' + (mins % 60) + ' min' : mins + ' min') + ' without stops';
@@ -7172,6 +7180,22 @@ Add New Stop
           }
         }
       } catch (e) {}
+    }
+    // Move one stop up or down in the route: the order is saved, the numbers change and the line is redrawn
+    function rmRouteMove(id, dir) {
+      const R = RM.route; if (!R) return;
+      const ids = R.stops.map(v => v.id), i = ids.indexOf(id), j = i + dir;
+      if (i < 0 || j < 0 || j >= ids.length) return;
+      const t = ids[i]; ids[i] = ids[j]; ids[j] = t;
+      const all = routeAll(), changed = [];
+      ids.forEach((x, k) => { const v = all.find(o => o.id === x); if (v && v.routeSeq !== k + 1) { v.routeSeq = k + 1; changed.push(v); } });
+      try { routePersist(changed); } catch (e) {}
+      const o = rmRouteDays().find(d => d.date === R.date);
+      if (o) R.stops = o.list;
+      let n = 0; R.num = {}; R.stops.forEach(v => { if (rmHasGeo(v)) R.num[v.id] = ++n; });
+      R.road = null; R.info = '';
+      rmDraw(); rmSummary(); rmNear();
+      clearTimeout(RM.roadT); RM.roadT = setTimeout(rmRoadFetch, 600);
     }
     function rmRouteLine() {
       const R = RM.route; if (!R) return '';
