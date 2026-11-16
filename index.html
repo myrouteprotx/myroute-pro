@@ -2584,6 +2584,10 @@ Add New Stop
               <input type="text" id="addrZip" inputmode="numeric" maxlength="10" placeholder="77011" autocomplete="postal-code" class="w-full px-3 py-2 text-xs bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
           </div>
+          <div class="mt-2">
+            <button type="button" onclick="vaVerify()" class="px-3 py-1.5 text-[11px] font-black text-white rounded-lg" style="background:#0e7490;border:1px solid #67e8f9">Verify address with Google</button>
+            <div id="vaBox" class="mt-2 hidden"></div>
+          </div>
         </div>
 
         <!-- Phone & Email -->
@@ -8597,6 +8601,7 @@ Add New Stop
             if (wasOnToday && entered && payload.visitDate === todayString) payload.removedFromToday = todayString; }
           visits[index] = { ...visits[index], ...payload };
           if (addrChanged) { delete visits[index].lat; delete visits[index].lng; delete visits[index].geoApprox; }
+          vaApplyGeo(visits[index]);
           showToast(`Updated record for "${payload.businessName}"`);
         }
       } else {
@@ -8605,6 +8610,7 @@ Add New Stop
           ...payload
         };
         if (scanPhotoId) { newStop.cardPhotoId = scanPhotoId; scanPhotoId = null; }
+        vaApplyGeo(newStop);
         visits.unshift(newStop);
         showToast(`Logged stop for "${payload.businessName}"!`);
       }
@@ -8918,6 +8924,47 @@ Add New Stop
       catch (e) { if (st) st.textContent = 'Could not save the photo: ' + ((e && (e.message || e.code)) || 'try again'); }
     }
     function stashFollowUp() { const g = (i) => { const e = document.getElementById(i); return e ? e.value : null; }; if (document.getElementById('fuBody')) fuDraft = { vid: fuVisitId, tpl: g('fuTpl'), to: g('fuTo'), subject: g('fuSubject'), body: g('fuBody'), sig: g('fuSig'), sigOn: document.getElementById('fuSigOn') ? document.getElementById('fuSigOn').checked : null }; }
+
+
+    /* Verify address with Google Places: finds the real business listing and flags police, post office, closed */
+    window.__vaList = []; window.__vaPick = null;
+    function vaEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+    async function vaVerify() {
+      const box = document.getElementById('vaBox'); if (!box) return;
+      const g = (i) => { const e = document.getElementById(i); return e ? (e.value || '').trim() : ''; };
+      const name = g('businessName');
+      if (!name) { showToast('Type the business name first'); return; }
+      const place = [g('addrCity'), g('addrState'), g('addrZip')].filter(Boolean).join(' ') || 'Houston TX';
+      box.classList.remove('hidden'); box.innerHTML = '<div class="text-[11px] text-slate-300">Checking Google...</div>';
+      try {
+        const hd = (typeof homeData === 'function') ? homeData() : null; const ent = hd && hd.list ? hd.list[hd.def] : null;
+        const r = await window.__mrpFn('places', { query: name + ' ' + place, lat: ent && ent.lat != null ? ent.lat : undefined, lng: ent && ent.lng != null ? ent.lng : undefined });
+        const list = (r && r.places) || []; window.__vaList = list;
+        if (!list.length) { box.innerHTML = '<div class="text-[11px] text-amber-300 font-bold">Google found no match. Check the name and city, or try again with the zip filled in.</div>'; return; }
+        box.innerHTML = '<div class="text-[11px] font-black text-slate-200 mb-1">Tap the correct one to fill the address:</div>' + list.map((p, i) => {
+          const tag = p.bad ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#7f1d1d;color:#fecaca">NOT A PLUMBER: ' + vaEsc(p.bad.replace(/_/g, ' ')) + '</span>' : (p.status && p.status !== 'OPERATIONAL' ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#7f1d1d;color:#fecaca">' + vaEsc(p.status.replace(/_/g, ' ')) + '</span>' : (p.plumber ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#064e3b;color:#a7f3d0">Plumber</span>' : '<span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#334155;color:#e2e8f0">' + vaEsc((p.type || 'business').replace(/_/g, ' ')) + '</span>'));
+          const po = /p\.?\s*o\.?\s*box/i.test(p.address) ? ' <span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#7f1d1d;color:#fecaca">P.O. BOX</span>' : '';
+          return '<button type="button" onclick="vaChoose(' + i + ')" class="w-full text-left p-2 mb-1.5 rounded-lg" style="background:#0f172a;border:1px solid #475569"><div class="text-xs font-black text-white">' + vaEsc(p.name) + ' ' + tag + po + '</div><div class="text-[11px] text-slate-300">' + vaEsc(p.address) + '</div></button>';
+        }).join('');
+      } catch (e) {
+        const m = String((e && e.message) || e || '');
+        box.innerHTML = '<div class="text-[11px] text-amber-300 font-bold">' + (/no_key/.test(m) ? 'The Google key is not saved in Supabase yet.' : (/404|not found|Failed to send/i.test(m) ? 'The lookup function is not deployed in Supabase yet.' : 'Could not check right now. ' + vaEsc(m))) + '</div>';
+      }
+    }
+    function vaChoose(i) {
+      const p = (window.__vaList || [])[i]; if (!p) return;
+      if (p.bad && !confirm('Google says this is a ' + p.bad.replace(/_/g, ' ') + ', not a plumber. Use it anyway?')) return;
+      const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+      set('streetAddress', [p.street, p.suite ? 'Ste ' + p.suite : ''].filter(Boolean).join(' '));
+      set('addrCity', p.city || ''); set('addrState', p.state || ''); set('addrZip', p.zip || '');
+      window.__vaPick = { addr: addrCombined(), lat: p.lat, lng: p.lng };
+      const box = document.getElementById('vaBox'); if (box) box.innerHTML = '<div class="text-[11px] font-black" style="color:#6ee7b7">Address filled from Google. Tap Save to keep it.</div>';
+    }
+    function vaApplyGeo(rec) {
+      const p = window.__vaPick; window.__vaPick = null;
+      if (!p || !rec || p.lat == null || String(rec.streetAddress || '') !== p.addr) return;
+      rec.lat = Math.round(p.lat * 1e6) / 1e6; rec.lng = Math.round(p.lng * 1e6) / 1e6; rec.geoApprox = false;
+    }
 
     /* Address helpers: street + City + State + Zip are saved as one "street, City ST 77011" string */
     function addrSplitIn() {
