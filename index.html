@@ -7279,8 +7279,8 @@ Add New Stop
       if (!w || !b || !h) return;
       var desk = window.matchMedia('(min-width:1024px)').matches;
       var hd = h.closest('.justify-between');
-      if (desk) { if (hd && w.parentNode !== hd) hd.appendChild(w); if (hd) hd.style.position = 'relative'; w.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(1.2);z-index:2'; }
-      else { w.style.cssText = ''; if (hd) hd.style.position = ''; if (w.nextElementSibling !== b) b.parentNode.insertBefore(w, b); }
+      if (desk) { if (hd && w.parentNode !== hd) hd.appendChild(w); var bg = document.getElementById('rmBtnGroup'); if (hd) hd.style.position = ''; w.style.cssText = 'position:static;order:1;margin:0 auto;white-space:nowrap;flex:0 0 auto'; if (bg) bg.style.order = '2'; }
+      else { w.style.cssText = ''; var bg2 = document.getElementById('rmBtnGroup'); if (bg2) bg2.style.order = ''; if (hd) hd.style.position = ''; if (w.nextElementSibling !== b) b.parentNode.insertBefore(w, b); }
     }
     rmPlaceMiles(); window.addEventListener('resize', rmPlaceMiles);
     function rmMilesLabel() { return (Math.round(RM_NEAR_MI * 10) / 10) + (RM_NEAR_MI === 1 ? ' mile' : ' miles'); }
