@@ -1340,6 +1340,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     #detailBody .dt-photorow { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
     #detailBody .dt-photorow > div { flex:0 1 auto; width:fit-content; max-width:100%; padding:8px 10px; border-radius:12px; }
     #detailBody .dt-photorow img { height:176px; width:auto; max-width:100%; }
+    /* One identical box for every business card and building photo, on phone and desktop (Project Photos are not touched) */
+    .mrp-uph, #detailBody .dt-photorow img.mrp-uph { width:156px !important; height:98px !important; max-width:100%; object-fit:cover; object-position:center; display:block; border-radius:12px; border:1px solid #475569; background:#0f172a; }
     #detailBody .dt-grid input, #detailBody .dt-grid select, #detailBody .dt-grid textarea { font-size:13px !important; padding:5px 9px !important; border-radius:9px !important; }
     #detailBody .dt-grid textarea { min-height:70px; }
     #detailBody .dt-grid > div > .flex { margin-bottom:3px !important; }
@@ -2429,7 +2431,7 @@ Add New Stop
             <input type="file" id="vpPhotoCamera" accept="image/*" capture="environment" class="hidden">
             <input type="file" id="vpPhotoLibrary" accept="image/*" multiple class="hidden">
             <div id="vpPhotoStatus" class="text-[11px] font-semibold mt-2 min-h-[1rem] text-slate-300" role="status" aria-live="polite"></div>
-            <div id="vpPhotoList" class="hidden mt-2 grid grid-cols-3 gap-2"></div>
+            <div id="vpPhotoList" class="hidden mt-2 flex flex-wrap gap-2"></div>
           </div>
           <div id="vpCardWrap" style="display:none"><span class="block text-xs font-bold text-slate-300 mt-3 mb-1">Business card photo</span>
           <div id="vpCardBox" onmouseenter="vpPasteTarget='card'" onfocusin="vpPasteTarget='card'" onclick="vpPasteTarget='card'" ondragover="event.preventDefault();this.style.boxShadow='0 0 0 3px #1dcff3'" ondragleave="this.style.boxShadow=''" ondrop="vpCardDrop(event)" class="vp-box">
@@ -5202,7 +5204,7 @@ Add New Stop
     function dPhotos(ids, label) {
       const list = (ids || []).filter(Boolean);
       if (!list.length) return '';
-      return `<div class="flex flex-wrap gap-3">${list.map((id, n) => `<a href="/_blob/${escapeHtml(id)}" target="_blank" rel="noopener" class="block"><img src="/_blob/${escapeHtml(id)}" alt="${escapeHtml(label)} ${n + 1}" loading="lazy" class="h-44 w-auto max-w-full object-cover rounded-xl border border-slate-600"></a>`).join('')}</div>`;
+      return `<div class="flex flex-wrap gap-3">${list.map((id, n) => `<a href="/_blob/${escapeHtml(id)}" target="_blank" rel="noopener" class="block"><img src="/_blob/${escapeHtml(id)}" alt="${escapeHtml(label)} ${n + 1}" loading="lazy" class="mrp-uph"></a>`).join('')}</div>`;
     }
     function dCalls(calls) {
       if (!Array.isArray(calls) || !calls.length) return '';
@@ -6356,7 +6358,7 @@ Add New Stop
                 <div class="text-[10px] text-slate-500">${escapeHtml(item.clientRole || 'Decision Maker')}</div>
                 ${item.phone ? `<div class="text-[11px] text-slate-700 font-semibold mt-1">📞 ${escapeHtml(item.phone)}</div>` : ''}
                 ${item.email ? `<div class="text-[11px] text-slate-700 font-semibold break-all">✉️ ${escapeHtml(item.email)}</div>` : ''}
-                ${item.cardPhotoId ? `<a href="/_blob/${escapeHtml(item.cardPhotoId)}" target="_blank" rel="noopener" class="block mt-2"><img src="/_blob/${escapeHtml(item.cardPhotoId)}" alt="Business card for ${escapeHtml(item.businessName)}" onerror="this.parentNode.style.display='none'" style="max-width: 200px; width: 100%; height: auto; border: 1px solid #cad4e2; border-radius: 8px; display: block;"></a>` : ''}
+                ${item.cardPhotoId ? `<a href="/_blob/${escapeHtml(item.cardPhotoId)}" target="_blank" rel="noopener" class="block mt-2"><img src="/_blob/${escapeHtml(item.cardPhotoId)}" alt="Business card for ${escapeHtml(item.businessName)}" onerror="this.parentNode.style.display='none'" style="width: 156px; max-width: 100%; height: 98px; object-fit: cover; border: 1px solid #cad4e2; border-radius: 12px; display: block;"></a>` : ''}
               </td>
               <td class="py-3 px-4 whitespace-nowrap">
                 <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">
@@ -7550,7 +7552,7 @@ Add New Stop
       const has = vpPhotoIds.length > 0;
       list.classList.toggle('hidden', !has);
       list.innerHTML = vpPhotoIds.map((id, i) =>
-        `<div class="relative"><a href="/_blob/${escapeHtml(id)}" target="_blank" rel="noopener"><img src="/_blob/${escapeHtml(id)}" alt="Building photo ${i + 1}" class="w-full h-24 object-cover rounded-xl border border-slate-700 bg-slate-950"></a>`
+        `<div class="relative"><a href="/_blob/${escapeHtml(id)}" target="_blank" rel="noopener"><img src="/_blob/${escapeHtml(id)}" alt="Building photo ${i + 1}" class="mrp-uph"></a>`
         + `<button type="button" onclick="removeVpPhoto(${i})" aria-label="Remove photo ${i + 1}" title="Remove this photo" class="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-rose-600 text-white text-xs font-black border border-white/70 shadow">&times;</button></div>`
       ).join('');
       document.getElementById('vpPhotoTakeText').textContent = has ? 'Take another photo' : 'Take photo';
@@ -7594,7 +7596,7 @@ Add New Stop
     function renderVpCard() {
       const box = document.getElementById('vpCardPreview'); if (!box) return;
       box.classList.toggle('hidden', !vpCardId);
-      box.innerHTML = vpCardId ? `<a href="/_blob/${escapeHtml(vpCardId)}" target="_blank" rel="noopener"><img src="/_blob/${escapeHtml(vpCardId)}" alt="Business card" class="max-h-40 max-w-full rounded-xl border border-slate-600 bg-white object-contain"></a><button type="button" onclick="removeVpCard()" aria-label="Remove card photo" title="Remove card photo" class="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-rose-600 text-white text-xs font-black border border-white/70 shadow">&times;</button>` : '';
+      box.innerHTML = vpCardId ? `<a href="/_blob/${escapeHtml(vpCardId)}" target="_blank" rel="noopener"><img src="/_blob/${escapeHtml(vpCardId)}" alt="Business card" class="mrp-uph"></a><button type="button" onclick="removeVpCard()" aria-label="Remove card photo" title="Remove card photo" class="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-rose-600 text-white text-xs font-black border border-white/70 shadow">&times;</button>` : '';
       const t = document.getElementById('vpCardTakeText'); if (t) t.textContent = vpCardId ? 'Replace card photo' : 'Take card photo';
     }
     function removeVpCard() {
