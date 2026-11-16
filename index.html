@@ -3241,6 +3241,15 @@ Add New Stop
         </div>
 
         <div class="mrp-admin-only p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Verify addresses in a file</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Choose an import file (.json) before you import it. Every stop is checked on Google. Stops that match a real, open plumber get the verified address and exact map pin. Police stations, post offices, closed businesses and anything unclear are listed for you to review and are left unchanged. Then download the checked file.</div>
+          <input type="file" id="vfFile" accept=".json,application/json" class="hidden">
+          <button type="button" onclick="document.getElementById('vfFile').click()" class="px-3 py-1.5 text-xs font-bold text-white rounded-xl" style="background:#0e7490;border:1px solid #67e8f9">Choose file and verify</button>
+          <p id="vfStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
+          <div id="vfOut" class="mt-2"></div>
+        </div>
+
+        <div class="mrp-admin-only p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Remove a batch of stops</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Pick a range of visit dates, tap Show stops, then uncheck any you want to keep. Nothing is deleted until you tap Delete and enter the administrator password.</div>
           <div class="grid grid-cols-2 gap-2 mb-2">
@@ -12931,6 +12940,62 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
   window.addEventListener('resize', sync); window.addEventListener('load', function () { sync(); setTimeout(sync, 400); setTimeout(sync, 1500); });
   document.addEventListener('DOMContentLoaded', sync); setTimeout(sync, 100); setInterval(sync, 2000);
   try { var n = document.querySelector('.main-nav'); if (n && window.ResizeObserver) new ResizeObserver(sync).observe(n); } catch (e) {}
+})();
+
+/* Verify a whole import file against Google Places, then download the checked copy */
+(function () {
+  var inp = document.getElementById('vfFile'); if (!inp) return;
+  var DATA = null, RES = [], NAME = 'verified.json';
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function say(t) { var e = document.getElementById('vfStatus'); if (e) e.textContent = t; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function norm(t) { return String(t || '').toLowerCase().replace(/&/g, 'and').replace(/\b(inc|llc|co|company|corp|the)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function nameOk(a, b) { var x = norm(a), y = norm(b); if (!x || !y) return false; if (x === y || x.indexOf(y) > -1 || y.indexOf(x) > -1) return true; var xs = x.split(' '), ys = y.split(' '), hit = 0; xs.forEach(function (w) { if (w.length > 2 && ys.indexOf(w) > -1) hit++; }); return hit >= Math.min(2, xs.length); }
+  inp.addEventListener('change', async function (e) {
+    var f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    var out = document.getElementById('vfOut'); out.innerHTML = '';
+    try { DATA = JSON.parse(await f.text()); } catch (er) { say('That file could not be read as JSON.'); return; }
+    NAME = f.name.replace(/\.json$/i, '') + '-Verified.json';
+    var keys = Object.keys(DATA).filter(function (k) { return DATA[k] && typeof DATA[k] === 'object' && DATA[k].businessName; });
+    if (!keys.length) { say('No stops with a business name were found in that file.'); return; }
+    RES = [];
+    for (var i = 0; i < keys.length; i++) {
+      var v = DATA[keys[i]]; say('Checking ' + (i + 1) + ' of ' + keys.length + ': ' + v.businessName);
+      var tail = String(v.streetAddress || '').replace(/dispatch/ig, '').replace(/\s+/g, ' ').trim();
+      var r = { key: keys[i], name: v.businessName, old: v.streetAddress || '', state: 'review', why: '', pick: null };
+      try {
+        var res = await window.__mrpFn('places', { query: v.businessName + ' ' + tail, lat: v.lat != null ? v.lat : undefined, lng: v.lng != null ? v.lng : undefined });
+        var list = (res && res.places) || [];
+        var good = list.filter(function (p) { return !p.bad && (!p.status || p.status === 'OPERATIONAL') && p.street && !/p\.?\s*o\.?\s*box/i.test(p.address) && nameOk(v.businessName, p.name); })[0];
+        if (good) { r.state = 'ok'; r.pick = good; }
+        else if (!list.length) r.why = 'Google found nothing';
+        else { var t = list[0]; r.why = t.bad ? 'Top match is a ' + t.bad.replace(/_/g, ' ') : (t.status && t.status !== 'OPERATIONAL' ? 'Top match is ' + t.status.replace(/_/g, ' ').toLowerCase() : 'Name does not match: ' + t.name + ' (' + t.address + ')'); }
+      } catch (er) {
+        var m = String((er && er.message) || er || '');
+        say(/no_key/.test(m) ? 'The Google key is not saved in Supabase yet.' : (/404|not found|Failed to send/i.test(m) ? 'The lookup function is not deployed in Supabase yet.' : 'Stopped: ' + m)); return;
+      }
+      RES.push(r); await sleep(250);
+    }
+    var ok = RES.filter(function (r) { return r.state === 'ok'; }).length;
+    say('Done. ' + ok + ' of ' + RES.length + ' verified, ' + (RES.length - ok) + ' to review.');
+    var h = '<button type="button" id="vfDl" class="px-3 py-1.5 text-xs font-black text-white rounded-xl mb-2" style="background:#059669;border:1px solid #6ee7b7">Download checked file</button><div class="text-[11px]" style="max-height:320px;overflow:auto">';
+    RES.slice().sort(function (a, b) { return (a.state === 'ok') - (b.state === 'ok'); }).forEach(function (r) {
+      h += '<div class="p-2 mb-1.5 rounded-lg" style="background:#0f172a;border:1px solid ' + (r.state === 'ok' ? '#065f46' : '#7f1d1d') + '"><div class="font-black text-white">' + esc(r.name) + ' <span style="color:' + (r.state === 'ok' ? '#6ee7b7' : '#fca5a5') + '">' + (r.state === 'ok' ? 'VERIFIED' : 'REVIEW') + '</span></div>'
+        + '<div class="text-slate-400">Before: ' + esc(r.old) + '</div>'
+        + (r.state === 'ok' ? '<div style="color:#6ee7b7">Google: ' + esc(r.pick.address) + '</div>' : '<div style="color:#fca5a5">' + esc(r.why) + '</div>') + '</div>';
+    });
+    out.innerHTML = h + '</div>';
+    document.getElementById('vfDl').onclick = function () {
+      var copy = JSON.parse(JSON.stringify(DATA));
+      RES.forEach(function (r) {
+        if (r.state !== 'ok') return; var p = r.pick, v = copy[r.key];
+        v.streetAddress = [[p.street, p.suite ? 'Ste ' + p.suite : ''].filter(Boolean).join(' '), [p.city, [p.state, p.zip].filter(Boolean).join(' ')].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+        if (p.lat != null) { v.lat = Math.round(p.lat * 1e6) / 1e6; v.lng = Math.round(p.lng * 1e6) / 1e6; v.geoApprox = false; }
+      });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(copy, null, 2)], { type: 'application/json' })); a.download = NAME;
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    };
+  });
 })();
 </script>
 </body></html>
