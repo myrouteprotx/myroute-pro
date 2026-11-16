@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>MyRoute Pro Address Checker</title>
+<style>
+:root{--bg:#0b1020;--card:#111a30;--line:#2a3856;--fg:#f1f5f9;--mut:#94a3b8;--cy:#00ffdd;--g:#34d399;--y:#fbbf24;--r:#f87171}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:20px 16px 60px}
+.wrap{max-width:860px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--mut);font-size:13px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+input[type=text],input[type=email],input[type=password]{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#0b1127;color:var(--fg);font-size:15px;margin-bottom:8px}
+button{cursor:pointer;font-weight:800;font-size:14px;border-radius:10px;padding:10px 16px;border:1px solid var(--line);background:#1e293b;color:var(--fg)}
+button.pri{background:#0e7490;border-color:#67e8f9;color:#fff}
+button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
+#status{font-weight:700;margin:10px 0;min-height:20px}
+.row{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;background:#0e1730}
+.row.green{border-color:#065f46}.row.yellow{border-color:#92660a}.row.red{border-color:#7f1d1d}
+.tag{display:inline-block;font-size:11px;font-weight:900;padding:2px 7px;border-radius:6px;margin-left:6px}
+.t-green{background:#064e3b;color:#a7f3d0}.t-yellow{background:#713f12;color:#fde68a}.t-red{background:#7f1d1d;color:#fecaca}
+.nm{font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sm{font-size:12px;color:var(--mut)}
+.why{font-size:12px;margin-top:3px}
+.links a{color:var(--cy);font-size:12px;margin-right:12px}
+.sum{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 12px}
+.sum span{padding:6px 12px;border-radius:10px;font-weight:900}
+@media (max-width:480px){body{padding:14px 16px 50px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>MyRoute Pro Address Checker</h1>
+  <div class="sub">Check collected addresses before they go into MyRoute Pro. Each stop is checked on Google, then sorted: <b style="color:var(--g)">Green</b> is safe to import, <b style="color:var(--y)">Yellow</b> means call first, <b style="color:var(--r)">Red</b> is left out.</div>
+
+  <div id="login" class="card" hidden>
+    <div style="font-weight:800;margin-bottom:8px">Sign in with your MyRoute Pro login</div>
+    <input type="email" id="em" placeholder="Email" autocomplete="username">
+    <input type="password" id="pw" placeholder="Password" autocomplete="current-password">
+    <button class="pri" id="inBtn" type="button">Sign in</button>
+    <div id="loginMsg" class="sm" style="margin-top:8px"></div>
+  </div>
+
+  <div id="tool" class="card" hidden>
+    <div style="font-weight:800;margin-bottom:6px">1. Choose your file</div>
+    <div class="sm" style="margin-bottom:10px">Pick the import file (.json) with the stops you collected. Nothing is imported from here and your file is not saved anywhere.</div>
+    <input type="file" id="file" accept=".json,application/json" hidden>
+    <button class="pri" id="pick" type="button">Choose file and check</button>
+    <button id="out" type="button" style="margin-left:6px">Sign out</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="sum" class="sum"></div>
+  <div id="dlbar" hidden style="margin-bottom:12px"><button class="dl" id="dl" type="button">Download checked file</button> <span class="sm">Green and yellow stops that are ticked go in the file. Red stops are left out.</span></div>
+  <div id="list"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+(function () {
+  var SB_URL = 'https://rrhmykprzkumixcjsygo.supabase.co', SB_KEY = 'sb_publishable_-Tc0Yl6WAYnmVAJV-hYRXQ_HwLeW4Dj';
+  var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+  var $ = function (id) { return document.getElementById(id); };
+  var DATA = null, RES = [], NAME = 'checked.json';
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function say(t) { $('status').textContent = t; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function digits(t) { return String(t || '').replace(/\D/g, '').slice(-10); }
+  function norm(t) { return String(t || '').toLowerCase().replace(/&/g, 'and').replace(/\b(inc|llc|co|company|corp|the)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function nameOk(a, b) { var x = norm(a), y = norm(b); if (!x || !y) return false; if (x === y || x.indexOf(y) > -1 || y.indexOf(x) > -1) return true; var xs = x.split(' '), ys = y.split(' '), hit = 0; xs.forEach(function (w) { if (w.length > 2 && ys.indexOf(w) > -1) hit++; }); return hit >= Math.min(2, xs.length); }
+  function mail(p) { return /\b(pmb|p\.?\s*o\.?\s*box|mailbox)\b/i.test(String(p.address || '') + ' ' + String(p.suite || '')) || /\b(ups store|fedex office|fedex ship|regus|mail boxes|mailbox|postal annex|pak mail|usps|post office)\b/i.test(String(p.name || '')); }
+
+  function show(logged) { $('login').hidden = logged; $('tool').hidden = !logged; }
+  sb.auth.getSession().then(function (r) { show(!!(r.data && r.data.session)); });
+  $('inBtn').onclick = async function () {
+    var m = $('loginMsg'); m.textContent = 'Signing in...';
+    var r = await sb.auth.signInWithPassword({ email: $('em').value.trim(), password: $('pw').value });
+    if (r.error) { m.textContent = r.error.message; return; }
+    m.textContent = ''; show(true);
+  };
+  $('out').onclick = async function () { await sb.auth.signOut(); show(false); };
+  $('pick').onclick = function () { $('file').click(); };
+
+  function classify(rec, list) {
+    var out = { level: 'red', why: [], pick: null, top: list[0] || null };
+    var cand = list.filter(function (p) { return nameOk(rec.businessName, p.name); })[0];
+    if (!cand) { out.why.push(list.length ? 'No Google listing with this name. Closest: ' + list[0].name + ' (' + list[0].address + ')' : 'Google found nothing'); return out; }
+    out.pick = cand;
+    var hard = [];
+    if (cand.bad) hard.push('Google lists it as a ' + cand.bad.replace(/_/g, ' '));
+    if (cand.status && cand.status !== 'OPERATIONAL') hard.push('Google says it is ' + cand.status.replace(/_/g, ' ').toLowerCase());
+    if (mail(cand)) hard.push('Looks like a mailbox store or P.O. box');
+    if (!cand.street) hard.push('No street address');
+    if (hard.length) { out.why = hard; return out; }
+    var soft = [];
+    if (!cand.plumber) soft.push('Not listed as a plumber on Google (' + (cand.type || 'business').replace(/_/g, ' ') + ')');
+    var fp = digits(rec.phone), gp = digits(cand.phone);
+    if (!gp) soft.push('Google has no phone number for it');
+    else if (!fp) soft.push('No phone in your file to compare');
+    else if (fp !== gp) soft.push('Phone differs: file ' + rec.phone + ', Google ' + cand.phone);
+    if (!cand.website && !(cand.ratings >= 1)) soft.push('No website and no reviews');
+    out.level = soft.length ? 'yellow' : 'green'; out.why = soft; return out;
+  }
+
+  $('file').addEventListener('change', async function (e) {
+    var f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    $('list').innerHTML = ''; $('sum').innerHTML = ''; $('dlbar').hidden = true;
+    try { DATA = JSON.parse(await f.text()); } catch (er) { say('That file could not be read as JSON.'); return; }
+    NAME = f.name.replace(/\.json$/i, '') + '-Checked.json';
+    var keys = Object.keys(DATA).filter(function (k) { return DATA[k] && typeof DATA[k] === 'object' && DATA[k].businessName; });
+    if (!keys.length) { say('No stops with a business name were found in that file.'); return; }
+    RES = [];
+    for (var i = 0; i < keys.length; i++) {
+      var v = DATA[keys[i]]; say('Checking ' + (i + 1) + ' of ' + keys.length + ': ' + v.businessName);
+      var tail = String(v.streetAddress || '').replace(/dispatch/ig, '').replace(/\s+/g, ' ').trim();
+      try {
+        var res = await sb.functions.invoke('places', { body: { query: v.businessName + ' ' + tail, lat: v.lat != null ? v.lat : undefined, lng: v.lng != null ? v.lng : undefined } });
+        if (res.error) { var ctx = res.error.context, code = ctx && ctx.status, txt = ''; try { txt = JSON.stringify(await ctx.clone().json()); } catch (x) {}
+          say(code === 403 ? 'Your login is not allowed to run checks. Ask the administrator.' : (code === 404 ? 'The lookup function is not deployed in Supabase yet.' : (/no_key/.test(txt) ? 'The Google key is not saved in Supabase yet.' : 'Stopped: ' + (txt || res.error.message)))); return; }
+        var r = classify(v, (res.data && res.data.places) || []);
+        RES.push({ key: keys[i], rec: v, r: r, use: r.level !== 'red' });
+      } catch (er) { say('Stopped: ' + ((er && er.message) || er)); return; }
+      await sleep(200);
+    }
+    render();
+  });
+
+  function counts() { var c = { green: 0, yellow: 0, red: 0 }; RES.forEach(function (x) { c[x.r.level]++; }); return c; }
+  function render() {
+    var c = counts();
+    say('Done. ' + RES.length + ' stops checked.');
+    $('sum').innerHTML = '<span class="t-green">' + c.green + ' green</span><span class="t-yellow">' + c.yellow + ' yellow, call first</span><span class="t-red">' + c.red + ' red, left out</span>';
+    $('dlbar').hidden = false;
+    var order = { red: 0, yellow: 1, green: 2 };
+    $('list').innerHTML = RES.map(function (x, i) { return { x: x, i: i }; }).sort(function (a, b) { return order[a.x.r.level] - order[b.x.r.level]; }).map(function (o) {
+      var x = o.x, r = x.r, v = x.rec, p = r.pick;
+      var label = { green: 'GREEN', yellow: 'YELLOW: CALL FIRST', red: 'RED: LEFT OUT' }[r.level];
+      var q = encodeURIComponent(v.businessName + ' ' + String(v.streetAddress || '').replace(/dispatch/ig, ''));
+      var links = '<div class="links" style="margin-top:4px">' + (p && p.id ? '<a target="_blank" rel="noopener" href="https://www.google.com/maps/place/?q=place_id:' + encodeURIComponent(p.id) + '">Open on Google Maps</a>' : '') + (v.phone ? '<a href="tel:' + esc(v.phone.replace(/[^\d+]/g, '')) + '">Call ' + esc(v.phone) + '</a>' : '') + '<a target="_blank" rel="noopener" href="https://www.google.com/search?q=' + q + '+Texas+plumbing+license">Search license</a></div>';
+      return '<div class="row ' + r.level + '"><label class="nm"><input type="checkbox" ' + (x.use ? 'checked' : '') + (r.level === 'red' ? '' : '') + ' onchange="window.__ck(' + o.i + ',this.checked)"> ' + esc(v.businessName) + '<span class="tag t-' + r.level + '">' + label + '</span></label>'
+        + '<div class="sm">Day ' + esc(v.routeDate || '') + '. Before: ' + esc(v.streetAddress || '') + '</div>'
+        + (p && r.level !== 'red' ? '<div class="sm" style="color:var(--g)">Google: ' + esc(p.address) + '</div>' : '')
+        + (r.why.length ? '<div class="why" style="color:' + (r.level === 'red' ? 'var(--r)' : 'var(--y)') + '">' + r.why.map(esc).join('<br>') + '</div>' : '')
+        + links + '</div>';
+    }).join('');
+  }
+  window.__ck = function (i, on) { RES[i].use = !!on; };
+
+  $('dl').onclick = function () {
+    var copy = {}, byDay = {};
+    RES.forEach(function (x) {
+      if (!x.use) return;
+      var v = JSON.parse(JSON.stringify(x.rec)), p = x.r.pick;
+      if (p && x.r.level !== 'red') {
+        v.streetAddress = [[p.street, p.suite ? 'Ste ' + p.suite : ''].filter(Boolean).join(' '), [p.city, [p.state, p.zip].filter(Boolean).join(' ')].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+        if (p.lat != null) { v.lat = Math.round(p.lat * 1e6) / 1e6; v.lng = Math.round(p.lng * 1e6) / 1e6; v.geoApprox = false; }
+      }
+      if (x.r.level === 'yellow') v.notes = (v.notes ? v.notes + ' ' : '') + '[CALL FIRST: ' + x.r.why.join('; ') + ']';
+      copy[x.key] = v; (byDay[v.routeDate || ''] = byDay[v.routeDate || ''] || []).push(x.key);
+    });
+    Object.keys(byDay).forEach(function (d) {
+      var ks = byDay[d].sort(function (a, b) { return (copy[a].routeSeq || 1e9) - (copy[b].routeSeq || 1e9); }), n = ks.length;
+      ks.forEach(function (k, i) { var v = copy[k]; if (v.routeSeq != null) v.routeSeq = i + 1; if (v.notes) v.notes = v.notes.replace(/Planned stop \d+ of \d+ for this day/, 'Planned stop ' + (i + 1) + ' of ' + n + ' for this day'); });
+    });
+    // keep any non-stop entries untouched
+    Object.keys(DATA).forEach(function (k) { if (!(k in copy) && !(DATA[k] && typeof DATA[k] === 'object' && DATA[k].businessName)) copy[k] = DATA[k]; });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(copy, null, 2)], { type: 'application/json' })); a.download = NAME;
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  };
+})();
+</script>
+</body>
+</html>

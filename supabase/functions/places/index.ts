@@ -21,6 +21,9 @@ Deno.serve(async (req) => {
     const jwt = (req.headers.get("authorization") || "").replace(/^Bearer /i, "");
     const { data: u } = await sb.auth.getUser(jwt);
     if (!u?.user) return json({ error: "not_signed_in" }, 401);
+    // Only the owner, administrators and managers may run checks (they are billed to the owner's Google account)
+    const { data: mem } = await sb.from("members").select("role").eq("member", u.user.id).maybeSingle();
+    if (mem && !["admin", "manager"].includes(mem.role as string)) return json({ error: "not_allowed" }, 403);
     const key = Deno.env.get("GOOGLE_PLACES_KEY");
     if (!key) return json({ error: "no_key" }, 500);
     const body = await req.json().catch(() => ({}));
@@ -34,7 +37,7 @@ Deno.serve(async (req) => {
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
-        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.types,places.primaryType,places.businessStatus",
+        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.types,places.primaryType,places.businessStatus,places.nationalPhoneNumber,places.websiteUri,places.userRatingCount",
       },
       body: JSON.stringify(payload),
     });
@@ -59,6 +62,9 @@ Deno.serve(async (req) => {
         plumber: types.includes("plumber"),
         bad: types.find((t) => BAD.includes(t)) || "",
         status: p.businessStatus || "",
+        phone: p.nationalPhoneNumber || "",
+        website: p.websiteUri || "",
+        ratings: p.userRatingCount ?? 0,
       };
     });
     return json({ ok: true, places });
