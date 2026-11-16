@@ -12461,4 +12461,69 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){apply(saved)});else apply(saved);
 })();
 </script>
+
+<script>
+/* Search boxes: an X appears on hover or focus when a name is typed; picking a suggestion jumps to that property */
+(function () {
+  var IDS = ['topSearch', 'searchInput', 'fireSearch', 'waterSearch', 'pcwSearch', 'repSearch', 'pastWeeksSearch', 'detailGroupSearch'];
+  var st = document.createElement('style');
+  st.textContent = 'input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}' +
+    '.mrp-sx{position:absolute;z-index:5;width:22px;height:22px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(15,23,42,.92);color:#fff;font:900 13px/20px system-ui,sans-serif;text-align:center;padding:0;cursor:pointer;display:none}' +
+    '.mrp-sx:hover{background:#e11d48;border-color:#fff}';
+  document.head.appendChild(st);
+  function setup(el) {
+    if (el.dataset.sx) return; el.dataset.sx = '1';
+    var host = el.parentElement; if (!host) return;
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'mrp-sx'; b.setAttribute('aria-label', 'Clear search'); b.title = 'Clear'; b.textContent = '\u00d7';
+    host.appendChild(b);
+    var hover = false;
+    function place() {
+      var has = !!el.value && el.offsetParent !== null;
+      b.style.display = (has && (hover || document.activeElement === el)) ? 'block' : 'none';
+      if (has) { b.style.top = (el.offsetTop + el.offsetHeight / 2 - 11) + 'px'; b.style.left = (el.offsetLeft + el.offsetWidth - 32) + 'px'; }
+      if (has) el.style.paddingRight = '34px';
+    }
+    host.addEventListener('mouseenter', function () { hover = true; place(); });
+    host.addEventListener('mouseleave', function () { hover = false; place(); });
+    el.addEventListener('input', place); el.addEventListener('focus', place); el.addEventListener('blur', function () { setTimeout(place, 150); });
+    b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    b.addEventListener('click', function (e) { e.preventDefault(); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); try { el.focus(); } catch (x) {} place(); });
+    setInterval(place, 600);
+    place();
+  }
+  function all() { IDS.forEach(function (id) { var el = document.getElementById(id); if (el) setup(el); }); }
+  all(); setTimeout(all, 1500); setTimeout(all, 4000);
+  document.addEventListener('focusin', all);
+
+  /* choosing a suggestion from the drop-down: scroll so that property is at the very top */
+  function jump(el) {
+    var id = el.id, body = { topSearch: 'visitsTableBody', searchInput: 'visitsTableBody', fireSearch: 'fireTableBody', waterSearch: 'waterTableBody', pcwSearch: 'pcwTableBody' }[id];
+    if (!body) return;
+    function go(last) {
+      var tb = document.getElementById(body); if (!tb) return;
+      var rows = [].slice.call(tb.querySelectorAll('tr')).filter(function (r) { return r.offsetParent !== null; });
+      if (!rows.length) return;
+      var q = (el.value || '').toLowerCase();
+      var row = rows.filter(function (r) { return (r.innerText || '').toLowerCase().indexOf(q) > -1; })[0] || rows[0];
+      var hdr = document.querySelector('header'); var off = (hdr && getComputedStyle(hdr).position !== 'static' ? hdr.getBoundingClientRect().height : 0) + 12;
+      var y = row.getBoundingClientRect().top + window.pageYOffset - off;
+      window.scrollTo(0, Math.max(0, y));
+      if (last) { try { el.blur(); } catch (x) {} }
+    }
+    setTimeout(function () { go(false); }, 200);
+    setTimeout(function () { go(true); }, 700);
+  }
+  document.addEventListener('input', function (e) {
+    var el = e.target; if (!el || IDS.indexOf(el.id) === -1) return;
+    if (e.inputType === 'insertReplacementText' || (!e.inputType && el.value)) jump(el);
+  }, true);
+  document.addEventListener('change', function (e) {
+    var el = e.target; if (!el || IDS.indexOf(el.id) === -1) return;
+    var dl = document.getElementById('searchSuggestList'); if (!dl) return;
+    var v = (el.value || '').trim().toLowerCase();
+    if (v && [].some.call(dl.options, function (o) { return o.value.toLowerCase() === v; })) jump(el);
+  }, true);
+})();
+</script>
 </body></html>
