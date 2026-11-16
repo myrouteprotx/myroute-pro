@@ -8937,6 +8937,7 @@ Add New Stop
 
     /* Verify address with Google Places: finds the real business listing and flags police, post office, closed */
     window.__vaList = []; window.__vaPick = null;
+    window.vaMail = function (p) { return /\b(pmb|p\.?\s*o\.?\s*box|mailbox)\b/i.test(String(p.address || '') + ' ' + String(p.suite || '')) || /\b(ups store|fedex office|fedex ship|regus|mail boxes|mailbox|postal annex|pak mail|usps|post office)\b/i.test(String(p.name || '')); };
     function vaEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
     async function vaVerify() {
       const box = document.getElementById('vaBox'); if (!box) return;
@@ -8952,7 +8953,7 @@ Add New Stop
         if (!list.length) { box.innerHTML = '<div class="text-[11px] text-amber-300 font-bold">Google found no match. Check the name and city, or try again with the zip filled in.</div>'; return; }
         box.innerHTML = '<div class="text-[11px] font-black text-slate-200 mb-1">Tap the correct one to fill the address:</div>' + list.map((p, i) => {
           const tag = p.bad ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#7f1d1d;color:#fecaca">NOT A PLUMBER: ' + vaEsc(p.bad.replace(/_/g, ' ')) + '</span>' : (p.status && p.status !== 'OPERATIONAL' ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#7f1d1d;color:#fecaca">' + vaEsc(p.status.replace(/_/g, ' ')) + '</span>' : (p.plumber ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#064e3b;color:#a7f3d0">Plumber</span>' : '<span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#334155;color:#e2e8f0">' + vaEsc((p.type || 'business').replace(/_/g, ' ')) + '</span>'));
-          const po = /p\.?\s*o\.?\s*box/i.test(p.address) ? ' <span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#7f1d1d;color:#fecaca">P.O. BOX</span>' : '';
+          const po = window.vaMail(p) ? ' <span class="px-1.5 py-0.5 rounded text-[10px] font-black" style="background:#7f1d1d;color:#fecaca">MAILBOX / P.O. BOX</span>' : '';
           return '<button type="button" onclick="vaChoose(' + i + ')" class="w-full text-left p-2 mb-1.5 rounded-lg" style="background:#0f172a;border:1px solid #475569"><div class="text-xs font-black text-white">' + vaEsc(p.name) + ' ' + tag + po + '</div><div class="text-[11px] text-slate-300">' + vaEsc(p.address) + '</div></button>';
         }).join('');
       } catch (e) {
@@ -12966,7 +12967,7 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
       try {
         var res = await window.__mrpFn('places', { query: v.businessName + ' ' + tail, lat: v.lat != null ? v.lat : undefined, lng: v.lng != null ? v.lng : undefined });
         var list = (res && res.places) || [];
-        var good = list.filter(function (p) { return !p.bad && (!p.status || p.status === 'OPERATIONAL') && p.street && !/p\.?\s*o\.?\s*box/i.test(p.address) && nameOk(v.businessName, p.name); })[0];
+        var good = list.filter(function (p) { return !p.bad && (!p.status || p.status === 'OPERATIONAL') && p.street && !window.vaMail(p) && nameOk(v.businessName, p.name); })[0];
         if (good) { r.state = 'ok'; r.pick = good; }
         else if (!list.length) r.why = 'Google found nothing';
         else { var t = list[0]; r.why = t.bad ? 'Top match is a ' + t.bad.replace(/_/g, ' ') : (t.status && t.status !== 'OPERATIONAL' ? 'Top match is ' + t.status.replace(/_/g, ' ').toLowerCase() : 'Name does not match: ' + t.name + ' (' + t.address + ')'); }
