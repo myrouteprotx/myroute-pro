@@ -4227,7 +4227,7 @@ Add New Stop
       clearPlannedRoute();
     }
     function copyRouteList() {
-      const list = routeAll().filter(isOnRoute).sort((a, b) => routeName(a).localeCompare(routeName(b)));
+      const list = routeAll().filter(isOnRoute).sort((a, b) => ((a.routeSeq == null ? 1e9 : +a.routeSeq) - (b.routeSeq == null ? 1e9 : +b.routeSeq)) || routeName(a).localeCompare(routeName(b)));
       if (!list.length) { showToast('No stops on your route list yet'); return; }
       const txt = list.map((v, i) => `${i + 1}. ${routeName(v)}${v.streetAddress ? ' - ' + v.streetAddress : ''}`).join('\n');
       const done = () => showToast(`Route list copied: ${list.length} stop${list.length === 1 ? '' : 's'}`);
@@ -4320,7 +4320,7 @@ Add New Stop
     function rfNice(d) { return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
     function rfOpen(date) {
       date = date || addDaysToDate(todayString, 1);
-      const list = routeAll().filter(v => v.routeDate === date).sort((a, b) => routeName(a).localeCompare(routeName(b)));
+      const list = routeAll().filter(v => v.routeDate === date).sort((a, b) => ((a.routeSeq == null ? 1e9 : +a.routeSeq) - (b.routeSeq == null ? 1e9 : +b.routeSeq)) || routeName(a).localeCompare(routeName(b)));
       const checked = routeAll().filter(v => v.inRoute === true && v.routeDate !== date).length;
       const rows = list.map(v => '<li class="flex items-center gap-2 py-1.5 border-b border-slate-700 text-xs"><div class="flex-1 min-w-0"><div class="font-bold">' + escapeHtml(routeName(v)) + '</div><div class="text-slate-400 break-words">' + escapeHtml(v.streetAddress || 'No street address') + '</div></div><button type="button" onclick="rfRemove(\'' + v.id + '\',\'' + date + '\')" class="px-2 py-1 text-[11px] font-bold text-red-300 bg-slate-800 border border-slate-600 rounded-lg">Remove</button></li>').join('');
       rpShow('<div class="text-sm font-black mb-2">Future route</div>'
@@ -4344,7 +4344,7 @@ Add New Stop
     function rfPlan(date) { const list = routeAll().filter(v => v.routeDate === date); rpClose(); planRoute(list); }
     // ----- Full-screen reminder when stops are planned for today -----
     let rmdShown = false;
-    function rmdList() { return routeAll().filter(v => v.routeDate === todayString).sort((a, b) => routeName(a).localeCompare(routeName(b))); }
+    function rmdList() { return routeAll().filter(v => v.routeDate === todayString).sort((a, b) => ((a.routeSeq == null ? 1e9 : +a.routeSeq) - (b.routeSeq == null ? 1e9 : +b.routeSeq)) || routeName(a).localeCompare(routeName(b))); }
     function rmdActive() { return rmdList().filter(v => v.routeSkip !== todayString); }
     function rmdMapsHtml() {
       const act = rmdActive().filter(v => String(v.streetAddress || '').trim());
