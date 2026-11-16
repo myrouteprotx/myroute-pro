@@ -129,15 +129,16 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       var paths = Object.keys(pending);
       while (paths.length) {
         var chunk = paths.splice(0, 40), up = [], del = [];
-        chunk.forEach(function (p) { if (pending[p] === null) del.push(p); else up.push({ owner: uid, path: p, data: pending[p], updated_at: new Date().toISOString() }); });
+        chunk.forEach(function (p) { if (pending[p] === null) del.push(p); else up.push({ owner: dataOwner || uid, path: p, data: pending[p], updated_at: new Date().toISOString() }); });
         if (up.length) { var r = await sb.from('docs').upsert(up, { onConflict: 'owner,path' }); if (r.error) throw r.error; }
-        if (del.length) { var r2 = await sb.from('docs').delete().eq('owner', uid).in('path', del); if (r2.error) throw r2.error; }
+        if (del.length && dataOwner && window.__mrpRole !== 'admin') { del.forEach(function (p) { delete pending[p]; }); del = []; } // only administrators can delete saved items
+        if (del.length) { var r2 = await sb.from('docs').delete().eq('owner', dataOwner || uid).in('path', del); if (r2.error) throw r2.error; }
         chunk.forEach(function (p) { var sent = up.find(function (x) { return x.path === p; }); if (pending[p] === null || (sent && JSON.stringify(pending[p]) === JSON.stringify(sent.data))) delete pending[p]; });
         persist();
       }
       while (pendingBlobs.length) {
         var id = pendingBlobs[0], rec = await idbGet('b', id);
-        if (rec) { var du = await toDataUrl(rec.blob); var r3 = await sb.from('blobs').upsert({ owner: uid, id: id, type: rec.type || rec.blob.type, data: du }, { onConflict: 'owner,id' }); if (r3.error) throw r3.error; }
+        if (rec) { var du = await toDataUrl(rec.blob); var r3 = await sb.from('blobs').upsert({ owner: dataOwner || uid, id: id, type: rec.type || rec.blob.type, data: du }, { onConflict: 'owner,id' }); if (r3.error) throw r3.error; }
         pendingBlobs.shift(); persist();
       }
       online = true; setStatus('Saved');
@@ -155,7 +156,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       if (r.error) throw r.error; rows = rows.concat(r.data || []); if (!r.data || r.data.length < 1000) break; from += 1000;
     }
     var remote = {}; rows.forEach(function (x) { remote[x.path] = x.data; });
-    var first = !viewOnly && localStorage.getItem(SYNCED) !== uid;
+    var first = !viewOnly && !dataOwner && localStorage.getItem(SYNCED) !== uid;
     var changed = {};
     Object.keys(remote).forEach(function (p) { if (pending[p] === undefined && JSON.stringify(store[p]) !== JSON.stringify(remote[p])) { store[p] = remote[p]; changed[p] = 1; } });
     if (first) {
@@ -233,11 +234,28 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       session = await showSignIn();
     }
     uid = session.user.id;
-    // Viewer accounts (listed in the private 'viewers' table) see the owner's data, can click around, and nothing is ever saved
+    // Team roles: administrator, manager, user, viewer. A person listed in the private 'members' table works on the owner's data with that role.
+    // (The older 'viewers' table is still honoured as the viewer role.) Anyone not listed is the owner of their own data.
+    var role = 'owner';
     try {
-      var vq = await sb.from('viewers').select('owner').eq('viewer', uid).maybeSingle();
-      if (vq && vq.data && vq.data.owner) { viewOnly = true; dataOwner = vq.data.owner; store = {}; pending = {}; pendingBlobs = []; }
+      var mq = await sb.from('members').select('owner,role').eq('member', uid).maybeSingle();
+      if (mq && mq.data && mq.data.owner) { role = mq.data.role || 'viewer'; dataOwner = mq.data.owner; }
     } catch (e) {}
+    if (role === 'owner') {
+      try {
+        var vq = await sb.from('viewers').select('owner').eq('viewer', uid).maybeSingle();
+        if (vq && vq.data && vq.data.owner) { role = 'viewer'; dataOwner = vq.data.owner; }
+      } catch (e) {}
+    }
+    if (role === 'viewer') { viewOnly = true; store = {}; pending = {}; pendingBlobs = []; }
+    else if (dataOwner && localStorage.getItem('mrp_uid') !== uid) {
+      // a team member signing in on a device that held someone else's copy: start clean so nothing of theirs is mixed in
+      try { localStorage.removeItem(KEY); localStorage.removeItem(PEND); localStorage.removeItem(PBLOB); localStorage.removeItem(SYNCED); } catch (e) {}
+      store = {}; pending = {}; pendingBlobs = [];
+    }
+    window.__mrpRole = role; window.__mrpOwner = dataOwner || uid;
+    try { document.documentElement.classList.add('mrp-role-' + role); } catch (e) {}
+    window.__mrpRpc = function (name, args) { return sb.rpc(name, args || {}); };
     if (viewOnly) {
       try { localStorage.removeItem(KEY); localStorage.removeItem(PEND); localStorage.removeItem(PBLOB); localStorage.removeItem(SYNCED); } catch (e) {}
       window.__mrpViewOnly = true;
@@ -1432,6 +1450,11 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 .act-wrap > button[onclick^="editVisit"] { color: #a5b4fc !important; }
 .act-wrap > button[onclick^="deleteVisit"] { color: #fda4af !important; }
 .act-wrap > button[onclick^="startRevisit"] svg, .act-wrap > button[onclick^="editVisit"] svg, .act-wrap > button[onclick^="deleteVisit"] svg { width: 13px; height: 13px; }
+/* Team roles: what each level can see and use */
+html.mrp-role-manager .mrp-admin-only, html.mrp-role-user .mrp-admin-only, html.mrp-role-viewer .mrp-admin-only { display: none !important; }
+html.mrp-role-manager button[onclick^="delete"], html.mrp-role-user button[onclick^="delete"], html.mrp-role-viewer button[onclick^="delete"],
+html.mrp-role-manager .act-wrap > button[onclick^="deleteVisit"], html.mrp-role-user .act-wrap > button[onclick^="deleteVisit"], html.mrp-role-viewer .act-wrap > button[onclick^="deleteVisit"],
+html.mrp-role-user button[onclick^="editVisit"], html.mrp-role-user .act-wrap > button[onclick^="editVisit"] { display: none !important; }
 </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -3165,6 +3188,21 @@ Add New Stop
           <button type="button" onclick="window.__mrpSignOut()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Sign out of this device</button>
         </div>
 
+        <div id="mrpTeamCard" style="display:none" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Team</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Add a person who has already created their own login on the sign-in screen. Type the same email they used, pick their level, and tap Add person.</div>
+          <div class="text-[10px] text-slate-400 mb-2 leading-relaxed"><b class="text-slate-200">Administrator:</b> everything, including adding people and deleting. <b class="text-slate-200">Manager:</b> adds and edits visits, notes and reports; cannot delete or add people. <b class="text-slate-200">User (employee):</b> adds visits, edits notes, adds and removes photos, and can throw away anything not yet saved; once Save is pressed it stays. Cannot edit stop details, delete stops, or use Settings tools. <b class="text-slate-200">Viewer:</b> look only, nothing is saved.</div>
+          <div class="flex flex-wrap gap-2 mb-2">
+            <input type="email" id="mrpTeamEmail" autocomplete="off" placeholder="Their email address" class="flex-1 min-w-[180px] text-xs px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white">
+            <select id="mrpTeamRole" class="text-xs px-2 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white">
+              <option value="viewer">Viewer</option><option value="user">User</option><option value="manager">Manager</option><option value="admin">Administrator</option>
+            </select>
+            <button type="button" onclick="mrpTeamAdd()" class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-600 border border-emerald-400 rounded-xl transition">Add person</button>
+          </div>
+          <p id="mrpTeamMsg" class="text-xs text-slate-300 font-semibold min-h-[1rem] mb-1"></p>
+          <div id="mrpTeamList" class="rounded-xl border border-slate-700 bg-slate-900/70 overflow-hidden"></div>
+        </div>
+
         <div id="mrpLockBlock" style="display:none" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Face ID lock</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Ask for Face ID (or this device's fingerprint or passcode) each time you open the app. Set it up once on each device. <span id="mrpLockStatus" class="font-bold text-emerald-300"></span></div>
@@ -3184,7 +3222,7 @@ Add New Stop
           <button type="button" onclick="addHomeAddr()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Add address</button>
         </div>
 
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+        <div class="mrp-admin-only p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Import a backup</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Choose your MyRoute Pro backup file or photos file (.json). It is added to this device only and nothing is uploaded.</div>
           <input type="file" id="importBackupInput" accept=".json,application/json" class="hidden">
@@ -3192,7 +3230,7 @@ Add New Stop
           <p id="importBackupStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
         </div>
 
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+        <div class="mrp-admin-only p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Remove a batch of stops</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Pick a range of visit dates, tap Show stops, then uncheck any you want to keep. Nothing is deleted until you tap Delete and enter the administrator password.</div>
           <div class="grid grid-cols-2 gap-2 mb-2">
@@ -11035,6 +11073,7 @@ Add New Stop
         ? 'Synced with your other devices'
         : 'This device only. Not sharing with your other devices.';
       settingsModal.classList.remove('hidden'); document.body.classList.add('mrp-noscroll');
+      try { mrpTeamOpen(); } catch (e) {}
       document.getElementById('logoStatus').textContent = '';
       renderCompany();
       lucide.createIcons();
@@ -12532,6 +12571,63 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
     var v = (el.value || '').trim().toLowerCase();
     if (v && [].some.call(dl.options, function (o) { return o.value.toLowerCase() === v; })) jump(el);
   }, true);
+})();
+</script>
+
+<script>
+/* Team: add people and set their level (administrators only, desktop only) */
+(function () {
+  var NAMES = { admin: 'Administrator', manager: 'Manager', user: 'User', viewer: 'Viewer' };
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function can() { var r = window.__mrpRole; return (r === 'owner' || r === 'admin') && window.matchMedia('(min-width:1024px)').matches && window.matchMedia('(pointer:fine)').matches; }
+  function msg(t, bad) { var m = document.getElementById('mrpTeamMsg'); if (m) { m.textContent = t || ''; m.style.color = bad ? '#fda4af' : '#86efac'; } }
+  function fail(e) {
+    var t = String((e && e.message) || e || '');
+    if (/could not find the function|does not exist|schema cache/i.test(t)) return 'Team setup has not been run in Supabase yet. Run the team SQL once, then try again.';
+    return t.slice(0, 140) || 'Something went wrong.';
+  }
+  window.mrpTeamOpen = function () {
+    var c = document.getElementById('mrpTeamCard'); if (!c) return;
+    c.style.display = can() ? '' : 'none';
+    if (can()) mrpTeamLoad();
+  };
+  window.mrpTeamLoad = async function () {
+    var box = document.getElementById('mrpTeamList'); if (!box || !window.__mrpRpc) return;
+    box.innerHTML = '<div class="p-3 text-xs text-slate-400">Loading...</div>';
+    try {
+      var r = await window.__mrpRpc('mrp_list_members'); if (r.error) throw r.error;
+      var rows = r.data || [];
+      if (!rows.length) { box.innerHTML = '<div class="p-3 text-xs text-slate-400">Nobody added yet. You are the administrator.</div>'; return; }
+      box.innerHTML = rows.map(function (m) {
+        return '<div class="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-slate-700/70"><div class="flex-1 min-w-[160px] text-xs font-bold text-white break-all">' + esc(m.email || m.member) + '</div>' +
+          '<select onchange="mrpTeamSetRole(\'' + esc(m.member) + '\', this.value)" class="text-xs px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-white">' +
+          Object.keys(NAMES).map(function (k) { return '<option value="' + k + '"' + (k === m.role ? ' selected' : '') + '>' + NAMES[k] + '</option>'; }).join('') + '</select>' +
+          '<button type="button" onclick="mrpTeamRemove(\'' + esc(m.member) + '\')" class="px-2.5 py-1.5 text-[10px] font-black text-rose-200 bg-slate-900 border border-rose-500/70 rounded-lg">Remove</button></div>';
+      }).join('');
+    } catch (e) { box.innerHTML = '<div class="p-3 text-xs" style="color:#fda4af">' + esc(fail(e)) + '</div>'; }
+  };
+  window.mrpTeamAdd = async function () {
+    var em = (document.getElementById('mrpTeamEmail').value || '').trim(), role = document.getElementById('mrpTeamRole').value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { msg('Type their full email address first.', true); return; }
+    msg('Adding...');
+    try {
+      var r = await window.__mrpRpc('mrp_add_member', { p_email: em, p_role: role }); if (r.error) throw r.error;
+      if (r.data === 'no_account') { msg('No login found for that email yet. Ask them to open the app and create their login first, then add them.', true); return; }
+      if (r.data === 'self') { msg('That is your own login.', true); return; }
+      if (r.data !== 'ok') { msg('Could not add: ' + r.data, true); return; }
+      document.getElementById('mrpTeamEmail').value = ''; msg('Added as ' + NAMES[role] + '. They get this access the next time they open or reload the app.'); mrpTeamLoad();
+    } catch (e) { msg(fail(e), true); }
+  };
+  window.mrpTeamSetRole = async function (id, role) {
+    msg('Saving...');
+    try { var r = await window.__mrpRpc('mrp_set_member_role', { p_member: id, p_role: role }); if (r.error) throw r.error; msg('Level changed to ' + NAMES[role] + '.'); }
+    catch (e) { msg(fail(e), true); mrpTeamLoad(); }
+  };
+  window.mrpTeamRemove = async function (id) {
+    if (!confirm('Remove this person? They will no longer see any of your data.')) return;
+    try { var r = await window.__mrpRpc('mrp_remove_member', { p_member: id }); if (r.error) throw r.error; msg('Removed.'); mrpTeamLoad(); }
+    catch (e) { msg(fail(e), true); }
+  };
 })();
 </script>
 </body></html>
