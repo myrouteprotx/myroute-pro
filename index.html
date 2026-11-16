@@ -1448,6 +1448,9 @@ html.mrp-role-manager button[onclick^="delete"], html.mrp-role-user button[oncli
 html.mrp-role-manager .act-wrap > button[onclick^="deleteVisit"], html.mrp-role-user .act-wrap > button[onclick^="deleteVisit"], html.mrp-role-viewer .act-wrap > button[onclick^="deleteVisit"],
 html.mrp-role-user button[onclick^="editVisit"], html.mrp-role-user .act-wrap > button[onclick^="editVisit"] { display: none !important; }
 #adminModal { z-index: 70 !important; }
+#rmRouteBtn { background: linear-gradient(90deg, #7c3aed, #a855f7) !important; border: 2px solid #d8b4fe !important; color: #fff !important; box-shadow: 0 0 10px rgba(168,85,247,.6); }
+@media (min-width:1024px) { #rmRouteBtn { display: inline-flex !important; } }
+@media (max-width:1023px) { #rmBtnGroup > #rmRouteBtn { grid-column: 1 / -1; } }
 </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -2055,6 +2058,10 @@ Add New Stop
             <button type="button" id="rmLocBtn" onclick="rmLocate()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-white bg-gradient-to-r from-blue-600 to-cyan-500 active:scale-95 transition">
               <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
               <span>Use my location</span>
+            </button>
+            <button type="button" id="rmRouteBtn" onclick="rmRouteMenu()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-white transition active:scale-95">
+              <i data-lucide="route" class="w-3.5 h-3.5"></i>
+              <span id="rmRouteBtnText">Show a route</span>
             </button>
             <button type="button" id="rmFitBtn" onclick="rmFit(false)" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black text-slate-200 bg-slate-900 border border-slate-700 hover:bg-slate-700 transition active:scale-95">
               <i data-lucide="locate-fixed" class="w-3.5 h-3.5"></i>
@@ -6851,7 +6858,7 @@ Add New Stop
     };
     const RM_SMIN = 300;
     const RM_SMAX = 900000;
-    const RM = { S: 2600, cLng: -95.09, cLat: 29.55, w: 0, h: 0, selId: null, group: null, placing: null, fitted: false, filter: 'ALL', ptrs: new Map(), g: null, pinch: null, ready: false, me: null, watch: null };
+    const RM = { route: null, S: 2600, cLng: -95.09, cLat: 29.55, w: 0, h: 0, selId: null, group: null, placing: null, fitted: false, filter: 'ALL', ptrs: new Map(), g: null, pinch: null, ready: false, me: null, watch: null };
 
     function rmEl(id) { return document.getElementById(id); }
     function rmHasGeo(v) { return Number.isFinite(v.lat) && Number.isFinite(v.lng); }
@@ -6859,7 +6866,7 @@ Add New Stop
     function rmToScreen(lng, lat) { return [RM.w / 2 + (lng - RM.cLng) * rmCos() * RM.S, RM.h / 2 - (lat - RM.cLat) * RM.S]; }
     function rmFromScreen(x, y) { return [RM.cLng + (x - RM.w / 2) / (rmCos() * RM.S), RM.cLat - (y - RM.h / 2) / RM.S]; }
     function rmClamp(s) { return Math.max(RM_SMIN, Math.min(RM_SMAX, s)); }
-    function rmVisible() { return visits.filter(v => rmHasGeo(v) && (RM.filter === 'ALL' || v.visitStatus === RM.filter)); }
+    function rmVisible() { if (RM.route) return RM.route.stops.filter(rmHasGeo); return visits.filter(v => rmHasGeo(v) && (RM.filter === 'ALL' || v.visitStatus === RM.filter)); }
     function rmIsOpen() { const el = rmEl('routeMapView'); return !!el && !el.classList.contains('hidden'); }
 
     function rmMeasure() {
@@ -6889,7 +6896,7 @@ Add New Stop
 
     // all = true includes far-away stops (for example an out-of-town office)
     function rmFit(all) {
-      const pts = visits.filter(rmHasGeo);
+      const pts = RM.route ? RM.route.stops.filter(rmHasGeo) : visits.filter(rmHasGeo);
       if (!pts.length) { rmDraw(); return; }
       let use = pts;
       if (!all) {
@@ -7006,7 +7013,8 @@ Add New Stop
       const list = rmVisible();
 
       // Pins and clusters, worked out first so area names can steer clear of them
-      const clusters = rmClusters(list).sort((a, b) => a[0].p[1] - b[0].p[1]);
+      const clusters = (RM.route ? list.map(v => [{ v, p: rmToScreen(v.lng, v.lat) }]) : rmClusters(list)).sort((a, b) => a[0].p[1] - b[0].p[1]);
+      if (RM.route) h += rmRouteLine();
 
       // Area names, taken from the stops' own addresses
       if (RM.S < 30000) {
@@ -7053,7 +7061,7 @@ Add New Stop
             + `<title>${escapeHtml(v.businessName || '')}${v.geoApprox ? ' (approximate spot)' : ''}</title>`
             + `<circle cx="0" cy="-20" r="20" fill="transparent"/>`
             + `<path d="M0 0C-8-9-13-15-13-21a13 13 0 1 1 26 0C13-15 8-9 0 0Z" fill="${col}" stroke="${sel ? '#ffffff' : '#0b1020'}" stroke-width="${sel ? 2.5 : 1.5}"${v.geoApprox ? ' stroke-dasharray="3 2"' : ''}${sel ? ` style="filter:drop-shadow(0 0 6px ${col})"` : ''}/>`
-            + `<circle cx="0" cy="-21" r="4.6" fill="#ffffff" opacity="0.95"/></g>`;
+            + (RM.route && RM.route.num[v.id] ? `<circle cx="0" cy="-21" r="8.5" fill="#ffffff"/><text x="0" y="-17.2" text-anchor="middle" style="font:900 11px 'Plus Jakarta Sans',sans-serif;fill:#0b1020;pointer-events:none">${RM.route.num[v.id]}</text></g>` : `<circle cx="0" cy="-21" r="4.6" fill="#ffffff" opacity="0.95"/></g>`);
           if (RM.S >= 30000) {
             const nm = (v.businessName || '');
             g += `<text class="rm-lbl" x="${(p[0] + 16).toFixed(1)}" y="${(p[1] - 17).toFixed(1)}">${escapeHtml(nm.length > 24 ? nm.slice(0, 23) + '…' : nm)}</text>`;
@@ -7086,6 +7094,79 @@ Add New Stop
       svg.innerHTML = h;
       rmScale();
       rmStreetsLink();
+    }
+
+
+    // ----- Show a route on this map: pick a day (today or any Future route day) and see its stops numbered in order, joined by a line -----
+    function rmRouteDays() {
+      const by = {};
+      routeAll().forEach(v => { if (v.routeDate && v.routeDate >= todayString && v.routeSkip !== v.routeDate) (by[v.routeDate] = by[v.routeDate] || []).push(v); });
+      return Object.keys(by).sort().map(d => ({ date: d, list: by[d].sort((a, b) => ((a.routeSeq == null ? 1e9 : +a.routeSeq) - (b.routeSeq == null ? 1e9 : +b.routeSeq)) || String(a.businessName || '').localeCompare(String(b.businessName || ''))) }));
+    }
+    function rmRouteMenu() {
+      if (RM.route) { rmRouteClear(); return; }
+      const days = rmRouteDays();
+      const nice = d => { try { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }); } catch (e) { return d; } };
+      const rows = days.map(o => {
+        const placed = o.list.filter(rmHasGeo).length;
+        const tag = o.date === todayString ? 'Today' : (o.date === getOffsetDate(1) ? 'Tomorrow' : '');
+        return `<button type="button" onclick="rmShowRoute('${o.date}')" style="display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:12px 14px;margin-top:8px;border-radius:12px;background:#0f172a;border:1px solid #3b82f6;color:#fff;font-weight:800;font-size:14px"><span>${tag ? '<span style="color:#5eead4">' + tag + ' &middot; </span>' : ''}${escapeHtml(nice(o.date))}</span><span style="font-size:12px;color:#93a3b9;white-space:nowrap">${o.list.length} stops${placed < o.list.length ? ' (' + placed + ' on the map)' : ''}</span></button>`;
+      }).join('');
+      rpShow('<div style="font-weight:900;font-size:16px">Show a route on the map</div><div style="font-size:12px;color:#93a3b9;margin-top:4px">Pick a day. Its stops appear numbered in route order, joined by a line, without leaving this page.</div>'
+        + (rows || '<div style="margin-top:12px;font-size:13px;color:#cbd5e1">No route days yet. Add stops to Today\'s route or a Future route day first.</div>')
+        + '<button type="button" onclick="rpClose()" style="margin-top:12px;width:100%;padding:10px;border-radius:12px;background:#334155;color:#fff;font-weight:800;font-size:13px">Close</button>');
+    }
+    function rmRouteClear() {
+      RM.route = null;
+      const t = rmEl('rmRouteBtnText'); if (t) t.textContent = 'Show a route';
+      renderRouteMap(); rmFit(false);
+    }
+    async function rmOfficePoint() {
+      try { const e = homeEntry(); if (e && Number.isFinite(e.lat) && Number.isFinite(e.lng)) return { lat: e.lat, lng: e.lng }; } catch (er) {}
+      return null;
+    }
+    async function rmShowRoute(date) {
+      rpClose();
+      const o = rmRouteDays().find(x => x.date === date); if (!o) return;
+      const nice = (() => { try { return new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); } catch (e) { return date; } })();
+      const num = {}; let n = 0; o.list.forEach(v => { if (rmHasGeo(v)) num[v.id] = ++n; });
+      RM.route = { date, label: (date === todayString ? 'Today' : nice), stops: o.list, num, office: null, road: null, info: '' };
+      const t = rmEl('rmRouteBtnText'); if (t) t.textContent = 'Clear route';
+      RM.selId = null; RM.group = null;
+      const geo = o.list.filter(rmHasGeo);
+      if (!geo.length) { renderRouteMap(); showToast('None of these stops are placed on the map yet. Use "Place all on map" first.'); return; }
+      RM.route.office = await rmOfficePoint();
+      const pts = geo.concat(RM.route.office ? [RM.route.office] : []);
+      renderRouteMap();
+      rmFitBounds(Math.min(...pts.map(p => p.lat)), Math.max(...pts.map(p => p.lat)), Math.min(...pts.map(p => p.lng)), Math.max(...pts.map(p => p.lng)), 0.8);
+      // follow the roads when the free routing service answers; otherwise the straight-line version stays
+      try {
+        const seq = (RM.route.office ? [RM.route.office] : []).concat(geo, RM.route.office ? [RM.route.office] : []);
+        if (seq.length > 1 && seq.length <= 60) {
+          const my = RM.route;
+          const url = 'https://router.project-osrm.org/route/v1/driving/' + seq.map(p => p.lng.toFixed(5) + ',' + p.lat.toFixed(5)).join(';') + '?overview=full&geometries=geojson';
+          const r = await fetch(url); const j = r.ok ? await r.json() : null;
+          if (j && j.routes && j.routes[0] && RM.route === my) {
+            my.road = j.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            const mi = j.routes[0].distance / 1609.34, mins = Math.round(j.routes[0].duration / 60);
+            my.info = Math.round(mi) + ' mi driving, about ' + (mins >= 60 ? Math.floor(mins / 60) + ' hr ' + (mins % 60) + ' min' : mins + ' min') + ' without stops';
+            rmDraw(); rmSummary();
+          }
+        }
+      } catch (e) {}
+    }
+    function rmRouteLine() {
+      const R = RM.route; if (!R) return '';
+      const geo = R.stops.filter(rmHasGeo);
+      let pts;
+      if (R.road && R.road.length) pts = R.road.map(c => rmToScreen(c[1], c[0]));
+      else pts = (R.office ? [R.office] : []).concat(geo, R.office ? [R.office] : []).map(p => rmToScreen(p.lng, p.lat));
+      if (pts.length < 2) return '';
+      const d = pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+      let g = `<polyline points="${d}" fill="none" stroke="#0b1020" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" opacity="0.55" style="pointer-events:none"/>`
+        + `<polyline points="${d}" fill="none" stroke="#00e6c7" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"${R.road ? '' : ' stroke-dasharray="10 7"'} style="pointer-events:none"/>`;
+      if (R.office) { const [ox, oy] = rmToScreen(R.office.lng, R.office.lat); g += `<g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)})" style="pointer-events:none"><rect x="-9" y="-9" width="18" height="18" rx="4" fill="#fbbf24" stroke="#0b1020" stroke-width="2"/><text y="-14" text-anchor="middle" class="rm-lbl">Start and finish</text></g>`; }
+      return g;
     }
 
     function rmScale() {
@@ -7189,6 +7270,7 @@ Add New Stop
       const placed = visits.filter(rmHasGeo).length;
       const shown = rmVisible().length;
       const approx = visits.filter(v => rmHasGeo(v) && v.geoApprox).length;
+      if (RM.route) { el.textContent = RM.route.label + ': ' + RM.route.stops.filter(rmHasGeo).length + ' of ' + RM.route.stops.length + ' stops on the map' + (RM.route.info ? ' · ' + RM.route.info : ''); return; }
       let t = RM.filter === 'ALL' ? `${placed} of ${total} stops on the map` : `${shown} stops shown (${RM.filter})`;
       if (approx) t += ` · ${approx} approximate`;
       el.textContent = t;
