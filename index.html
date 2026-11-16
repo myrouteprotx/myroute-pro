@@ -3174,6 +3174,26 @@ Add New Stop
         </div>
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Remove a batch of stops</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Pick a range of visit dates, tap Show stops, then uncheck any you want to keep. Nothing is deleted until you tap Delete and enter the administrator password.</div>
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <label class="text-[10px] font-bold text-slate-400">From date<input type="date" id="bulkFrom" class="w-full mt-0.5 text-xs px-2 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white"></label>
+            <label class="text-[10px] font-bold text-slate-400">To date<input type="date" id="bulkTo" class="w-full mt-0.5 text-xs px-2 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white"></label>
+          </div>
+          <input type="search" id="bulkWord" autocomplete="off" name="mrp-find-9" data-lpignore="true" data-1p-ignore data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" placeholder="Optional: only names containing these letters, for example plumb" class="w-full text-xs px-3 py-2 mb-2 bg-slate-900 border border-slate-600 rounded-xl text-white">
+          <button type="button" onclick="bulkShow()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Show stops</button>
+          <div id="bulkBox" class="hidden mt-3">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <div id="bulkCount" class="text-xs font-black text-white"></div>
+              <div class="flex gap-1.5"><button type="button" onclick="bulkAll(true)" class="px-2 py-1 text-[10px] font-black text-slate-200 bg-slate-900 border border-slate-600 rounded-lg">Check all</button><button type="button" onclick="bulkAll(false)" class="px-2 py-1 text-[10px] font-black text-slate-200 bg-slate-900 border border-slate-600 rounded-lg">Uncheck all</button></div>
+            </div>
+            <div id="bulkList" class="rounded-xl border border-slate-700 bg-slate-900/70 overflow-y-auto" style="max-height:260px"></div>
+            <button type="button" id="bulkDelBtn" onclick="bulkDelete()" class="mt-2 w-full px-3 py-2.5 text-xs font-black text-white bg-rose-600 border border-white/40 rounded-xl">Delete checked stops</button>
+          </div>
+          <p id="bulkStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Files and email wording</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Photos and PDFs you attach to emails, and the wording of your follow-up emails.</div>
           <div class="grid grid-cols-2 gap-2">
@@ -8091,6 +8111,44 @@ Add New Stop
       const kind = pendingDeleteKind;
       closeAdminModal();
       if (id) { if (kind === 'fire') doDeleteFire(id); else if (kind === 'water') doDeleteWater(id); else if (kind === 'pcw') doDeletePcw(id); else doDeleteVisit(id); }
+    }
+
+    // ----- Remove a batch of stops (Settings): shows the list first, deletes only what is checked, after the administrator password -----
+    function bulkShow() {
+      const from = document.getElementById('bulkFrom').value, to = document.getElementById('bulkTo').value;
+      const word = (document.getElementById('bulkWord').value || '').trim().toLowerCase();
+      const st = document.getElementById('bulkStatus');
+      if (!from || !to) { st.textContent = 'Pick both a From date and a To date first.'; return; }
+      const list = visits.filter(v => v.visitDate >= from && v.visitDate <= to && (!word || String(v.businessName || '').toLowerCase().includes(word)))
+        .sort((a, b) => String(a.visitDate).localeCompare(String(b.visitDate)) || String(a.businessName).localeCompare(String(b.businessName)));
+      window.__bulkIds = list.map(v => v.id);
+      document.getElementById('bulkBox').classList.remove('hidden');
+      document.getElementById('bulkList').innerHTML = list.length ? list.map(v =>
+        `<label class="flex items-start gap-2 px-3 py-2 border-b border-slate-800 text-xs text-slate-200 cursor-pointer"><input type="checkbox" class="bulkChk mt-0.5 accent-rose-500" data-id="${escapeHtml(v.id)}" checked onchange="bulkCount()"><span class="min-w-0"><span class="font-black text-white">${escapeHtml(v.businessName || '(no name)')}</span><span class="block text-[11px] text-slate-400">${escapeHtml(v.visitDate)}${v.streetAddress ? ' &middot; ' + escapeHtml(v.streetAddress) : ''}${v.notes ? ' &middot; has notes' : ''}</span></span></label>`).join('')
+        : '<div class="px-3 py-4 text-xs text-slate-400">No stops match those dates.</div>';
+      st.textContent = '';
+      bulkCount();
+    }
+    function bulkAll(on) { document.querySelectorAll('.bulkChk').forEach(c => { c.checked = on; }); bulkCount(); }
+    function bulkChecked() { return Array.from(document.querySelectorAll('.bulkChk:checked')).map(c => c.dataset.id); }
+    function bulkCount() {
+      const n = bulkChecked().length, t = document.querySelectorAll('.bulkChk').length;
+      document.getElementById('bulkCount').textContent = n + ' of ' + t + ' stops checked';
+      const b = document.getElementById('bulkDelBtn'); if (b) { b.textContent = n ? 'Delete ' + n + ' checked stop' + (n === 1 ? '' : 's') : 'Nothing checked'; b.disabled = !n; b.style.opacity = n ? '1' : '.5'; }
+    }
+    function bulkDelete() {
+      const ids = bulkChecked(); if (!ids.length) return;
+      openAdminGate('delete', function () {
+        const gone = new Set(ids); let n = 0;
+        visits.forEach(v => { if (gone.has(v.id)) { n++; if (v.cardPhotoId) dropAssetLater(v.cardPhotoId); visitPhotoIds(v).forEach(pid => dropAssetLater(pid)); } });
+        visits = visits.filter(v => !gone.has(v.id));
+        saveRecords();
+        document.getElementById('bulkBox').classList.add('hidden');
+        document.getElementById('bulkStatus').textContent = 'Deleted ' + n + ' stops.';
+        showToast('Deleted ' + n + ' stops.');
+      });
+      const lab = document.querySelector('label[for="adminPasswordInput"]'); if (lab) lab.textContent = 'Enter the administrator password to delete ' + ids.length + ' checked stops';
+      const sub = document.querySelector('#adminModal p.truncate'); if (sub) sub.textContent = 'Delete ' + ids.length + ' stops';
     }
 
     function doDeleteVisit(id) {
