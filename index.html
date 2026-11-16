@@ -76,6 +76,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 #settingsPanel #mrpCoreTile .core-logo button{width:100%!important;height:28px!important;min-height:0!important;padding:0 6px!important;font-size:11px!important;white-space:nowrap}
 #mrpCoreTile #logoStatus{margin:2px 0 0!important;min-height:0!important;font-size:11px}
 #mrpCoreTile #logoStatus:empty{display:none}
+#settingsPanel > .mt-4 > #mrpTeamCard{--acc:#10b981}
 </style>
 </head><body>
 <!DOCTYPE html>
@@ -3207,9 +3208,24 @@ Add New Stop
           </div>
         </div>
 
+        <div id="mrpTeamCard" style="display:none" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Team</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Add a person who has already created their own login on the sign-in screen. Type the same email they used, pick their level, and tap Add person.</div>
+          <div class="text-[10px] text-slate-400 mb-2 leading-relaxed"><b class="text-slate-200">Administrator:</b> everything, including adding people and deleting. <b class="text-slate-200">Manager:</b> adds and edits visits, notes and reports; cannot delete or add people. <b class="text-slate-200">User (employee):</b> adds visits, edits notes, adds and removes photos, and can throw away anything not yet saved; once Save is pressed it stays. Cannot edit stop details, delete stops, or use Settings tools. <b class="text-slate-200">Viewer:</b> look only, nothing is saved.</div>
+          <div class="flex flex-wrap gap-2 mb-2">
+            <input type="email" id="mrpTeamEmail" autocomplete="off" placeholder="Their email address" class="flex-1 min-w-[180px] text-xs px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white">
+            <select id="mrpTeamRole" class="text-xs px-2 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white">
+              <option value="viewer">Viewer</option><option value="user">User</option><option value="manager">Manager</option><option value="admin">Administrator</option>
+            </select>
+            <button type="button" onclick="mrpTeamAdd()" class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-600 border border-emerald-400 rounded-xl transition">Add person</button>
+          </div>
+          <p id="mrpTeamMsg" class="text-xs text-slate-300 font-semibold min-h-[1rem] mb-1"></p>
+          <div id="mrpTeamList" class="rounded-xl border border-slate-700 bg-slate-900/70 overflow-hidden"></div>
+        </div>
+
         
 
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+        <div id="settingsSyncCard" style="display:none" aria-hidden="true" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Sync status</div>
           <div id="settingsSyncStatus" class="text-xs text-slate-200 font-semibold mt-1">This device only</div>
         </div>
@@ -3247,20 +3263,6 @@ Add New Stop
           </div>
         </div>
 
-        <div id="mrpTeamCard" style="display:none" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Team</div>
-          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Add a person who has already created their own login on the sign-in screen. Type the same email they used, pick their level, and tap Add person.</div>
-          <div class="text-[10px] text-slate-400 mb-2 leading-relaxed"><b class="text-slate-200">Administrator:</b> everything, including adding people and deleting. <b class="text-slate-200">Manager:</b> adds and edits visits, notes and reports; cannot delete or add people. <b class="text-slate-200">User (employee):</b> adds visits, edits notes, adds and removes photos, and can throw away anything not yet saved; once Save is pressed it stays. Cannot edit stop details, delete stops, or use Settings tools. <b class="text-slate-200">Viewer:</b> look only, nothing is saved.</div>
-          <div class="flex flex-wrap gap-2 mb-2">
-            <input type="email" id="mrpTeamEmail" autocomplete="off" placeholder="Their email address" class="flex-1 min-w-[180px] text-xs px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white">
-            <select id="mrpTeamRole" class="text-xs px-2 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white">
-              <option value="viewer">Viewer</option><option value="user">User</option><option value="manager">Manager</option><option value="admin">Administrator</option>
-            </select>
-            <button type="button" onclick="mrpTeamAdd()" class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-600 border border-emerald-400 rounded-xl transition">Add person</button>
-          </div>
-          <p id="mrpTeamMsg" class="text-xs text-slate-300 font-semibold min-h-[1rem] mb-1"></p>
-          <div id="mrpTeamList" class="rounded-xl border border-slate-700 bg-slate-900/70 overflow-hidden"></div>
-        </div>
 
         <div id="mrpLockBlock" style="display:none" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Face ID lock</div>
