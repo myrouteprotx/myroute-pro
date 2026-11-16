@@ -184,7 +184,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       if (!o) {
         o = document.createElement('div'); o.id = 'mrpAuth';
         o.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0b1127;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
-        o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.144;pointer-events:none"></div><div style="position:relative;width:100%;max-width:360px;background:rgba(17,26,54,.92);border:1px solid #324256;border-radius:16px;padding:22px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:4px">My Route Pro</div><div style="color:#93a3b9;font-size:13px;margin-bottom:14px">Sign in to load your stops on this device.</div>'
+        o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png?v=2) center center / contain no-repeat;opacity:0.144;pointer-events:none"></div><div style="position:relative;width:100%;max-width:360px;background:rgba(17,26,54,.92);border:1px solid #324256;border-radius:16px;padding:22px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:4px">My Route Pro</div><div style="color:#93a3b9;font-size:13px;margin-bottom:14px">Sign in to load your stops on this device.</div>'
           + '<input id="mrpEmail" type="email" autocomplete="username" placeholder="Email" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:8px">'
           + '<input id="mrpPass" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0b1127;color:#fff;font-size:16px;margin-bottom:10px">'
           + '<button id="mrpIn" type="button" style="width:100%;padding:13px;border-radius:10px;background:#00e6c7;border:2px solid #14ffe0;color:#04210f;font-weight:900;font-size:16px">Sign in</button>'
@@ -286,8 +286,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 })();
 </script>
 
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+  <link rel="icon" type="image/png" href="icon-192.png?v=2">
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="My Route Pro">
@@ -1443,7 +1443,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
         
         <!-- Brand Logo -->
         <div id="brandBlock" class="flex items-center space-x-3.5">
-          <img src="logo-512.png" alt="MyRoute Pro" class="h-11 w-auto rounded-xl shadow-lg" style="max-width:120px;object-fit:contain">
+          <img src="logo-512.png?v=2" alt="MyRoute Pro" class="h-11 w-auto rounded-xl shadow-lg" style="max-width:120px;object-fit:contain">
           <div>
             <div class="flex items-center gap-2">
               <span class="text-2xl font-black tracking-tight text-white">My <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-pink-400 to-amber-300">Route</span></span>
@@ -3250,7 +3250,7 @@ Add New Stop
   </div>
 
   <!-- Background watermark -->
-  <div class="no-print" aria-hidden="true" style="position: fixed; inset: 2.5%; z-index: 20; pointer-events: none; background: url('watermark.png') center center / contain no-repeat; opacity: 0.096;"></div>
+  <div class="no-print" aria-hidden="true" style="position: fixed; inset: 2.5%; z-index: 20; pointer-events: none; background: url('watermark.png?v=2') center center / contain no-repeat; opacity: 0.096;"></div>
 
   <!-- Notification Toast -->
   <div class="no-print mobile-settings-link" style="text-align:center;padding:18px 0 28px"><button type="button" onclick="openSettings()" style="color:#93a3b9;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0">Settings</button></div>
@@ -4388,7 +4388,7 @@ Add New Stop
       const list = rmdList(); if (!list.length) return;
       try { if (localStorage.getItem('mrp_remind_off') === todayString) { rmdShown = true; return; } } catch (e) {}
       rmdShown = true; const old = document.getElementById('remindOverlay'); if (old) old.remove();
-      const em = document.querySelector('#companyBrand > img'); const logo = (em && em.getAttribute('src')) || 'icon-192.png';
+      const em = document.querySelector('#companyBrand > img'); const logo = (em && em.getAttribute('src')) || 'icon-192.png?v=2';
       const rows = list.map((v, i) => '<li style="padding:10px 0;border-bottom:1px solid #324256"><label style="display:flex;align-items:flex-start;gap:12px"><input type="checkbox" ' + (v.routeSkip === todayString ? '' : 'checked ') + 'onchange="rmdToggle(\'' + v.id + '\', this.checked)" style="width:24px;height:24px;min-width:24px;accent-color:#00e6c7;margin-top:2px"><span><span style="display:block;font-size:16px;font-weight:800;color:#fff"><span style="color:#fbbaa6">' + (i + 1) + '.</span> ' + escapeHtml(routeName(v)) + '</span><span style="display:block;font-size:14px;color:#cad4e2;word-break:break-word">' + escapeHtml(v.streetAddress || 'No street address') + '</span></span></label></li>').join('');
       const o = document.createElement('div'); o.id = 'remindOverlay';
       o.style.cssText = 'position:fixed;inset:0;z-index:125;background:rgba(2,6,23,.6);display:flex;align-items:flex-end;justify-content:center';
@@ -11375,7 +11375,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     if (document.getElementById('mrpLock') || !get() || skip) return;
     var o = document.createElement('div'); o.id = 'mrpLock';
     o.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#0b1127;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
-    o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png) center center / contain no-repeat;opacity:0.144;pointer-events:none"></div>'
+    o.innerHTML = '<div aria-hidden="true" style="position:absolute;inset:3%;background:url(watermark.png?v=2) center center / contain no-repeat;opacity:0.144;pointer-events:none"></div>'
       + '<div style="position:relative;width:100%;max-width:340px;text-align:center;background:rgba(17,26,54,.92);border:1px solid #324256;border-radius:16px;padding:24px;color:#fff"><div style="font-weight:900;font-size:20px;margin-bottom:6px">My Route Pro</div><div style="color:#93a3b9;font-size:13px;margin-bottom:16px">Locked</div>'
       + '<button id="mrpUnlock" type="button" style="width:100%;padding:13px;border-radius:10px;background:#00e6c7;border:2px solid #14ffe0;color:#04210f;font-weight:900;font-size:16px">Unlock with Face ID</button>'
       + '<button id="mrpUsePw" type="button" style="display:block;width:100%;margin-top:10px;padding:12px;border-radius:10px;background:#0b1127;border:1px solid #475569;color:#e2e8f0;font-weight:700;font-size:14px">Use password instead</button>'
