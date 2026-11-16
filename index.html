@@ -1414,6 +1414,11 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     #vibrantReportCanvas.rs-dark [class*="text-amber-7"],#vibrantReportCanvas.rs-dark [class*="text-amber-8"],#vibrantReportCanvas.rs-dark [class*="text-orange-7"],#vibrantReportCanvas.rs-dark [class*="text-orange-8"]{color:#ffb866!important}
     #vibrantReportCanvas.rs-dark [class*="text-purple-7"],#vibrantReportCanvas.rs-dark [class*="text-fuchsia-7"],#vibrantReportCanvas.rs-dark [class*="text-pink-7"]{color:#e2a8ff!important}
     }
+/* Desktop table headers: every title stays on ONE line, left to right (never stacked word by word) */
+@media (min-width:1100px){
+  table:has(#visitsTableBody) thead th, table:has(#todayTableBody) thead th, table:has(#yesterdayTableBody) thead th, table:has(#visitsTableBody) thead th *, table:has(#todayTableBody) thead th *, table:has(#yesterdayTableBody) thead th * { white-space: nowrap !important; word-break: keep-all !important; overflow-wrap: normal !important; writing-mode: horizontal-tb !important; }
+  table:has(#visitsTableBody) thead th, table:has(#todayTableBody) thead th, table:has(#yesterdayTableBody) thead th { font-size: clamp(7px, 0.52vw, 10.5px) !important; letter-spacing: 0.02em !important; padding-left: 6px !important; padding-right: 6px !important; overflow: visible !important; }
+}
 </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
