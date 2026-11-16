@@ -1419,6 +1419,11 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   table:has(#visitsTableBody) thead th, table:has(#todayTableBody) thead th, table:has(#yesterdayTableBody) thead th, table:has(#visitsTableBody) thead th *, table:has(#todayTableBody) thead th *, table:has(#yesterdayTableBody) thead th * { white-space: nowrap !important; word-break: keep-all !important; overflow-wrap: normal !important; writing-mode: horizontal-tb !important; }
   table:has(#visitsTableBody) thead th, table:has(#todayTableBody) thead th, table:has(#yesterdayTableBody) thead th { font-size: clamp(7px, 0.52vw, 10.5px) !important; letter-spacing: 0.02em !important; padding-left: 6px !important; padding-right: 6px !important; overflow: visible !important; }
 }
+/* Route Map desktop: four buttons all the same smaller size */
+@media (min-width:1024px){
+  #rmBtnGroup > a, #rmBtnGroup > button { width: 118px !important; height: 32px !important; padding: 0 6px !important; justify-content: center !important; font-size: 10.5px !important; gap: 5px !important; white-space: nowrap !important; }
+  #rmBtnGroup > a svg, #rmBtnGroup > button svg { width: 12px !important; height: 12px !important; }
+}
 </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -7279,8 +7284,17 @@ Add New Stop
       if (!w || !b || !h) return;
       var desk = window.matchMedia('(min-width:1024px)').matches;
       var hd = h.closest('.justify-between');
-      if (desk) { if (hd && w.parentNode !== hd) hd.appendChild(w); var bg = document.getElementById('rmBtnGroup'); if (hd) hd.style.position = ''; w.style.cssText = 'position:static;order:1;margin:0 auto;white-space:nowrap;flex:0 0 auto'; if (bg) bg.style.order = '2'; }
-      else { w.style.cssText = ''; var bg2 = document.getElementById('rmBtnGroup'); if (bg2) bg2.style.order = ''; if (hd) hd.style.position = ''; if (w.nextElementSibling !== b) b.parentNode.insertBefore(w, b); }
+      var row = document.getElementById('rmMilesRow');
+      if (desk) {
+        if (hd && !row) { row = document.createElement('div'); row.id = 'rmMilesRow'; row.style.cssText = 'display:flex;justify-content:center;padding:10px 16px 2px'; hd.parentNode.insertBefore(row, hd.nextSibling); }
+        if (row) { row.style.display = 'flex'; if (w.parentNode !== row) row.appendChild(w); }
+        w.style.cssText = 'position:static;margin:0;white-space:nowrap;flex:0 0 auto';
+        var bg = document.getElementById('rmBtnGroup'); if (bg) bg.style.order = '';
+      } else {
+        w.style.cssText = ''; var bg2 = document.getElementById('rmBtnGroup'); if (bg2) bg2.style.order = '';
+        if (hd) hd.style.position = ''; if (row) row.style.display = 'none';
+        if (w.nextElementSibling !== b) b.parentNode.insertBefore(w, b);
+      }
     }
     rmPlaceMiles(); window.addEventListener('resize', rmPlaceMiles);
     function rmMilesLabel() { return (Math.round(RM_NEAR_MI * 10) / 10) + (RM_NEAR_MI === 1 ? ' mile' : ' miles'); }
