@@ -1447,6 +1447,7 @@ html.mrp-role-manager .mrp-admin-only, html.mrp-role-user .mrp-admin-only, html.
 html.mrp-role-manager button[onclick^="delete"], html.mrp-role-user button[onclick^="delete"], html.mrp-role-viewer button[onclick^="delete"],
 html.mrp-role-manager .act-wrap > button[onclick^="deleteVisit"], html.mrp-role-user .act-wrap > button[onclick^="deleteVisit"], html.mrp-role-viewer .act-wrap > button[onclick^="deleteVisit"],
 html.mrp-role-user button[onclick^="editVisit"], html.mrp-role-user .act-wrap > button[onclick^="editVisit"] { display: none !important; }
+#adminModal { z-index: 70 !important; }
 </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -4012,6 +4013,8 @@ Add New Stop
         return;
       }
       const hasOld = (item.notes && item.notes.trim()) || item.visitResult;
+      // remember how the stop looked, so "Undo today's revisit" can put it back exactly
+      item.revisitUndo = { visitDate: item.visitDate || '', followUpDate: item.followUpDate || '', includeInWeek: item.includeInWeek || '', revisitedOn: item.revisitedOn || '', notes: item.notes || '', visitResult: item.visitResult || '', pushed: !!hasOld };
       if (hasOld) {
         if (!Array.isArray(item.notesHistory)) item.notesHistory = [];
         item.notesHistory.push({
@@ -4049,8 +4052,39 @@ Add New Stop
 
     function getHistoryLink(item) {
       const h = Array.isArray(item.notesHistory) ? item.notesHistory : [];
-      if (!h.length) return '';
-      return `<button type="button" onclick="openHistory('${item.id}')" class="text-[10px] text-amber-300 font-semibold underline decoration-dotted text-left">Previous visit notes (${h.length})</button>`;
+      const undo = (item.revisitedOn === todayString && item.revisitUndo && window.__mrpRole !== 'viewer')
+        ? `<button type="button" onclick="undoRevisit('${item.id}')" title="Put the notes and dates back the way they were before today's revisit" class="text-[10px] text-rose-300 font-semibold underline decoration-dotted text-left">Undo today's revisit</button>` : '';
+      if (!h.length) return undo;
+      return `<button type="button" onclick="openHistory('${item.id}')" class="text-[10px] text-amber-300 font-semibold underline decoration-dotted text-left">Previous visit notes (${h.length})</button>` + undo;
+    }
+
+    // Undo a revisit logged today: the earlier notes, result and dates come back, and the stop leaves this week's report
+    function undoRevisit(id) {
+      const it = visits.find(v => v.id === id);
+      if (!it || !it.revisitUndo || it.revisitedOn !== todayString) return;
+      if (!confirm('Undo today\'s revisit for ' + (it.businessName || 'this stop') + '?\n\nYour earlier notes and visit date come back, and it leaves this week\'s report. Anything typed in the notes since the revisit is removed.')) return;
+      const u = it.revisitUndo;
+      if (u.pushed && Array.isArray(it.notesHistory)) it.notesHistory.pop();
+      it.notes = u.notes; it.visitResult = u.visitResult; it.visitDate = u.visitDate;
+      if (u.followUpDate) it.followUpDate = u.followUpDate; else delete it.followUpDate;
+      if (u.includeInWeek) it.includeInWeek = u.includeInWeek; else delete it.includeInWeek;
+      if (u.revisitedOn) it.revisitedOn = u.revisitedOn; else delete it.revisitedOn;
+      delete it.revisitUndo;
+      saveRecords();
+      showToast('Revisit undone: ' + (it.businessName || 'stop'));
+    }
+
+    // Delete one earlier visit from "Previous visit notes" (administrators, with the administrator password)
+    function deleteHistoryEntry(id, idx) {
+      const it = visits.find(v => v.id === id);
+      if (!it || !Array.isArray(it.notesHistory) || !it.notesHistory[idx]) return;
+      const when = it.notesHistory[idx].visitDate || 'unknown date';
+      openAdminGate('delete', function () {
+        const cur = visits.find(v => v.id === id);
+        if (cur && Array.isArray(cur.notesHistory)) { cur.notesHistory.splice(idx, 1); saveRecords(); showToast('Deleted the visit from ' + when); try { openHistory(id); } catch (e) {} }
+      });
+      const lab = document.querySelector('label[for="adminPasswordInput"]'); if (lab) lab.textContent = 'Enter the administrator password to delete the ' + when + ' visit';
+      const sub = document.querySelector('#adminModal p.truncate'); if (sub) sub.textContent = 'Delete earlier visit';
     }
 
     function openHistory(id) {
@@ -4060,9 +4094,9 @@ Add New Stop
       document.getElementById('historyLabel').textContent = item.businessName + (item.clientName && item.clientName !== 'Contact TBD' ? ' · ' + item.clientName : '');
       const h = Array.isArray(item.notesHistory) ? item.notesHistory : [];
       document.getElementById('historyList').innerHTML = h.length
-        ? h.map(e => `
+        ? h.map((e, i) => `
           <div class="p-3 rounded-2xl bg-slate-800 border border-slate-700">
-            <div class="text-[10px] font-black uppercase tracking-wider text-amber-300">Visit on ${escapeHtml(e.visitDate || 'unknown date')}</div>
+            <div class="flex items-start justify-between gap-2"><div class="text-[10px] font-black uppercase tracking-wider text-amber-300">Visit on ${escapeHtml(e.visitDate || 'unknown date')}</div>${(!window.__mrpRole || window.__mrpRole === 'owner' || window.__mrpRole === 'admin') ? `<button type="button" onclick="deleteHistoryEntry('${id}', ${i})" title="Delete this earlier visit" class="text-[10px] font-black text-rose-300 underline decoration-dotted">Delete</button>` : ''}</div>
             ${(e.status || e.result) ? `<div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml([e.status, e.result].filter(Boolean).join(' · '))}</div>` : ''}
             <p class="text-xs text-slate-200 mt-1.5 whitespace-pre-wrap">${e.notes ? escapeHtml(e.notes) : '<span class="italic text-slate-500">No notes were written for this visit.</span>'}</p>
           </div>`).reverse().join('')
