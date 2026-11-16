@@ -1452,6 +1452,9 @@ html.mrp-role-user button[onclick^="editVisit"], html.mrp-role-user .act-wrap > 
 @media (min-width:1024px) { #rmRouteBtn { display: inline-flex !important; } }
 @media (max-width:1023px) { #rmBtnGroup > #rmRouteBtn { grid-column: 1 / -1; } }
 #routeMapView.rm-routing #rmMilesWrap, #routeMapView.rm-routing #rmMilesRow { display: none !important; }
+#topSearchWrap { grid-column: 1 / -1; display: flex; justify-content: center; }
+#topSearchWrap > div { margin-left: auto; margin-right: auto; min-width: 0 !important; }
+#topSearchWrap #topSearch { min-width: 0 !important; width: 100% !important; box-sizing: border-box; }
 </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -12848,6 +12851,22 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
     try { var r = await window.__mrpRpc('mrp_remove_member', { p_member: id }); if (r.error) throw r.error; msg('Removed.'); mrpTeamLoad(); }
     catch (e) { msg(fail(e), true); }
   };
+})();
+</script>
+
+<script>
+/* The top search bar is the same width as the Route Tracker / Route Map / Report Studio tab bar, and centered */
+(function () {
+  function sync() {
+    var nav = document.querySelector('.main-nav'), box = document.querySelector('#topSearchWrap > div');
+    if (!nav || !box) return;
+    var w = nav.getBoundingClientRect().width;
+    var z = (box.offsetWidth > 0) ? box.getBoundingClientRect().width / box.offsetWidth : 1; if (!(z > 0.5 && z < 2)) z = 1; // the page content is drawn slightly zoomed, so convert to the box's own units
+    if (w > 40) { box.style.width = (w / z) + 'px'; box.style.maxWidth = '100%'; }
+  }
+  window.addEventListener('resize', sync); window.addEventListener('load', function () { sync(); setTimeout(sync, 400); setTimeout(sync, 1500); });
+  document.addEventListener('DOMContentLoaded', sync); setTimeout(sync, 100); setInterval(sync, 2000);
+  try { var n = document.querySelector('.main-nav'); if (n && window.ResizeObserver) new ResizeObserver(sync).observe(n); } catch (e) {}
 })();
 </script>
 </body></html>
