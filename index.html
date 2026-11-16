@@ -1442,14 +1442,6 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   #rmBtnGroup > a, #rmBtnGroup > button { width: 118px !important; height: 32px !important; padding: 0 6px !important; justify-content: center !important; font-size: 10.5px !important; gap: 5px !important; white-space: nowrap !important; }
   #rmBtnGroup > a svg, #rmBtnGroup > button svg { width: 12px !important; height: 12px !important; }
 }
-/* Revisit, Edit and Delete show as clear labeled boxes on every visit */
-.act-wrap > button[onclick^="startRevisit"], .act-wrap > button[onclick^="editVisit"], .act-wrap > button[onclick^="deleteVisit"] { display: inline-flex !important; align-items: center; gap: 4px; padding: 5px 9px !important; border-radius: 9px !important; border: 1px solid currentColor !important; font-size: 10.5px; font-weight: 900; line-height: 1; white-space: nowrap; background: rgba(15,23,42,.55); }
-.act-wrap > button[onclick^="startRevisit"]::after { content: "Revisit"; }
-.act-wrap > button[onclick^="editVisit"]::after { content: "Edit"; }
-.act-wrap > button[onclick^="deleteVisit"]::after { content: "Delete"; }
-.act-wrap > button[onclick^="editVisit"] { color: #a5b4fc !important; }
-.act-wrap > button[onclick^="deleteVisit"] { color: #fda4af !important; }
-.act-wrap > button[onclick^="startRevisit"] svg, .act-wrap > button[onclick^="editVisit"] svg, .act-wrap > button[onclick^="deleteVisit"] svg { width: 13px; height: 13px; }
 /* Team roles: what each level can see and use */
 html.mrp-role-manager .mrp-admin-only, html.mrp-role-user .mrp-admin-only, html.mrp-role-viewer .mrp-admin-only { display: none !important; }
 html.mrp-role-manager button[onclick^="delete"], html.mrp-role-user button[onclick^="delete"], html.mrp-role-viewer button[onclick^="delete"],
