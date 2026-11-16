@@ -30,6 +30,7 @@
 body.mrp-modal-open{overflow:hidden !important}
 body.mrp-modal-open *{animation-play-state:paused !important}
 
+@keyframes mrpNeonG{0%,100%{border-color:#00ffdd;box-shadow:0 0 8px 2px #00ffdd,0 0 28px 8px rgba(0,255,221,.65),inset 0 0 14px rgba(0,255,221,.45)}50%{border-color:#064d44;box-shadow:0 0 2px 0 #064d44,0 0 6px 1px rgba(0,255,221,.15),inset 0 0 2px rgba(0,255,221,.1)}}
 </style></head><body>
 <!DOCTYPE html>
 <html lang="en">
@@ -4467,8 +4468,8 @@ Add New Stop
       const em = document.querySelector('#companyBrand > img'); const logo = (em && em.getAttribute('src')) || 'icon-192.png?v=2';
       const rows = list.map((v, i) => '<li style="padding:10px 0;border-bottom:1px solid #324256"><label style="display:flex;align-items:flex-start;gap:12px"><input type="checkbox" ' + (v.routeSkip === todayString ? '' : 'checked ') + 'onchange="rmdToggle(\'' + v.id + '\', this.checked)" style="width:24px;height:24px;min-width:24px;accent-color:#00e6c7;margin-top:2px"><span><span style="display:block;font-size:16px;font-weight:800;color:#fff"><span style="color:#fbbaa6">' + (i + 1) + '.</span> ' + escapeHtml(routeName(v)) + '</span><span style="display:block;font-size:14px;color:#cad4e2;word-break:break-word">' + escapeHtml(v.streetAddress || 'No street address') + '</span></span></label></li>').join('');
       const o = document.createElement('div'); o.id = 'remindOverlay';
-      o.style.cssText = 'position:fixed;inset:0;z-index:125;background:rgba(2,6,23,.6);display:flex;align-items:flex-end;justify-content:center';
-      o.innerHTML = '<div style="width:100%;max-width:560px;height:50vh;height:50dvh;min-height:340px;max-height:100%;display:flex;flex-direction:column;background:#0f172a;border:1px solid #519bfb;border-radius:20px 20px 0 0;color:#fff;padding:14px 16px max(14px,env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.6)">'
+      o.style.cssText = 'position:fixed;inset:0;z-index:125;background:rgba(2,6,23,.6);display:flex;align-items:center;justify-content:center;padding:16px';
+      o.innerHTML = '<div style="width:100%;max-width:560px;height:min(80vh,680px);height:min(80dvh,680px);min-height:340px;max-height:100%;display:flex;flex-direction:column;background:#0f172a;border:3px solid #00ffdd;border-radius:20px;color:#fff;padding:14px 16px 14px;animation:mrpNeonG .9s ease-in-out infinite">'
         + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><img src="' + logo + '" alt="My Route Pro" style="height:44px;width:auto;max-width:120px;object-fit:contain;border-radius:10px"><div><div style="font-size:18px;font-weight:900">You have appointments today</div><div id="rmdCount" style="font-size:13px;color:#cad4e2">' + rmdActive().length + ' of ' + list.length + ' stop' + (list.length === 1 ? '' : 's') + ' checked for ' + escapeHtml(rfNice(todayString)) + '</div></div></div>'
         + '<ol style="list-style:none;padding:0 4px;margin:0 0 10px;flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;border-top:1px solid #324256">' + rows + '</ol>'
         + '<div id="rmdMaps">' + rmdMapsHtml() + '</div>'
@@ -12205,7 +12206,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var lab = document.getElementById('todayRouteBtnLabel');
     if (lab) lab.textContent = list.length ? "Today's route (" + list.length + ')' : "Today's route";
     var h = chiHour();
-    var mode = list.length ? 'g' : (h >= 8 && h < 10 ? 'r' : '');
+    var mode = '';
     var b = document.getElementById('routeBanner');
     if (!mode || dismissed()) { if (b) b.remove(); return; }
     var text = list.length ? "Today's route: " + list.length + ' stop' + (list.length === 1 ? '' : 's') + '. First: ' + routeName(list[0]) : "Today's route: 0 stops. No stops today.";
