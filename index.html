@@ -56,20 +56,26 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 #settingsPanel > .mt-4 > div.p-3 a{height:40px;width:200px;max-width:100%;display:inline-flex!important;align-items:center;justify-content:center;border-radius:12px}
 #settingsPanel button.bg-slate-800:not([aria-label]),#settingsPanel button.bg-slate-700:not([aria-label]){background:#0e7490;border:1px solid #67e8f9;color:#fff}
 #settingsPanel [aria-label="Close settings"]{color:#fff!important;background:#334155;border:1px solid #64748b;border-radius:12px;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}
-@media (min-width:1200px){
-  #settingsPanel > .mt-4{grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:start!important}
-  #settingsPanel > .mt-4 > :nth-child(-n+5){align-self:stretch}
-  #settingsPanel > .mt-4 > :nth-child(1){grid-column:1;grid-row:1}
-  #settingsPanel > .mt-4 > :nth-child(4){grid-column:1;grid-row:2}
-  #settingsPanel > .mt-4 > :nth-child(2){grid-column:2;grid-row:1}
-  #settingsPanel > .mt-4 > :nth-child(3){grid-column:2;grid-row:2}
-  #settingsPanel > .mt-4 > :nth-child(5){grid-column:3;grid-row:1 / span 2}
-}
-@media (min-width:900px) and (max-width:1199px){
-  #settingsPanel > .mt-4 > :nth-child(5){grid-column:1 / -1}
-}
-@media (min-width:900px){#settingsPanel > .mt-4 > :nth-child(-n+4){min-height:112px}}
 #settingsPanel > .mt-4 > div.p-3 > label{color:#e2e8f0}
+#settingsPanel #mrpCoreTile{grid-column:1 / -1;background:linear-gradient(135deg,#0c1a3a 0%,#0a1226 70%);border:1.5px solid #00e6c7;border-radius:24px;box-shadow:0 0 0 1px rgba(0,230,199,.3),0 0 20px rgba(0,230,199,.35),inset 0 0 24px rgba(0,230,199,.06);padding:0 0 14px;overflow:hidden}
+#mrpCoreTile .core-head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(0,230,199,.3);background:linear-gradient(90deg,rgba(4,70,66,.5),rgba(15,23,42,.2))}
+#mrpCoreTile .core-ico{width:32px;height:32px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(20,184,166,.12);color:#5eead4;border:1px solid rgba(20,184,166,.4)}
+#mrpCoreTile .core-title{margin:0;font-size:15px;font-weight:800;color:#fff;-webkit-text-fill-color:#fff}
+#mrpCoreTile .core-grid{display:grid;grid-template-columns:1fr;gap:12px;padding:12px 16px 0;align-items:start}
+#mrpCoreTile .core-col{display:flex;flex-direction:column;gap:10px}
+#mrpCoreTile label{margin-bottom:3px!important}
+#mrpCoreTile input[type=text],#mrpCoreTile input[type=email]{height:34px;padding-top:0;padding-bottom:0}
+@media (min-width:900px){
+  #mrpCoreTile .core-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+  #mrpCoreTile .core-col{min-height:130px;justify-content:space-between}
+}
+#mrpCoreTile .core-logo > div.rounded-2xl{padding:5px 8px!important;min-height:36px;display:flex;align-items:center;justify-content:center}
+#mrpCoreTile #settingsLogoImg{max-height:30px!important}
+#mrpCoreTile #settingsLogoEmpty{font-size:10.5px;line-height:1.2;margin:0}
+#mrpCoreTile .core-logo .flex.flex-wrap{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important;margin-top:6px!important}
+#settingsPanel #mrpCoreTile .core-logo button{width:100%!important;height:28px!important;min-height:0!important;padding:0 6px!important;font-size:11px!important;white-space:nowrap}
+#mrpCoreTile #logoStatus{margin:2px 0 0!important;min-height:0!important;font-size:11px}
+#mrpCoreTile #logoStatus:empty{display:none}
 </style>
 </head><body>
 <!DOCTYPE html>
@@ -3163,37 +3169,42 @@ Add New Stop
       </div>
 
       <div class="mt-4 space-y-3.5">
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+        <div id="mrpCoreTile" class="mrp-wide">
+          <div class="core-head">
+            <div class="core-ico"><i data-lucide="building-2" class="w-4 h-4"></i></div>
+            <h4 class="core-title">Core Company Information</h4>
+          </div>
+          <div class="core-grid">
+            <div class="core-col"><div class="core-field">
           <label class="block text-xs font-bold text-slate-300 mb-1" for="setRepName">Sales Representative</label>
           <input type="text" id="setRepName" placeholder="e.g. Your Name" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        </div>
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <label class="block text-xs font-bold text-slate-300 mb-1" for="setTerritory">Territory / Route Name</label>
-          <input type="text" id="setTerritory" placeholder="e.g. Houston" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        </div>
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <label class="block text-xs font-bold text-slate-300 mb-1" for="setManagerEmail">Manager Recipient Email</label>
-          <input type="email" multiple id="setManagerEmail" placeholder="name@company.com, name2@company.com" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        </div>
-
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+        </div><div class="core-field">
           <label class="block text-xs font-bold text-slate-300 mb-1" for="setCompanyName">Company you work for</label>
           <input type="text" id="setCompanyName" placeholder="Company name" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        </div>
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Company logo</div>
+        </div></div>
+            <div class="core-col"><div class="core-field">
+          <label class="block text-xs font-bold text-slate-300 mb-1" for="setTerritory">Territory / Route Name</label>
+          <input type="text" id="setTerritory" placeholder="e.g. Houston" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div><div class="core-field">
+          <label class="block text-xs font-bold text-slate-300 mb-1" for="setManagerEmail">Manager Recipient Email</label>
+          <input type="email" multiple id="setManagerEmail" placeholder="name@company.com, name2@company.com" class="w-full text-xs px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div></div>
+            <div class="core-logo">
+          <label class="block text-xs font-bold text-slate-300 mb-1">Company logo</label>
           <div class="rounded-2xl border border-dashed border-slate-600 bg-slate-800/50 p-3 text-center">
             <img id="settingsLogoImg" alt="Company logo" class="hidden mx-auto max-h-20 max-w-full rounded-lg bg-white p-1">
             <p id="settingsLogoEmpty" class="text-xs text-slate-400">No logo yet. Choose an image, or copy one and paste it here.</p>
           </div>
           <input type="file" id="logoFileInput" accept="image/*" class="hidden">
           <div class="flex flex-wrap gap-2 mt-2">
-            <button type="button" onclick="document.getElementById('logoFileInput').click()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Choose image</button>
-            <button type="button" onclick="pasteLogoFromClipboard()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Paste image</button>
-            <button type="button" onclick="useBuiltInLogo()" class="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-xl transition">Use the PuroClean logo</button>
-            <button type="button" id="logoRemoveBtn" onclick="removeLogo()" class="hidden px-3 py-1.5 text-xs font-bold text-rose-300 border border-rose-500/40 hover:bg-rose-600/30 rounded-xl transition">Remove logo</button>
+            <button type="button" onclick="document.getElementById('logoFileInput').click()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Choose Image</button>
+            <button type="button" onclick="pasteLogoFromClipboard()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Paste Image</button>
+            <button type="button" onclick="useBuiltInLogo()" class="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-xl transition">Use PuroClean Logo</button>
+            <button type="button" id="logoRemoveBtn" onclick="removeLogo()" class="hidden px-3 py-1.5 text-xs font-bold text-rose-300 border border-rose-500/40 hover:bg-rose-600/30 rounded-xl transition">Remove Logo</button>
           </div>
           <p id="logoStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
+        </div>
+          </div>
         </div>
 
         
