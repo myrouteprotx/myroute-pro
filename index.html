@@ -6156,7 +6156,7 @@ Add New Stop
 
       // Today's visits live in their own box. While searching or filtering, every match shows in the main list.
       const isFiltering = !!search || statusFilter !== 'ALL' || urgencyFilter !== 'ALL';
-      const todayList = visits.filter(isOnToday).sort((a, b) => (a.businessName || '').localeCompare(b.businessName || ''));
+      const todayList = visits.filter(isOnToday).sort((a, b) => ((a.routeSeq == null ? 1e9 : +a.routeSeq) - (b.routeSeq == null ? 1e9 : +b.routeSeq)) || (a.businessName || '').localeCompare(b.businessName || ''));
       const mainList = isFiltering ? filtered : filtered.filter(v => !isOnToday(v));
 
       document.getElementById('resultsCountBadge').textContent = `${mainList.length} records`;
