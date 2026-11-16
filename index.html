@@ -1451,6 +1451,7 @@ html.mrp-role-user button[onclick^="editVisit"], html.mrp-role-user .act-wrap > 
 #rmRouteBtn { background: linear-gradient(90deg, #7c3aed, #a855f7) !important; border: 2px solid #d8b4fe !important; color: #fff !important; box-shadow: 0 0 10px rgba(168,85,247,.6); }
 @media (min-width:1024px) { #rmRouteBtn { display: inline-flex !important; } }
 @media (max-width:1023px) { #rmBtnGroup > #rmRouteBtn { grid-column: 1 / -1; } }
+#routeMapView.rm-routing #rmMilesWrap, #routeMapView.rm-routing #rmMilesRow { display: none !important; }
 </style>
 </head>
 <body class="hero-glow-bg text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
@@ -7116,8 +7117,24 @@ Add New Stop
         + (rows || '<div style="margin-top:12px;font-size:13px;color:#cbd5e1">No route days yet. Add stops to Today\'s route or a Future route day first.</div>')
         + '<button type="button" onclick="rpClose()" style="margin-top:12px;width:100%;padding:10px;border-radius:12px;background:#334155;color:#fff;font-weight:800;font-size:13px">Close</button>');
     }
+
+    // The list of properties on the selected route, in visiting order (replaces the "within miles" list while a route is showing)
+    function rmRouteList(el) {
+      const R = RM.route; if (!R) return;
+      el.classList.remove('hidden');
+      const rows = R.stops.map(v => {
+        const n = R.num[v.id], placed = rmHasGeo(v);
+        return `<button type="button" ${placed ? `onclick="rmGoTo('${escapeHtml(v.id)}')"` : 'disabled'} class="w-full flex items-center gap-3 text-left px-3 py-2 rounded-xl bg-slate-900/70 border border-slate-700 hover:border-cyan-500/60 transition">`
+          + `<span class="shrink-0 w-6 h-6 rounded-full text-[11px] font-black flex items-center justify-center" style="background:${placed ? '#fff' : '#475569'};color:${placed ? '#0b1020' : '#e2e8f0'}">${placed ? n : '–'}</span>`
+          + `<span class="min-w-0 flex-1"><span class="block text-xs font-extrabold text-white truncate">${escapeHtml(v.businessName || 'Visit')}</span><span class="block text-[11px] text-slate-400 truncate">${escapeHtml(v.streetAddress || v.clientName || '')}</span></span>`
+          + (placed ? '' : '<span class="shrink-0 text-[10px] font-black text-amber-300">Not on map yet</span>') + '</button>';
+      }).join('');
+      el.innerHTML = `<div class="flex items-center justify-between gap-3 flex-wrap"><h3 class="text-sm font-black text-white flex items-center gap-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#00e6c7"></span>Route for ${escapeHtml(R.label)} <span class="text-cyan-300">(${R.stops.length} stops)</span></h3>`
+        + `<button type="button" onclick="rmRouteClear()" class="px-2.5 py-1 rounded-lg text-[11px] font-black text-rose-200 bg-rose-950/60 border border-rose-800/70">Clear route</button></div>`
+        + `<p class="text-[10px] text-slate-400 font-semibold mt-1">In visiting order. Tap a property to jump to it on the map.</p><div class="mt-2 space-y-1.5 max-h-80 overflow-y-auto">${rows}</div>`;
+    }
     function rmRouteClear() {
-      RM.route = null;
+      RM.route = null; try { rmEl('routeMapView').classList.remove('rm-routing'); } catch (e) {}
       const t = rmEl('rmRouteBtnText'); if (t) t.textContent = 'Show a route';
       renderRouteMap(); rmFit(false);
     }
@@ -7131,6 +7148,7 @@ Add New Stop
       const nice = (() => { try { return new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); } catch (e) { return date; } })();
       const num = {}; let n = 0; o.list.forEach(v => { if (rmHasGeo(v)) num[v.id] = ++n; });
       RM.route = { date, label: (date === todayString ? 'Today' : nice), stops: o.list, num, office: null, road: null, info: '' };
+      try { rmEl('routeMapView').classList.add('rm-routing'); } catch (e) {}
       const t = rmEl('rmRouteBtnText'); if (t) t.textContent = 'Clear route';
       RM.selId = null; RM.group = null;
       const geo = o.list.filter(rmHasGeo);
@@ -7555,6 +7573,7 @@ Add New Stop
       const mi = rmEl('rmMilesInput'); if (mi && document.activeElement !== mi) mi.value = RM_NEAR_MI;
       const el = rmEl('rmNear');
       if (!el) return;
+      if (RM.route) { rmRouteList(el); return; }
       if (!RM.me) { el.classList.add('hidden'); el.innerHTML = ''; const b = rmEl('rmLocBtn'); if (b) b.querySelector('span').textContent = 'Use my location'; return; }
       const list = visits.filter(rmHasGeo).map(v => ({ v, mi: rmMiles(RM.me, v) })).filter(o => o.mi <= RM_NEAR_MI).sort((a, b) => a.mi - b.mi);
       el.classList.remove('hidden');
