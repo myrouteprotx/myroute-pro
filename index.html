@@ -3833,6 +3833,7 @@ Add New Stop
       const item = visits.find(v => v.id === id);
       if (!item || !newStatus || item.visitStatus === newStatus) return;
       item.visitStatus = newStatus;
+      if (item.visitDate === todayString) item.removedFromToday = todayString;
       saveRecords();
       showToast(`${item.businessName} marked as ${newStatus}`);
     }
@@ -3863,6 +3864,7 @@ Add New Stop
       const item = visits.find(v => v.id === id);
       if (!item || (item.visitResult || '') === value) return;
       item.visitResult = value;
+      if (value && item.visitDate === todayString) item.removedFromToday = todayString;
       saveRecords();
       showToast(value ? `${item.businessName}: ${value}` : `Cleared result of visit for ${item.businessName}`);
     }
@@ -6179,7 +6181,7 @@ Add New Stop
         const mapsQuery = encodeURIComponent(String(item.streetAddress || ''));
 
         return `
-          <tr data-vid="${escapeHtml(item.id)}" class="hover:bg-slate-700/40 transition${isOnRoute(item) ? ' route-on' : ''}">
+          <tr data-vid="${escapeHtml(item.id)}" class="hover:bg-slate-700/40 transition${item.inRoute === true ? ' route-on' : ''}">
             <td class="py-3.5 px-4">
               <div class="font-extrabold text-white text-xs flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(item) ? 'checked' : ''} onchange="toggleRoute('${item.id}', this.checked)" aria-label="Add to my route list" title="Check to include this stop in your planned route"><span>${escapeHtml(item.businessName)}</span></div>
               ${item.clientName ? `<div class="cn-line-name">${escapeHtml(item.clientName)}</div>` : ''}
@@ -7142,7 +7144,7 @@ Add New Stop
           + (placed ? (legTxt(legFor(n)) ? `<span class="shrink-0 text-[10px] font-bold text-slate-400">${escapeHtml(legTxt(legFor(n)))}</span>` : '') : '<span class="shrink-0 text-[10px] font-black text-amber-300">Not on map yet</span>') + '</button>'
           + `<span class="shrink-0 flex gap-1">${arrow(v, -1, i > 0, '&#9650;', 'Move up')}${arrow(v, 1, i < R.stops.length - 1, '&#9660;', 'Move down')}</span></div>`;
       }).join('');
-      const bar = R.dirty ? `<div class="flex items-center justify-between gap-2 flex-wrap px-3 py-2 mt-2 rounded-xl" style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.6)"><span class="text-[11px] font-black text-amber-200">The order has changed and is not saved yet.</span><span class="flex gap-2"><button type="button" onclick="rmRouteSave()" class="px-3 py-1.5 rounded-lg text-[11px] font-black text-white" style="background:#059669;border:1px solid #6ee7b7">Save order</button><button type="button" onclick="rmRouteRevert()" class="px-3 py-1.5 rounded-lg text-[11px] font-black text-slate-100 bg-slate-800 border border-slate-500">Revert to original</button></span></div>` : '';
+      const bar = R.dirty ? `<div class="flex items-center justify-between gap-2 flex-wrap px-3 py-2 mt-2 rounded-xl" style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.6)"><span class="text-[11px] font-black text-amber-200">The order is saved and Today's visits matches it.</span><span class="flex gap-2"><button type="button" onclick="rmRouteRevert()" class="px-3 py-1.5 rounded-lg text-[11px] font-black text-slate-100 bg-slate-800 border border-slate-500">Revert to original</button></span></div>` : '';
       const rows = (R.office ? bookend('leave', null) : '') + rows0 + (R.office ? bookend('return', lg[nGeo]) : '') + (R.office ? '' : '<p class="text-[11px] text-amber-300 font-semibold">Add your Office address in Settings (Route start and finish addresses) to show leaving and returning.</p>');
       el.innerHTML = `<div class="flex items-center justify-between gap-3 flex-wrap"><h3 class="text-sm font-black text-white flex items-center gap-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#00e6c7"></span>Route for ${escapeHtml(R.label)} <span class="text-cyan-300">(${R.stops.length} stops)</span></h3>`
         + `<button type="button" onclick="rmRouteClear()" class="px-2.5 py-1 rounded-lg text-[11px] font-black text-rose-200 bg-rose-950/60 border border-rose-800/70">Clear route</button></div>`
@@ -7211,7 +7213,16 @@ Add New Stop
       if (!R.origIds) R.origIds = R.stops.map(v => v.id);
       const t = R.stops[i]; R.stops[i] = R.stops[j]; R.stops[j] = t;
       R.dirty = R.stops.map(v => v.id).join() !== R.origIds.join();
+      rmRouteApply(R);
       rmRouteRenumber(R); rmRouteRedraw();
+    }
+    // Every move is saved right away so Today's visits always mirrors the map order
+    function rmRouteApply(R) {
+      const changed = [];
+      R.stops.forEach((v, k) => { if (v.routeSeq !== k + 1) { v.routeSeq = k + 1; changed.push(v); } });
+      if (!changed.length) return;
+      try { routePersist(changed); } catch (e) {}
+      try { renderTable(); } catch (e) {}
     }
     function rmRouteSave() {
       const R = RM.route; if (!R || !R.dirty) return;
@@ -7228,6 +7239,7 @@ Add New Stop
       const by = {}; R.stops.forEach(v => { by[v.id] = v; });
       R.stops = R.origIds.map(id => by[id]).filter(Boolean);
       R.dirty = false; R.origIds = null;
+      rmRouteApply(R);
       rmRouteRenumber(R); rmRouteRedraw();
       showToast('Back to the original order');
     }
@@ -8579,6 +8591,10 @@ Add New Stop
         const index = visits.findIndex(v => v.id === editId);
         if (index !== -1) {
           const addrChanged = (visits[index].streetAddress || '') !== payload.streetAddress;
+          { const pv = visits[index];
+            const wasOnToday = pv.visitDate === todayString && pv.removedFromToday !== todayString;
+            const entered = (payload.visitResult || '') !== (pv.visitResult || '') || (payload.notes || '') !== (pv.notes || '') || (payload.visitStatus || '') !== (pv.visitStatus || '');
+            if (wasOnToday && entered && payload.visitDate === todayString) payload.removedFromToday = todayString; }
           visits[index] = { ...visits[index], ...payload };
           if (addrChanged) { delete visits[index].lat; delete visits[index].lng; delete visits[index].geoApprox; }
           showToast(`Updated record for "${payload.businessName}"`);
@@ -10088,7 +10104,7 @@ Add New Stop
       if (f.ownerName) names.push(`<div class="text-xs text-white font-extrabold">${escapeHtml(f.ownerName)}<span class="text-[10px] text-red-200/70 font-semibold"> · property owner</span></div>`);
       if (!names.length) names.push('<span class="text-slate-500 italic text-[11px]">No names yet</span>');
       return `
-        <tr class="hover:bg-red-950/20 transition${isOnRoute(f) ? ' route-on' : ''}" data-fid="${escapeHtml(f.id)}">
+        <tr class="hover:bg-red-950/20 transition${f.inRoute === true ? ' route-on' : ''}" data-fid="${escapeHtml(f.id)}">
           <td class="py-3.5 px-4 max-w-[220px]">
             ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="mob-photo block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the fire property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-red-400/40"></a>` : ''}
             <div class="text-xs font-extrabold text-white break-words flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(f) ? 'checked' : ''} onchange="toggleRoute('${escapeHtml(f.id)}', this.checked)" aria-label="Add to my planned route" title="Check to include this stop in your planned route"><span>${escapeHtml(f.streetAddress || 'No address')}</span></div>
@@ -10527,7 +10543,7 @@ Add New Stop
       if (f.ownerName) names.push(`<div class="text-xs text-white font-extrabold">${escapeHtml(f.ownerName)}<span class="text-[10px] text-sky-200/70 font-semibold"> · property owner</span></div>`);
       if (!names.length) names.push('<span class="text-slate-500 italic text-[11px]">No names yet</span>');
       return `
-        <tr class="hover:bg-sky-950/20 transition${isOnRoute(f) ? ' route-on' : ''}" data-fid="${escapeHtml(f.id)}">
+        <tr class="hover:bg-sky-950/20 transition${f.inRoute === true ? ' route-on' : ''}" data-fid="${escapeHtml(f.id)}">
           <td class="py-3.5 px-4 max-w-[220px]">
             ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="mob-photo block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the water loss property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-sky-400/40"></a>` : ''}
             <div class="text-xs font-extrabold text-white break-words flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(f) ? 'checked' : ''} onchange="toggleRoute('${escapeHtml(f.id)}', this.checked)" aria-label="Add to my planned route" title="Check to include this stop in your planned route"><span>${escapeHtml(f.streetAddress || 'No address')}</span></div>
@@ -10949,7 +10965,7 @@ Add New Stop
       if (f.ownerName) names.push(`<div class="text-xs text-white font-extrabold">${escapeHtml(f.ownerName)}<span class="text-[10px] text-emerald-200/70 font-semibold"> · property owner</span></div>`);
       if (!names.length) names.push('<span class="text-slate-500 italic text-[11px]">No names yet</span>');
       return `
-        <tr class="hover:bg-emerald-950/20 transition${isOnRoute(f) ? ' route-on' : ''}" data-fid="${escapeHtml(f.id)}">
+        <tr class="hover:bg-emerald-950/20 transition${f.inRoute === true ? ' route-on' : ''}" data-fid="${escapeHtml(f.id)}">
           <td class="py-3.5 px-4 max-w-[220px]">
             ${f.photoId ? `<a href="/_blob/${escapeHtml(f.photoId)}" target="_blank" rel="noopener" class="mob-photo block mb-2"><img src="/_blob/${escapeHtml(f.photoId)}" alt="Photo of ${escapeHtml(f.streetAddress || 'the property')}" loading="lazy" onerror="this.parentNode.style.display='none'" class="w-full max-w-[200px] h-24 object-cover rounded-xl border border-emerald-400/40"></a>` : ''}
             <div class="text-xs font-extrabold text-white break-words flex items-start gap-2"><input type="checkbox" class="route-check" ${isOnRoute(f) ? 'checked' : ''} onchange="toggleRoute('${escapeHtml(f.id)}', this.checked)" aria-label="Add to my planned route" title="Check to include this stop in your planned route"><span>${escapeHtml(f.streetAddress || 'No address')}</span></div>
@@ -12366,7 +12382,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
     var notes = '<div class="note-box mt-1" data-nid="' + id + '"><div class="notes-lbl">Notes and Last Contacted</div>'
       + '<textarea rows="3" placeholder="Add a note..." aria-label="Notes for ' + esc(f.streetAddress || 'this stop') + '" oninput="noteTyped(this)" class="w-full text-[11px] leading-snug px-2 py-1.5 bg-slate-900 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-y">' + esc(f.notes || '') + '</textarea>'
       + '<button type="button" onclick="saveLeadNote(this,\'' + kind + '\',\'' + id + '\')" data-orig="' + esc(f.notes || '') + '" class="note-save note-state-saved mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-black border">Saved</button></div>';
-    return '<tr class="hover:bg-slate-700/40 transition' + (isOnRoute(f) ? ' route-on' : '') + '" data-fid="' + id + '">'
+    return '<tr class="hover:bg-slate-700/40 transition' + (f.inRoute === true ? ' route-on' : '') + '" data-fid="' + id + '">'
       + '<td class="py-3.5 px-4 max-w-[220px]"><div class="text-xs font-extrabold text-white break-words flex items-start gap-2"><input type="checkbox" class="route-check" ' + (isOnRoute(f) ? 'checked' : '') + ' onchange="toggleRoute(\'' + id + '\', this.checked)" aria-label="Add to my planned route" title="Check to include this stop in your planned route"><span>' + esc(f.streetAddress || 'No address') + '</span></div>'
         + (names.length ? '<div class="mt-1">' + names.join('') + '</div>' : '<div class="text-slate-400 italic text-[11px] mt-1">No names yet</div>')
         + '<div class="mt-1.5">' + pills + '</div></td>'
