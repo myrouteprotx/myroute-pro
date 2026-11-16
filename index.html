@@ -7123,15 +7123,20 @@ Add New Stop
       const R = RM.route; if (!R) return;
       el.classList.remove('hidden');
       const arrow = (v, dir, ok, ch, label) => `<button type="button" ${ok ? `onclick="rmRouteMove('${escapeHtml(v.id)}', ${dir})"` : 'disabled'} title="${label}" aria-label="${label}" style="width:28px;height:28px;border-radius:8px;font-size:13px;font-weight:900;line-height:1;background:#0f172a;border:1px solid ${ok ? '#60a5fa' : '#334155'};color:${ok ? '#fff' : '#475569'}">${ch}</button>`;
-      const rows = R.stops.map((v, i) => {
+      const nGeo = Object.keys(R.num).length, lg = R.legs || [];
+      const legTxt = l => l ? (l.mi < 0.1 ? '' : (l.mi < 10 ? l.mi.toFixed(1) : Math.round(l.mi)) + ' mi · ' + (l.min >= 60 ? Math.floor(l.min / 60) + ' hr ' + (l.min % 60) + ' min' : l.min + ' min')) : '';
+      const legFor = n => R.office ? lg[n - 1] : (n > 1 ? lg[n - 2] : null);
+      const bookend = (kind, leg) => `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl border" style="background:rgba(251,191,36,.10);border-color:rgba(251,191,36,.55)"><span class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-black" style="background:#fbbf24;color:#0b1020">${kind === 'leave' ? 'S' : 'E'}</span><span class="min-w-0 flex-1"><span class="block text-xs font-extrabold text-white truncate">${kind === 'leave' ? 'Leave your office' : 'Return to your office'}</span><span class="block text-[11px] text-slate-400 truncate">${escapeHtml((homeAddr && homeAddr()) || '')}${R.office && R.office.rough ? ' (approximate spot)' : ''}</span></span>${leg ? `<span class="shrink-0 text-[11px] font-black text-amber-200">${escapeHtml(legTxt(leg))}</span>` : ''}</div>`;
+      const rows0 = R.stops.map((v, i) => {
         const n = R.num[v.id], placed = rmHasGeo(v);
         return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-slate-900/70 border border-slate-700">`
           + `<button type="button" ${placed ? `onclick="rmGoTo('${escapeHtml(v.id)}')"` : 'disabled'} class="flex-1 min-w-0 flex items-center gap-3 text-left">`
           + `<span class="shrink-0 w-6 h-6 rounded-full text-[11px] font-black flex items-center justify-center" style="background:${placed ? '#fff' : '#475569'};color:${placed ? '#0b1020' : '#e2e8f0'}">${placed ? n : '–'}</span>`
           + `<span class="min-w-0 flex-1"><span class="block text-xs font-extrabold text-white truncate">${escapeHtml(v.businessName || 'Visit')}</span><span class="block text-[11px] text-slate-400 truncate">${escapeHtml(v.streetAddress || v.clientName || '')}</span></span>`
-          + (placed ? '' : '<span class="shrink-0 text-[10px] font-black text-amber-300">Not on map yet</span>') + '</button>'
+          + (placed ? (legTxt(legFor(n)) ? `<span class="shrink-0 text-[10px] font-bold text-slate-400">${escapeHtml(legTxt(legFor(n)))}</span>` : '') : '<span class="shrink-0 text-[10px] font-black text-amber-300">Not on map yet</span>') + '</button>'
           + `<span class="shrink-0 flex gap-1">${arrow(v, -1, i > 0, '&#9650;', 'Move up')}${arrow(v, 1, i < R.stops.length - 1, '&#9660;', 'Move down')}</span></div>`;
       }).join('');
+      const rows = (R.office ? bookend('leave', null) : '') + rows0 + (R.office ? bookend('return', lg[nGeo]) : '') + (R.office ? '' : '<p class="text-[11px] text-amber-300 font-semibold">Add your Office address in Settings (Route start and finish addresses) to show leaving and returning.</p>');
       el.innerHTML = `<div class="flex items-center justify-between gap-3 flex-wrap"><h3 class="text-sm font-black text-white flex items-center gap-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#00e6c7"></span>Route for ${escapeHtml(R.label)} <span class="text-cyan-300">(${R.stops.length} stops)</span></h3>`
         + `<button type="button" onclick="rmRouteClear()" class="px-2.5 py-1 rounded-lg text-[11px] font-black text-rose-200 bg-rose-950/60 border border-rose-800/70">Clear route</button></div>`
         + `<p class="text-[10px] text-slate-400 font-semibold mt-1">In visiting order. Use the up and down arrows to change the order and the line on the map follows. Tap a name to jump to it.</p><div class="mt-2 space-y-1.5 max-h-80 overflow-y-auto">${rows}</div>`;
@@ -7142,7 +7147,13 @@ Add New Stop
       renderRouteMap(); rmFit(false);
     }
     async function rmOfficePoint() {
-      try { const e = homeEntry(); if (e && Number.isFinite(e.lat) && Number.isFinite(e.lng)) return { lat: e.lat, lng: e.lng }; } catch (er) {}
+      let e = null;
+      try { e = homeEntry(); } catch (er) {}
+      if (!e) { try { const d = await dbHandle.doc('meta/home').get(); if (d && d.exists) { const x = d.data(); if (x && x.data) { localStorage.setItem(HOME_KEY, x.data); homeRender(); e = homeEntry(); } } } catch (er) {} }
+      if (!e) return null;
+      if (Number.isFinite(e.lat) && Number.isFinite(e.lng)) return { lat: e.lat, lng: e.lng };
+      try { const g = await rmGeo(e.addr); if (g) { const d = homeData(); const en = d.list[d.def]; if (en) { en.lat = g[0]; en.lng = g[1]; homeSave(d); } return { lat: g[0], lng: g[1] }; } } catch (er) {}
+      const z = rmZip(e.addr); if (z && RM_ZIPS[z]) return { lat: RM_ZIPS[z][0], lng: RM_ZIPS[z][1], rough: true };
       return null;
     }
     async function rmShowRoute(date) {
@@ -7174,9 +7185,10 @@ Add New Stop
           const r = await fetch(url); const j = r.ok ? await r.json() : null;
           if (j && j.routes && j.routes[0] && RM.route === my && sig === my.stops.map(v => v.id).join()) {
             my.road = j.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            my.legs = (j.routes[0].legs || []).map(l => ({ mi: l.distance / 1609.34, min: Math.round(l.duration / 60) }));
             const mi = j.routes[0].distance / 1609.34, mins = Math.round(j.routes[0].duration / 60);
             my.info = Math.round(mi) + ' mi driving, about ' + (mins >= 60 ? Math.floor(mins / 60) + ' hr ' + (mins % 60) + ' min' : mins + ' min') + ' without stops';
-            rmDraw(); rmSummary();
+            rmDraw(); rmSummary(); try { rmNear(); } catch (e) {}
           }
         }
       } catch (e) {}
@@ -7193,7 +7205,7 @@ Add New Stop
       const o = rmRouteDays().find(d => d.date === R.date);
       if (o) R.stops = o.list;
       let n = 0; R.num = {}; R.stops.forEach(v => { if (rmHasGeo(v)) R.num[v.id] = ++n; });
-      R.road = null; R.info = '';
+      R.road = null; R.legs = null; R.info = '';
       rmDraw(); rmSummary(); rmNear();
       clearTimeout(RM.roadT); RM.roadT = setTimeout(rmRoadFetch, 600);
     }
@@ -7207,7 +7219,15 @@ Add New Stop
       const d = pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
       let g = `<polyline points="${d}" fill="none" stroke="#0b1020" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" opacity="0.55" style="pointer-events:none"/>`
         + `<polyline points="${d}" fill="none" stroke="#00e6c7" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"${R.road ? '' : ' stroke-dasharray="10 7"'} style="pointer-events:none"/>`;
-      if (R.office) { const [ox, oy] = rmToScreen(R.office.lng, R.office.lat); g += `<g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)})" style="pointer-events:none"><rect x="-9" y="-9" width="18" height="18" rx="4" fill="#fbbf24" stroke="#0b1020" stroke-width="2"/><text y="-14" text-anchor="middle" class="rm-lbl">Start and finish</text></g>`; }
+      // direction arrows on every leg (office > stop 1 > ... > office)
+      const seqPts = (R.office ? [R.office] : []).concat(geo, R.office ? [R.office] : []).map(p => rmToScreen(p.lng, p.lat));
+      for (let k = 0; k + 1 < seqPts.length; k++) {
+        const a = seqPts[k], b = seqPts[k + 1], dx = b[0] - a[0], dy = b[1] - a[1];
+        if (Math.hypot(dx, dy) < 46) continue;
+        const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, ang = Math.atan2(dy, dx) * 180 / Math.PI;
+        g += `<g transform="translate(${mx.toFixed(1)},${my.toFixed(1)}) rotate(${ang.toFixed(1)})" style="pointer-events:none"><path d="M-7 -7 L8 0 L-7 7 Z" fill="#ffffff" stroke="#0b1020" stroke-width="1.5" stroke-linejoin="round"/></g>`;
+      }
+      if (R.office) { const [ox, oy] = rmToScreen(R.office.lng, R.office.lat); g += `<g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)})" style="pointer-events:none"><rect x="-9" y="-9" width="18" height="18" rx="4" fill="#fbbf24" stroke="#0b1020" stroke-width="2"/><text y="-14" text-anchor="middle" class="rm-lbl">Office: leave and return</text></g>`; }
       return g;
     }
 
