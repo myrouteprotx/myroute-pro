@@ -56,8 +56,9 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 #settingsPanel > .mt-4 > div.p-3:nth-of-type(6n+5){--acc:#6366f1}
 #settingsPanel > .mt-4 > div.p-3:nth-of-type(6n+6){--acc:#f43f5e}
 #settingsPanel > .mt-4 > div.p-3 .text-\[10px\].font-black{color:color-mix(in srgb,var(--acc) 55%,#ffffff)!important;font-size:12px;letter-spacing:.08em}
+#settingsPanel #mrpAdminCard .text-\[11px\]:not(#pushStatus){font-size:12px!important;font-weight:700!important;line-height:1.35}
 #settingsPanel > .mt-4 > div.p-3 .text-\[11px\]{color:#cbd5e1!important}
-#settingsPanel button:not([aria-label]):not([onclick="closeSettings()"]):not([onclick^="toggleIntro"]):not([onclick^="bulkAll"]):not(.hidden){min-width:200px;width:auto;max-width:100%;height:38px;display:inline-flex;align-items:center;justify-content:center;text-align:center;padding:0 16px!important;font-size:12px!important;font-weight:800!important;border-radius:12px!important;line-height:1;white-space:nowrap}
+#settingsPanel button:not([aria-label]):not([onclick="closeSettings()"]):not(#setSaveBtn):not([onclick^="toggleIntro"]):not([onclick^="bulkAll"]):not(.hidden){min-width:200px;width:auto;max-width:100%;height:38px;display:inline-flex;align-items:center;justify-content:center;text-align:center;padding:0 16px!important;font-size:12px!important;font-weight:800!important;border-radius:12px!important;line-height:1;white-space:nowrap}
 #settingsPanel > .mt-4 > div.p-3 button.bg-slate-800,#settingsPanel > .mt-4 > div.p-3 button.bg-slate-700{background:color-mix(in srgb,var(--acc) 70%,#0b1226)!important;border:1px solid color-mix(in srgb,var(--acc) 60%,#ffffff)!important;color:#fff!important}
 #settingsPanel > .mt-4 > div.p-3 button.bg-slate-800:hover,#settingsPanel > .mt-4 > div.p-3 button.bg-slate-700:hover{filter:brightness(1.2)}
 #settingsPanel .grid:has(> button){display:flex!important;flex-wrap:wrap;gap:8px}
@@ -79,7 +80,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 }
 #mrpCoreTile #logoBox{user-select:none;-webkit-user-select:none;height:92px;padding:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;border-color:rgba(0,230,199,.45)}
 #mrpCoreTile #logoBox:hover,#mrpCoreTile #logoBox:focus-visible,#mrpCoreTile #logoBox.drag{border-color:#00e6c7;box-shadow:0 0 0 2px rgba(0,230,199,.35);background:rgba(0,230,199,.08)}
-#mrpCoreTile #settingsLogoImg{max-height:100%!important;max-width:100%;width:auto;height:auto;object-fit:contain;background:#fff;border-radius:8px;padding:3px}
+#mrpCoreTile #settingsLogoImg{max-height:78px!important;max-width:100%;width:auto;height:auto;object-fit:contain;background:#fff;border-radius:8px;padding:3px}
 #mrpCoreTile #settingsLogoImg.hidden,#mrpCoreTile #settingsLogoEmpty.hidden{display:none}
 #mrpCoreTile #settingsLogoEmpty{padding:0 6px}
 #logoMenu{position:fixed;z-index:99999;background:#0b1226;border:1px solid #00e6c7;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.6)}
@@ -87,7 +88,6 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 #logoMenu button{display:block;min-width:150px;height:34px;padding:0 14px;font-size:12px;font-weight:800;color:#fda4af;background:transparent;border:0;border-radius:8px;text-align:left}
 #logoMenu button:hover,#logoMenu button:focus{background:rgba(244,63,94,.2);outline:none}
 #mrpCoreTile .core-logo > div.rounded-2xl:not(#logoBox){padding:5px 8px!important;min-height:36px;display:flex;align-items:center;justify-content:center}
-#mrpCoreTile #settingsLogoImg{max-height:30px!important}
 #mrpCoreTile #settingsLogoEmpty{font-size:10.5px;line-height:1.2;margin:0}
 #mrpCoreTile .core-logo .flex.flex-wrap{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important;margin-top:6px!important}
 #settingsPanel #mrpCoreTile .core-logo button{width:100%!important;height:28px!important;min-height:0!important;padding:0 6px!important;font-size:11px!important;white-space:nowrap}
@@ -1056,6 +1056,8 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     }
     /* Text and boxes 3% larger across the app */
     header, main { zoom: 1.03; }
+    /* Desktop default display about 90% of before (set to 1 to undo). Browser zoom is not touched. */
+    @media (min-width:1024px) and (pointer:fine) { html { zoom: .9; } }
 
     /* Date pickers match the dark theme so the calendar icon is visible */
     input[type="date"], input[type="week"] { color-scheme: dark; }
@@ -3196,6 +3198,17 @@ Add New Stop
   </div>
 
   <!-- MODAL: SETTINGS -->
+  <div id="setUnsaved" class="hidden" style="position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,.7)">
+    <div style="max-width:360px;width:calc(100% - 32px);background:#0b1226;border:1px solid #00e6c7;border-radius:18px;padding:18px;box-shadow:0 0 24px rgba(0,230,199,.3)">
+      <div style="font-weight:900;color:#fff;font-size:14px">You have unsaved changes</div>
+      <div style="color:#cbd5e1;font-size:12px;margin:6px 0 14px">Save them before closing, discard them, or keep editing.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" onclick="setUnsavedChoice('save')" style="flex:1;min-width:90px;height:36px;border-radius:10px;font-size:12px;font-weight:800;color:#fff;background:#059669;border:0">Save</button>
+        <button type="button" onclick="setUnsavedChoice('discard')" style="flex:1;min-width:90px;height:36px;border-radius:10px;font-size:12px;font-weight:800;color:#fff;background:#be123c;border:0">Discard</button>
+        <button type="button" onclick="setUnsavedChoice('keep')" style="flex:1;min-width:90px;height:36px;border-radius:10px;font-size:12px;font-weight:800;color:#fff;background:#334155;border:1px solid #64748b">Continue Editing</button>
+      </div>
+    </div>
+  </div>
   <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 hidden">
     <div id="settingsPanel" class="bg-slate-900 rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-700 overflow-y-auto max-h-[92vh]">
       <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
@@ -3208,7 +3221,7 @@ Add New Stop
             <p class="text-xs text-slate-400">Your details for reports and email</p>
           </div>
         </div>
-        <button type="button" onclick="closeSettings()" aria-label="Close settings" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition">
+        <button type="button" onclick="closeSettingsGuarded()" aria-label="Close settings" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -3270,7 +3283,7 @@ Add New Stop
           <div id="settingsSyncStatus" class="text-xs text-slate-200 font-semibold mt-1">This device only</div>
         </div>
 
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+        <div id="mrpAdminCard" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Administrator</div>
           <div class="text-xs text-slate-200 font-semibold mt-1">Your Name</div>
           <div class="text-[11px] text-slate-400 mt-0.5">Deleting a visit requires the administrator password.</div>
@@ -3378,8 +3391,10 @@ Add New Stop
         </div>
       </div>
 
-      <div class="flex justify-end pt-4 mt-4 border-t border-slate-800">
-        <button type="button" onclick="closeSettings()" class="px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl transition">Done</button>
+      <div class="flex justify-end items-center gap-3 pt-4 mt-4 border-t border-slate-800">
+        <span id="setSavedMsg" class="text-xs font-bold text-emerald-300 hidden" role="status">Settings saved successfully</span>
+        <button type="button" id="setSaveBtn" onclick="saveSettingsChanges()" class="px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl transition">Save Changes</button>
+        <button type="button" id="setDoneBtn" onclick="closeSettings()" class="hidden px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl transition">Done</button>
       </div>
     </div>
   </div>
@@ -11473,9 +11488,46 @@ Add New Stop
       setCompanyName: 'repCompanyName'
     };
 
-    function openSettings() {
-      try { fillHomeInput(); } catch (e) {}
+    /* TRIAL: set to false to go back to the old behaviour (changes save as you type, Done button, click outside closes) */
+    const SETTINGS_EXPLICIT_SAVE = true;
+    function settingsDirty() {
+      return Object.keys(SETTING_FIELDS).some(id => document.getElementById(id).value !== document.getElementById(SETTING_FIELDS[id]).value);
+    }
+    function settingsFlag() {
+      const d = SETTINGS_EXPLICIT_SAVE && settingsDirty();
+      const b = document.getElementById('setSaveBtn'); if (b) b.style.boxShadow = d ? '0 0 0 2px #facc15' : '';
+      const m = document.getElementById('setSavedMsg'); if (m && d) m.classList.add('hidden');
+    }
+    function saveSettingsChanges() {
       Object.keys(SETTING_FIELDS).forEach(id => {
+        const target = document.getElementById(SETTING_FIELDS[id]), v = document.getElementById(id).value;
+        if (target.value !== v) { target.value = v; target.dispatchEvent(new Event('input', { bubbles: true })); }
+      });
+      try { saveSettings(); } catch (e) {}
+      window.__setDraft = false; settingsFlag();
+      const m = document.getElementById('setSavedMsg'); if (m) { m.classList.remove('hidden'); clearTimeout(m.__t); m.__t = setTimeout(() => m.classList.add('hidden'), 4000); }
+    }
+    function discardSettingsChanges() {
+      Object.keys(SETTING_FIELDS).forEach(id => { document.getElementById(id).value = document.getElementById(SETTING_FIELDS[id]).value; });
+      window.__setDraft = false; settingsFlag();
+    }
+    function setUnsavedChoice(c) {
+      document.getElementById('setUnsaved').style.display = 'none';
+      if (c === 'save') { saveSettingsChanges(); closeSettings(true); }
+      else if (c === 'discard') { discardSettingsChanges(); closeSettings(true); }
+    }
+    function closeSettingsGuarded() {
+      if (SETTINGS_EXPLICIT_SAVE && settingsDirty()) { document.getElementById('setUnsaved').style.display = 'flex'; return; }
+      closeSettings(true);
+    }
+    function applySettingsMode() {
+      document.getElementById('setSaveBtn').classList.toggle('hidden', !SETTINGS_EXPLICIT_SAVE);
+      document.getElementById('setDoneBtn').classList.toggle('hidden', SETTINGS_EXPLICIT_SAVE);
+    }
+    function openSettings() {
+      applySettingsMode();
+      try { fillHomeInput(); } catch (e) {}
+      if (!(SETTINGS_EXPLICIT_SAVE && window.__setDraft && settingsDirty())) Object.keys(SETTING_FIELDS).forEach(id => {
         document.getElementById(id).value = document.getElementById(SETTING_FIELDS[id]).value;
       });
       const synced = document.getElementById('syncText').textContent === 'Synced';
@@ -11495,6 +11547,7 @@ Add New Stop
 
     Object.keys(SETTING_FIELDS).forEach(id => {
       document.getElementById(id).addEventListener('input', (e) => {
+        if (SETTINGS_EXPLICIT_SAVE) { window.__setDraft = true; settingsFlag(); return; }
         const target = document.getElementById(SETTING_FIELDS[id]);
         target.value = e.target.value;
         target.dispatchEvent(new Event('input', { bubbles: true }));
@@ -11503,7 +11556,7 @@ Add New Stop
 
     // Modal background close
     window.addEventListener('click', (e) => {
-      if (e.target === settingsModal) closeSettings();
+      if (e.target === settingsModal && !SETTINGS_EXPLICIT_SAVE) closeSettings();
       if (e.target === cardModal) closeCardModal();
       if (e.target === callLogModal) closeCallLog();
       if (e.target === document.getElementById('callDialModal')) closeCallDial();
