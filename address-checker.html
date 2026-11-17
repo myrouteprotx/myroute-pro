@@ -52,6 +52,14 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
     <button id="out" type="button" style="margin-left:6px">Sign out</button>
   </div>
 
+  <div id="manual" class="card" hidden>
+    <div style="font-weight:800;margin-bottom:6px">Quick search (one business or address)</div>
+    <div class="sm" style="margin-bottom:10px">Looks up a single name or address on Google. This may cost money and only runs when you tap Search. For a saved visit's file number, use the Address Verification tile on the main page.</div>
+    <input id="mq" type="search" autocomplete="off" placeholder="Business name or street address" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff">
+    <button class="pri" id="mgo" type="button" style="margin-top:8px">Search</button>
+    <div id="mres" class="sm" style="margin-top:10px"></div>
+  </div>
+
   <div id="status"></div>
   <div id="sum" class="sum"></div>
   <div id="dlbar" hidden style="margin-bottom:12px"><button class="dl" id="dl" type="button">Download checked file</button> <span class="sm">Green and yellow stops that are ticked go in the file. Red stops are left out.</span></div>
@@ -71,7 +79,7 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
   var V = window.MRPVerify, nameOk = V.nameOk, mail = V.mail;
   var invoke = function (name, body) { return sb.functions.invoke(name, { body: body }); };
 
-  function show(logged) { $('login').hidden = logged; $('tool').hidden = !logged; }
+  function show(logged) { $('login').hidden = logged; $('tool').hidden = !logged; $('manual').hidden = !logged; }
   sb.auth.getSession().then(function (r) { show(!!(r.data && r.data.session)); });
   $('inBtn').onclick = async function () {
     var m = $('loginMsg'); m.textContent = 'Signing in...';
@@ -80,6 +88,18 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
     m.textContent = ''; show(true);
   };
   $('out').onclick = async function () { await sb.auth.signOut(); show(false); };
+  $('mgo').onclick = async function () {
+    var q = ($('mq').value || '').trim(), box = $('mres');
+    if (!q) { box.textContent = 'Type a business name or street address first.'; return; }
+    box.textContent = 'Asking Google...';
+    try {
+      var list = await V.search(invoke, q);
+      box.innerHTML = list.length ? list.map(function (p) {
+        var fl = V.flags(p).map(function (f) { return '<b style="color:#fca5a5"> &#9888; ' + esc(f.t) + '</b>'; }).join('');
+        return '<div style="padding:8px 0;border-top:1px solid #334155"><b>' + esc(p.name) + '</b> &middot; ' + esc(V.openText(p)) + fl + '<br>' + esc(p.address) + ' &middot; ' + esc(V.pretty(p.type)) + '</div>';
+      }).join('') : 'Google found nothing for that.';
+    } catch (e) { box.textContent = (e && e.message) || 'The search failed.'; }
+  };
   $('pick').onclick = function () { $('file').click(); };
 
   function classify(rec, list) { return V.classify(rec, list); }
