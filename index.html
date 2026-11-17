@@ -77,7 +77,16 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   #mrpCoreTile .core-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
   #mrpCoreTile .core-col{min-height:130px;justify-content:space-between}
 }
-#mrpCoreTile .core-logo > div.rounded-2xl{padding:5px 8px!important;min-height:36px;display:flex;align-items:center;justify-content:center}
+#mrpCoreTile #logoBox{user-select:none;-webkit-user-select:none;height:92px;padding:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;border-color:rgba(0,230,199,.45)}
+#mrpCoreTile #logoBox:hover,#mrpCoreTile #logoBox:focus-visible,#mrpCoreTile #logoBox.drag{border-color:#00e6c7;box-shadow:0 0 0 2px rgba(0,230,199,.35);background:rgba(0,230,199,.08)}
+#mrpCoreTile #settingsLogoImg{max-height:100%!important;max-width:100%;width:auto;height:auto;object-fit:contain;background:#fff;border-radius:8px;padding:3px}
+#mrpCoreTile #settingsLogoImg.hidden,#mrpCoreTile #settingsLogoEmpty.hidden{display:none}
+#mrpCoreTile #settingsLogoEmpty{padding:0 6px}
+#logoMenu{position:fixed;z-index:99999;background:#0b1226;border:1px solid #00e6c7;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+#logoMenu.hidden{display:none}
+#logoMenu button{display:block;min-width:150px;height:34px;padding:0 14px;font-size:12px;font-weight:800;color:#fda4af;background:transparent;border:0;border-radius:8px;text-align:left}
+#logoMenu button:hover,#logoMenu button:focus{background:rgba(244,63,94,.2);outline:none}
+#mrpCoreTile .core-logo > div.rounded-2xl:not(#logoBox){padding:5px 8px!important;min-height:36px;display:flex;align-items:center;justify-content:center}
 #mrpCoreTile #settingsLogoImg{max-height:30px!important}
 #mrpCoreTile #settingsLogoEmpty{font-size:10.5px;line-height:1.2;margin:0}
 #mrpCoreTile .core-logo .flex.flex-wrap{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important;margin-top:6px!important}
@@ -3227,17 +3236,13 @@ Add New Stop
         </div></div>
             <div class="core-logo">
           <label class="block text-xs font-bold text-slate-300 mb-1">Company logo</label>
-          <div class="rounded-2xl border border-dashed border-slate-600 bg-slate-800/50 p-3 text-center">
-            <img id="settingsLogoImg" alt="Company logo" class="hidden mx-auto max-h-20 max-w-full rounded-lg bg-white p-1">
-            <p id="settingsLogoEmpty" class="text-xs text-slate-400">No logo yet. Choose an image, or copy one and paste it here.</p>
+          <div id="logoBox" tabindex="0" role="button" aria-label="Company logo. Press Enter to choose an image, Delete to remove it, or paste an image." class="rounded-2xl border border-dashed border-slate-600 bg-slate-800/50 text-center">
+            <img id="settingsLogoImg" alt="Company logo" class="hidden">
+            <p id="settingsLogoEmpty">Drop, paste, or double-click to add logo.</p>
           </div>
           <input type="file" id="logoFileInput" accept="image/*" class="hidden">
-          <div class="flex flex-wrap gap-2 mt-2">
-            <button type="button" onclick="document.getElementById('logoFileInput').click()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Choose Image</button>
-            <button type="button" onclick="pasteLogoFromClipboard()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Paste Image</button>
-            <button type="button" onclick="useBuiltInLogo()" class="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-xl transition">Use PuroClean Logo</button>
-            <button type="button" id="logoRemoveBtn" onclick="removeLogo()" class="hidden px-3 py-1.5 text-xs font-bold text-rose-300 border border-rose-500/40 hover:bg-rose-600/30 rounded-xl transition">Remove Logo</button>
-          </div>
+          <span id="logoRemoveBtn" class="hidden"></span>
+          <div id="logoMenu" class="hidden" role="menu"><button type="button" role="menuitem" id="logoMenuRemove">Remove Logo</button></div>
           <p id="logoStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
         </div>
           </div>
@@ -5316,6 +5321,52 @@ Add New Stop
       if (file) setLogoFromFile(file);
     });
 
+
+    // Logo box: drag-drop, double-click, right-click remove, keyboard and long-press
+    (function () {
+      const box = document.getElementById('logoBox'), menu = document.getElementById('logoMenu'), mb = document.getElementById('logoMenuRemove');
+      if (!box || !menu || !mb) return;
+      const picker = () => document.getElementById('logoFileInput').click();
+      let armed = false;
+      function hideMenu() { menu.classList.add('hidden'); armed = false; mb.textContent = 'Remove Logo'; }
+      function showMenu(x, y) {
+        if (!document.getElementById('repCompanyLogoId').value) { setLogoStatus('No logo to remove.'); return; }
+        armed = false; mb.textContent = 'Remove Logo';
+        menu.classList.remove('hidden');
+        menu.style.left = Math.max(4, Math.min(x, innerWidth - 180)) + 'px';
+        menu.style.top = Math.max(4, Math.min(y, innerHeight - 60)) + 'px';
+        mb.focus();
+      }
+      mb.addEventListener('click', () => {
+        if (!armed) { armed = true; mb.textContent = 'Tap again to confirm'; return; }
+        hideMenu(); removeLogo();
+      });
+      document.addEventListener('pointerdown', (e) => { if (!menu.contains(e.target)) hideMenu(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideMenu(); });
+      box.addEventListener('dblclick', picker);
+      let lastTouch = 0;
+      box.addEventListener('pointerup', (e) => { if (e.pointerType === 'touch' && !lpFired) { lastTouch = Date.now(); picker(); } });
+      box.addEventListener('contextmenu', (e) => { e.preventDefault(); showMenu(e.clientX, e.clientY); });
+      let lp = null, lpFired = false;
+      box.addEventListener('pointerdown', (e) => {
+        lpFired = false;
+        if (e.pointerType !== 'touch') return;
+        lp = setTimeout(() => { lpFired = true; showMenu(e.clientX, e.clientY); }, 600);
+      });
+      ['pointerup', 'pointercancel', 'pointermove'].forEach(t => box.addEventListener(t, () => clearTimeout(lp)));
+      box.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); picker(); }
+        else if (e.key === 'Delete' || e.key === 'Backspace' || e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+          e.preventDefault(); const r = box.getBoundingClientRect(); showMenu(r.left + 10, r.bottom - 10);
+        }
+      });
+      ['dragenter', 'dragover'].forEach(t => box.addEventListener(t, (e) => { e.preventDefault(); box.classList.add('drag'); }));
+      ['dragleave', 'drop'].forEach(t => box.addEventListener(t, (e) => { e.preventDefault(); box.classList.remove('drag'); }));
+      box.addEventListener('drop', (e) => {
+        const f = Array.from((e.dataTransfer && e.dataTransfer.files) || []).find(x => x.type && x.type.startsWith('image/'));
+        if (f) setLogoFromFile(f); else setLogoStatus('Please drop an image file.');
+      });
+    })();
     // Paste an image (Ctrl+V / Cmd+V) while Settings is open
     document.addEventListener('paste', (e) => {
       const modal = document.getElementById('settingsModal');
