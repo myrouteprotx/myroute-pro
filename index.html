@@ -5025,8 +5025,17 @@ Add New Stop
       if (!item) return;
       if ((item.notes || '') === value) { showToast('Note is already saved'); return; }
       item.notes = value;
+      // A note saved on a stop from today's list means that visit is done: it leaves Today's visits and goes back into the route tracker (still saved, listed by date).
+      let moved = false;
+      if (value && isOnRoute(item)) {
+        item.removedFromToday = todayString;
+        if (item.inRoute === true) delete item.inRoute;
+        if (item.routeDate === todayString) item.routeSkip = todayString;
+        moved = true;
+      }
       saveRecords();
-      showToast(value ? `Note saved for ${item.businessName}` : `Note removed for ${item.businessName}`);
+      try { if (moved) renderTable(); } catch (e) {}
+      showToast(moved ? `Note saved. ${item.businessName} moved back to the route tracker` : (value ? `Note saved for ${item.businessName}` : `Note removed for ${item.businessName}`));
     }
 
     // "Prefers" is a pick-list right on the home screen
