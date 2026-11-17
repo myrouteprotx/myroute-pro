@@ -4945,7 +4945,9 @@ Add New Stop
           await wait();
         }
         const pts = [hp.lat != null ? [hp.lat, hp.lng] : [29.544, -95.023]];
-        for (let i = 0; i < stops.length; i++) {
+        // A route that already has a saved order (planned before, or arranged on the map) is opened in Google Maps in exactly that order.
+        const savedOrder = stops.every(v => v.routeSeq != null && isFinite(+v.routeSeq));
+        for (let i = 0; i < stops.length && !savedOrder; i++) {
           const v = stops[i];
           if (!rmHasGeo(v) || v.geoApprox) {
             status('Locating stop ' + (i + 1) + ' of ' + stops.length + '...');
@@ -4957,10 +4959,19 @@ Add New Stop
         }
         const usable = []; const lost = [];
         pts.forEach((p, i) => { if (i === 0) usable.push({ i, p }); else if (p) usable.push({ i, p }); else lost.push(stops[i - 1]); });
-        status('Finding the shortest driving order...');
-        const P = usable.map(u => u.p); let order, method = 'online road routing';
-        try { order = await rpOsrmOrder(P); } catch (e) { order = rpLocalOrder(P); method = 'straight-line distance (road routing was not reachable)'; }
-        const ordered = order.filter(k => k !== 0).map(k => stops[usable[k].i - 1]);
+        let ordered, method;
+        if (savedOrder) {
+          ordered = stops.slice().sort((x, y) => (+x.routeSeq - +y.routeSeq) || routeName(x).localeCompare(routeName(y)));
+          method = 'your saved order, the same order shown in Today\'s visits';
+        } else {
+          status('Finding the shortest driving order...');
+          const P = usable.map(u => u.p); let order; method = 'online road routing';
+          try { order = await rpOsrmOrder(P); } catch (e) { order = rpLocalOrder(P); method = 'straight-line distance (road routing was not reachable)'; }
+          ordered = order.filter(k => k !== 0).map(k => stops[usable[k].i - 1]);
+          // Save this order so Today's route, Today's visits, Copy list and every day's list match Google Maps
+          const chg = []; ordered.forEach((v, k) => { if (v.routeSeq !== k + 1) { v.routeSeq = k + 1; chg.push(v); } });
+          if (chg.length) { try { routePersist(chg); } catch (e) {} try { renderTable(); } catch (e) {} }
+        }
         const parts = rpLinks(home, ordered);
         const skipAll = skipped.concat(lost);
         const rows = ordered.map((v, i) => '<li class="py-1.5 border-b border-slate-700 text-xs"><span class="font-black text-purple-300">' + (i + 1) + '.</span> <span class="font-bold">' + escapeHtml(routeName(v)) + '</span><br><span class="text-slate-400">' + escapeHtml(v.streetAddress || '') + '</span></li>').join('');
@@ -12518,7 +12529,7 @@ document.getElementById('importBackupInput').addEventListener('change', async fu
 /* Today's route: a button with the stop list, plus a banner when the app opens (phone and desktop) */
 (function () {
   function stops() {
-    try { return routeAll().filter(isOnRoute); } catch (e) { return []; }
+    try { return routeAll().filter(isOnRoute).sort(function (a, b) { return ((a.routeSeq == null ? 1e9 : +a.routeSeq) - (b.routeSeq == null ? 1e9 : +b.routeSeq)) || routeName(a).localeCompare(routeName(b)); }); } catch (e) { return []; }
   }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function dismissKey() { try { return 'mrp_rb_' + todayString; } catch (e) { return 'mrp_rb'; } }
