@@ -3331,10 +3331,9 @@ Add New Stop
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Files and email wording</div>
-          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Photos and PDFs you attach to emails, and the wording of your follow-up emails.</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Uploaded files and email templates live under My Files. Bulk email sends to many people at once.</div>
           <div class="grid grid-cols-3 gap-2">
             <button type="button" onclick="closeSettings(); fuVisitId = null; openLibrary('manage')" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">My Files</button>
-            <button type="button" onclick="closeSettings(); fuVisitId = null; openTemplateFolder()" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">Email Templates</button>
             <button type="button" id="bulkEmailSettingsBtn" onclick="closeSettings(); bmOpen()" class="px-3 py-2.5 text-xs font-black text-white bg-gradient-to-r from-emerald-500 to-teal-500 border border-white/50 rounded-xl">Bulk email</button>
           </div>
         </div>
@@ -9018,6 +9017,28 @@ Add New Stop
       }
       if (!bad) say(ok + ' file' + (ok === 1 ? '' : 's') + ' saved.');
     }
+    /* My Files: two tabs (Uploaded Files / Email Templates) with a live search at the top of each */
+    function mrpFilesBar(active) {
+      const tab = (k, label, fn) => `<button type="button" onclick="${fn}" style="flex:1;padding:10px 8px;border-radius:10px 10px 0 0;font-weight:900;font-size:13px;color:#fff;border:1px solid ${active === k ? '#519bfb' : '#475569'};border-bottom:${active === k ? '3px solid #00e6c7' : '1px solid #475569'};background:${active === k ? '#0f172a' : '#1d2a3c'}">${label}</button>`;
+      return `<div style="display:flex;gap:4px;margin-top:12px">${tab('files', 'Uploaded Files', "tplFolder = false; openLibrary('manage')")}${tab('tpl', 'Email Templates', 'openTemplateFolder()')}</div>`
+        + `<div style="position:relative;margin-top:10px"><input id="mrpFSearch" type="search" autocomplete="off" placeholder="${active === 'files' ? 'Search files by name' : 'Search templates by title or keyword'}" oninput="mrpFilesSearch(this.value, '${active}')" style="width:100%;padding:10px 12px;border-radius:10px;background:#0f172a;border:1px solid #475569;color:#fff;font-size:14px"><div id="mrpFSugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:5;background:#0b1226;border:1px solid #00e6c7;border-radius:10px;margin-top:4px;max-height:220px;overflow-y:auto"></div></div>`;
+    }
+    function mrpFilesSearch(q, kind) {
+      q = (q || '').trim().toLowerCase();
+      const box = document.getElementById('mrpFSugg');
+      document.querySelectorAll(kind === 'files' ? '.mrp-fr' : '.mrp-tr').forEach(el => { el.style.display = (!q || el.dataset.n.includes(q)) ? '' : 'none'; });
+      if (!box) return;
+      if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; }
+      const hits = kind === 'files'
+        ? fileLib.filter(f => (f.name || '').toLowerCase().includes(q)).slice(0, 6).map(f => ({ id: f.id, label: f.name, sub: fmtSize(f.size) }))
+        : emailTemplates.filter(t => ((t.name || '') + ' ' + (t.subject || '') + ' ' + (t.when || '') + ' ' + (t.body || '')).toLowerCase().includes(q)).slice(0, 6).map(t => ({ id: t.id, label: t.name, sub: t.subject || '' }));
+      box.innerHTML = hits.length ? hits.map(h => `<button type="button" onclick="mrpFilesPick('${kind}', '${escapeHtml(h.id)}')" style="display:block;width:100%;text-align:left;padding:8px 12px;color:#fff;border-bottom:1px solid #1e293b"><div style="font-weight:800;font-size:13px">${escapeHtml(h.label || '')}</div><div style="color:#93a3b9;font-size:11px">${escapeHtml(h.sub || '')}</div></button>`).join('') : '<div style="padding:8px 12px;color:#93a3b9;font-size:12px">No matches</div>';
+      box.style.display = 'block';
+    }
+    function mrpFilesPick(kind, id) {
+      if (kind === 'files') { const w = window.open('/_blob/' + id, '_blank', 'noopener'); if (!w) location.href = '/_blob/' + id; const b = document.getElementById('mrpFSugg'); if (b) b.style.display = 'none'; }
+      else openTemplateEditor(id);
+    }
     let libMode = 'manage', libReturn = null;
     function openLibrary(mode, ret) {
       libMode = mode || 'manage'; libReturn = ret || null;
@@ -9025,9 +9046,9 @@ Add New Stop
       const rows = fileLib.length ? fileLib.map(f => {
         const isImg = /^image\//.test(f.type || '');
         const thumb = isImg ? `<img src="/_blob/${escapeHtml(f.id)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex:none">` : `<div style="width:56px;height:56px;border-radius:8px;background:#324256;color:#febda9;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex:none">${/pdf/i.test(f.type || f.name) ? 'PDF' : 'FILE'}</div>`;
-        return `<div style="display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #475569;border-radius:12px;margin-top:8px;background:#0f172a">${pick ? `<input type="checkbox" ${fuAttach.includes(f.id) ? 'checked' : ''} onchange="toggleAttach('${escapeHtml(f.id)}', this.checked)" style="width:22px;height:22px;flex:none">` : ''}${thumb}<div style="min-width:0;flex:1"><input value="${escapeHtml(f.name)}" onchange="renameLib('${escapeHtml(f.id)}', this.value)" style="width:100%;background:transparent;border:0;color:#fff;font-weight:800;font-size:14px"><div style="color:#93a3b9;font-size:11px">${escapeHtml(fmtSize(f.size))} &middot; <a href="/_blob/${escapeHtml(f.id)}" target="_blank" rel="noopener" style="color:#febda9;text-decoration:underline">Open</a></div></div>${pick ? '' : `<button type="button" onclick="deleteLib('${escapeHtml(f.id)}')" style="flex:none;padding:6px 10px;border-radius:8px;background:#81331b;color:#fff;font-size:12px;font-weight:800">Delete</button>`}</div>`;
+        return `<div class="mrp-fr" data-n="${escapeHtml((f.name || '').toLowerCase())}" style="display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #475569;border-radius:12px;margin-top:8px;background:#0f172a">${pick ? `<input type="checkbox" ${fuAttach.includes(f.id) ? 'checked' : ''} onchange="toggleAttach('${escapeHtml(f.id)}', this.checked)" style="width:22px;height:22px;flex:none">` : ''}${thumb}<div style="min-width:0;flex:1"><input value="${escapeHtml(f.name)}" onchange="renameLib('${escapeHtml(f.id)}', this.value)" style="width:100%;background:transparent;border:0;color:#fff;font-weight:800;font-size:14px"><div style="color:#93a3b9;font-size:11px">${escapeHtml(fmtSize(f.size))} &middot; <a href="/_blob/${escapeHtml(f.id)}" target="_blank" rel="noopener" style="color:#febda9;text-decoration:underline">Open</a></div></div>${pick ? '' : `<button type="button" onclick="deleteLib('${escapeHtml(f.id)}')" style="flex:none;padding:6px 10px;border-radius:8px;background:#81331b;color:#fff;font-size:12px;font-weight:800">Delete</button>`}</div>`;
       }).join('') : `<div style="color:#93a3b9;font-size:13px;margin-top:12px">No files yet. Add photos or PDFs, like flyers and brochures.</div>`;
-      fuShell(`<div style="color:#fff;font-weight:900;font-size:17px">My files</div><div style="color:#93a3b9;font-size:12px">${pick ? 'Check the files to attach to this email.' : 'Photos and PDFs saved in the app. Attach them to any follow-up email.'}</div>`
+      fuShell(`<div style="color:#fff;font-weight:900;font-size:17px">My files</div><div style="color:#93a3b9;font-size:12px">${pick ? 'Check the files to attach to this email.' : 'Photos and PDFs saved in the app. Attach them to any follow-up email.'}</div>${pick ? '' : mrpFilesBar('files')}`
         + `<div id="libPasteZone" contenteditable="true" inputmode="none" data-ph="Tap here, then Paste (or press Ctrl+V) to add a copied file or picture" style="margin-top:12px;padding:12px;border-radius:10px;background:#0f172a;border:2px dashed #64748b;color:#e2e8f0;font-size:14px;font-weight:600;min-height:44px" onpaste="libPaste(event)" oninput="this.innerHTML=''"></div><button type="button" onclick="libPasteBtn()" style="margin-top:8px;padding:11px 14px;border-radius:8px;background:#0f172a;border:1px solid #475569;color:#fff;font-weight:600;font-size:14px">Paste from clipboard</button>`
         + `<label style="display:block;margin-top:12px;padding:12px;border-radius:12px;background:#b33c18;color:#fff;font-weight:900;text-align:center;cursor:pointer">+ Add photos or PDFs<input type="file" multiple accept="image/*,application/pdf,text/plain,text/csv" style="display:none" onchange="addLibFiles(this.files,'libStatus').then(() => openLibrary(libMode, libReturn))"></label>`
         + `<div id="libStatus" style="color:#cad4e2;font-size:12px;margin-top:6px;min-height:1rem"></div>${rows}`
@@ -9428,8 +9449,8 @@ Add New Stop
     function openTemplateFolder() {
       tplFolder = true;
       const FB = 'padding:12px 14px;border-radius:8px;background:#0f172a;border:1px solid #475569;color:#fff;font-weight:600;font-size:14px';
-      const rows = emailTemplates.map(t => `<button type="button" onclick="openTemplateEditor('${escapeHtml(t.id)}')" style="display:block;width:100%;text-align:left;margin-top:8px;padding:12px;border-radius:10px;background:#0f172a;border:1px solid #475569;color:#fff"><div style="font-weight:800;font-size:15px">${escapeHtml(t.name)}</div><div style="color:#cad4e2;font-size:13px;margin-top:2px">${escapeHtml(t.subject || '(no subject)')}</div>${t.when ? `<div style="color:#93a3b9;font-size:12px;margin-top:2px">Used for: ${escapeHtml(t.when)}</div>` : ''}</button>`).join('');
-      fuShell(`<button type="button" onclick="tplFolder = false; closeFollowUp()" aria-label="Close" style="float:right;color:#fff;font-size:22px;font-weight:700;line-height:1;padding:2px 8px">&times;</button><div style="color:#fff;font-weight:900;font-size:17px">Email Templates</div><div style="color:#93a3b9;font-size:12px">Tap a template to edit its wording. Names and dates fill in on their own when you send.</div>${rows}`
+      const rows = emailTemplates.map(t => `<button type="button" class="mrp-tr" data-n="${escapeHtml(((t.name || '') + ' ' + (t.subject || '') + ' ' + (t.when || '') + ' ' + (t.body || '')).toLowerCase())}" onclick="openTemplateEditor('${escapeHtml(t.id)}')" style="display:block;width:100%;text-align:left;margin-top:8px;padding:12px;border-radius:10px;background:#0f172a;border:1px solid #475569;color:#fff"><div style="font-weight:800;font-size:15px">${escapeHtml(t.name)}</div><div style="color:#cad4e2;font-size:13px;margin-top:2px">${escapeHtml(t.subject || '(no subject)')}</div>${t.when ? `<div style="color:#93a3b9;font-size:12px;margin-top:2px">Used for: ${escapeHtml(t.when)}</div>` : ''}</button>`).join('');
+      fuShell(`<button type="button" onclick="tplFolder = false; closeFollowUp()" aria-label="Close" style="float:right;color:#fff;font-size:22px;font-weight:700;line-height:1;padding:2px 8px">&times;</button><div style="color:#fff;font-weight:900;font-size:17px">Email Templates</div><div style="color:#93a3b9;font-size:12px">Tap a template to edit its wording. Names and dates fill in on their own when you send.</div>${mrpFilesBar('tpl')}${rows}`
         + `<div style="display:flex;gap:8px;margin-top:14px"><button type="button" onclick="newTemplate()" style="flex:1;${FB}">+ New template</button></div>`);
     }
     function openTemplateEditor(selId) {
