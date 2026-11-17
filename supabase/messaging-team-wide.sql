@@ -1,11 +1,13 @@
 -- MyRoute Pro: only owners, administrators and managers may start a team-wide group.
--- Run ONCE in Supabase > SQL Editor, AFTER messaging-and-file-numbers.sql. It only replaces one function; no data is touched.
+-- RUN FOURTH (after messaging-and-file-numbers.sql). It only REPLACES one function (CREATE OR REPLACE); no data is touched.
 create or replace function public.mrp_msg_start(p_users uuid[], p_mode text, p_title text, p_body text, p_visit bigint default null)
 returns uuid[]
 language plpgsql security definer set search_path = public, auth as $$
 declare me uuid := auth.uid(); o uuid := public.mrp_my_owner(); u uuid; cid uuid; ids uuid[] := '{}'; r text; team int;
 begin
-  if me is null then raise exception 'not signed in'; end if;
+  if me is null or not public.mrp_in_team() then raise exception 'not allowed'; end if;
+  if array_length(p_users,1) > 100 then raise exception 'too many people'; end if;
+  if p_body is not null and length(p_body) > 4000 then raise exception 'message too long'; end if;
   if p_users is null or array_length(p_users,1) is null then raise exception 'choose at least one person'; end if;
   if exists (select 1 from unnest(p_users) x where x = me or x not in (select pp.uid from public.mrp_msg_people() pp)) then
     raise exception 'you can only message people on your team';

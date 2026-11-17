@@ -1,8 +1,19 @@
 -- MyRoute Pro: team setup (the "members" table and the functions Team Management uses)
--- Run FIRST, once, in Supabase > SQL Editor. Then run messaging-and-file-numbers.sql, team-directory.sql and messaging-team-wide.sql.
--- Safe to re-run. It only ADDS a table, functions and extra access rules. Your own data and your own access are not changed.
--- Until someone is added to your team, nothing behaves differently for you.
+-- RUN FIRST. Safe to re-run. Adds tables, functions and extra access rules only. Deletes and changes NO existing data.
+-- Security model:
+--   * "Owners" are the accounts listed in mrp_team_owners. At the end of this file your existing data owner is registered automatically.
+--   * Only a registered owner, or an administrator on that owner's team, can manage a team. Nobody else can, even though they are signed in.
+--   * Every team function works only on the caller's OWN team. Nobody can touch another team's people or data.
 
+-- ---------- registered owners ----------
+create table if not exists public.mrp_team_owners (
+  owner      uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.mrp_team_owners enable row level security;
+revoke all on public.mrp_team_owners from anon, authenticated;    -- no policies: only the database owner and our functions can use it
+
+-- ---------- team membership ----------
 create table if not exists public.members (
   member     uuid primary key references auth.users(id) on delete cascade,   -- one team per person
   owner      uuid not null references auth.users(id) on delete cascade,      -- whose data they work on
@@ -12,25 +23,34 @@ create table if not exists public.members (
 alter table public.members enable row level security;
 revoke all on public.members from anon, authenticated;
 grant select on public.members to authenticated;
-drop policy if exists mrp_members_self on public.members;
+drop policy if exists mrp_members_self on public.members;   -- replaces only this file's own policy of the same name
 create policy mrp_members_self on public.members for select to authenticated using (member = auth.uid());
 
--- Whose data the signed-in person works on (themself if they are not on someone's team)
+-- ---------- helper functions (all pin their search path; none accept a user id from the caller) ----------
+-- Whose data the signed-in person works on: their team owner, or themself.
 create or replace function public.mrp_my_owner() returns uuid
 language sql stable security definer set search_path = public, auth as $$
   select coalesce((select m.owner from public.members m where m.member = auth.uid() limit 1), auth.uid());
 $$;
--- True for the owner and for administrators (the people who may manage the team)
+-- True only for a registered owner, or an administrator on a registered owner's team. NOT true for everyone else.
 create or replace function public.mrp_is_team_admin() returns boolean
 language sql stable security definer set search_path = public, auth as $$
   select auth.uid() is not null and (
-    not exists (select 1 from public.members m where m.member = auth.uid())
-    or exists (select 1 from public.members m where m.member = auth.uid() and m.role = 'admin'));
+    exists (select 1 from public.mrp_team_owners o where o.owner = auth.uid())
+    or exists (select 1 from public.members m join public.mrp_team_owners o on o.owner = m.owner
+               where m.member = auth.uid() and m.role = 'admin'));
+$$;
+-- True when the caller belongs to a registered team (as owner or member). Messaging and file numbers require this.
+create or replace function public.mrp_in_team() returns boolean
+language sql stable security definer set search_path = public, auth as $$
+  select auth.uid() is not null and exists (select 1 from public.mrp_team_owners o where o.owner = public.mrp_my_owner());
 $$;
 revoke all on function public.mrp_my_owner() from public, anon;
 revoke all on function public.mrp_is_team_admin() from public, anon;
+revoke all on function public.mrp_in_team() from public, anon;
 grant execute on function public.mrp_my_owner() to authenticated;
 grant execute on function public.mrp_is_team_admin() to authenticated;
+grant execute on function public.mrp_in_team() to authenticated;
 
 -- ---------- team functions used by Settings > Team Management ----------
 create or replace function public.mrp_list_members()
@@ -52,9 +72,10 @@ begin
   select id into t from auth.users where lower(email) = lower(trim(p_email)) limit 1;
   if t is null then return 'no_account'; end if;
   if t = auth.uid() or t = o then return 'self'; end if;
+  if exists (select 1 from public.mrp_team_owners where owner = t) then return 'owner_account'; end if;   -- never pull another owner into a team
   if exists (select 1 from public.members where member = t and owner <> o) then return 'other_team'; end if;
   insert into public.members(member, owner, role) values (t, o, p_role)
-    on conflict (member) do update set role = excluded.role;
+    on conflict (member) do update set role = excluded.role where public.members.owner = o;
   return 'ok';
 end $$;
 
@@ -64,6 +85,7 @@ language plpgsql security definer set search_path = public, auth as $$
 begin
   if not public.mrp_is_team_admin() then raise exception 'not allowed'; end if;
   if p_role not in ('admin','manager','user','viewer') then raise exception 'bad role'; end if;
+  if p_member = auth.uid() then raise exception 'you cannot change your own role'; end if;
   update public.members set role = p_role where member = p_member and owner = public.mrp_my_owner();
 end $$;
 
@@ -72,6 +94,7 @@ returns void
 language plpgsql security definer set search_path = public, auth as $$
 begin
   if not public.mrp_is_team_admin() then raise exception 'not allowed'; end if;
+  if p_member = auth.uid() then raise exception 'you cannot remove yourself'; end if;
   delete from public.members where member = p_member and owner = public.mrp_my_owner();
 end $$;
 
@@ -84,9 +107,10 @@ grant execute on function public.mrp_add_member(text,text) to authenticated;
 grant execute on function public.mrp_set_member_role(uuid,text) to authenticated;
 grant execute on function public.mrp_remove_member(uuid) to authenticated;
 
--- ---------- let team members work on the owner's data, by role ----------
--- These are EXTRA rules added beside your existing ones, so the owner keeps exactly the access they have now.
+-- ---------- let team members work on their owner's data, by role ----------
+-- EXTRA rules added beside your existing ones: the owner keeps exactly the access they have now.
 -- Everyone on the team can read; administrators, managers and users can add and change; only administrators can delete.
+-- The DROP POLICY lines below only remove policies with THESE names (created by this file on an earlier run). They never touch your own policies or any data.
 do $$ begin
   if to_regclass('public.docs') is not null then
     execute 'drop policy if exists mrp_team_docs_read on public.docs';
@@ -107,3 +131,16 @@ do $$ begin
     execute 'create policy mrp_team_blobs_update on public.blobs for update to authenticated using (owner in (select m.owner from public.members m where m.member = auth.uid() and m.role in (''admin'',''manager'',''user''))) with check (owner in (select m.owner from public.members m where m.member = auth.uid() and m.role in (''admin'',''manager'',''user'')))';
   end if;
 end $$;
+
+-- ---------- register YOUR account as the owner ----------
+-- The account that already owns the most saved data (your visits) is registered as the owner. Nothing is changed in that data.
+do $$ begin
+  if to_regclass('public.docs') is not null then
+    insert into public.mrp_team_owners(owner)
+      select t.owner from (select d.owner, count(*) as c from public.docs d group by d.owner order by c desc limit 1) t
+      on conflict (owner) do nothing;
+  end if;
+end $$;
+
+-- CHECK THIS RESULT: the email shown must be YOUR MyRoute Pro login. If it is empty or wrong, tell me before running anything else.
+select u.email as registered_owner_email from public.mrp_team_owners o join auth.users u on u.id = o.owner;
