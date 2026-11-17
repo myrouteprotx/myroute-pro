@@ -1105,6 +1105,17 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     #vtiles .vt-src { font-size: 12px; font-weight: 700; color: #99f6e4; background: rgba(4,47,46,.6); border: 1px solid rgba(45,212,191,.5); border-radius: 10px; padding: 6px 9px; display: none; }
     #vtiles .vt-ask { border: 1px solid #f59e0b; background: rgba(120,53,15,.35); border-radius: 12px; padding: 9px 11px; font-size: 12px; color: #fde68a; margin-top: 8px; }
     .vt-link { color: #5eead4; font-size: 11px; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; background: none; border: 0; padding: 2px 0; cursor: pointer; display: inline-block; margin-top: 2px; }
+
+    /* Team Messaging button beside Add New Stop. On phones it shrinks to an icon so both fit on one row. */
+    @media screen and (max-width: 767px) {
+      #hdrActions { display: flex !important; gap: 8px; }
+      #hdrActions > button:not(#mrpMsgHdrBtn) { flex: 1 1 auto; width: auto; }
+      #hdrActions > #mrpMsgHdrBtn { width: 54px; flex: none; justify-content: center; padding-left: 0; padding-right: 0; }
+      #hdrActions > #mrpMsgHdrBtn .mm-lbl { display: none; }
+      #hdrActions > #syncBadge { right: 76px !important; }
+    }
+    @media screen and (max-width: 560px) { #mrpMsg > div { max-width: none !important; width: 100% !important; height: 100% !important; border-radius: 0 !important; } #mrpMsg { padding: 0 !important; } .mm-left { width: 100% !important; max-width: none !important; border-right: 0 !important; } .mm-has .mm-left { display: none !important; } .mm-body:not(.mm-has) .mm-right { display: none !important; } }
+    @media screen and (min-width: 561px) { .mm-back { display: none !important; } }
     /* Text and boxes 3% larger across the app */
     header, main { zoom: 1.03; }
     /* Desktop default display about 90% of before (set to 1 to undo). Browser zoom is not touched. */
@@ -1670,6 +1681,11 @@ html.mrp-role-user button[onclick^="editVisit"], html.mrp-role-user .act-wrap > 
             <i data-lucide="plus-circle" class="w-4 h-4 stroke-[2.5]"></i>
             <span class="hidden sm:inline">Add New Stop</span>
             <span class="sm:hidden">Add New Stop</span>
+          </button>
+          <button type="button" id="mrpMsgHdrBtn" onclick="mrpMsgOpen()" style="display:none;position:relative" aria-label="Team Messaging" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-violet-600 via-indigo-500 to-sky-500 hover:from-violet-500 hover:to-sky-400 transition-all shadow-lg shadow-indigo-500/20 active:scale-95">
+            <i data-lucide="message-square" class="w-4 h-4 stroke-[2.5]"></i>
+            <span class="mm-lbl">Team Messaging</span>
+            <span id="mrpMsgHdrBadge" style="display:none;position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#f43f5e;color:#fff;font-size:11px;font-weight:900;line-height:20px;text-align:center;border:2px solid #0b1226"></span>
           </button>
         </div>
 
@@ -3495,7 +3511,7 @@ Add New Stop
 
   <!-- Notification Toast -->
   <div class="no-print mobile-settings-link" style="text-align:center;padding:18px 0 28px"><button type="button" onclick="openSettings()" style="color:#93a3b9;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0">Settings</button></div>
-  <div class="no-print" style="text-align:center;padding:0 0 22px"><button type="button" id="mrpMsgFooterBtn" onclick="mrpMsgOpen()" style="display:none;color:#93a3b9;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0;margin-right:14px">Messages <span id="mrpMsgBadge" style="display:none;background:#f43f5e;color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:1px 7px;text-decoration:none"></span></button><button type="button" onclick="window.__mrpSignOut && window.__mrpSignOut()" style="color:#93a3b9;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0">Sign out</button></div>
+  <div class="no-print" style="text-align:center;padding:0 0 22px"><button type="button" onclick="window.__mrpSignOut && window.__mrpSignOut()" style="color:#93a3b9;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0">Sign out</button></div>
   <div id="undoDock" class="no-print fixed bottom-5 left-5 z-50 max-w-[90vw]" style="display: inline-grid; grid-template-columns: 2fr 1fr; gap: 8px; align-items: stretch;">
     <button type="button" id="undoBtn" onclick="goBack()" class="dock-btn inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-xs font-black text-white bg-gradient-to-r from-amber-500 to-orange-600 active:scale-95 transition">
       <i data-lucide="undo-2" class="w-4 h-4 shrink-0"></i>
@@ -13285,9 +13301,33 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
   function unread(c) { var cm = cmembers.find(function (m) { return m.conv_id === c.id && m.user_id === me; }); var lr = cm ? cm.last_read_at : 0; return msgs.filter(function (x) { return x.conv_id === c.id && x.sender !== me && x.created_at > lr; }).length; }
   function totalUnread() { return convs.reduce(function (n, c) { return n + unread(c); }, 0); }
   function badge() {
-    var n = totalUnread(), b = document.getElementById('mrpMsgBadge'), btn = document.getElementById('mrpMsgFooterBtn');
-    if (btn) btn.style.display = window.__mrpRole ? '' : 'none';
-    if (b) { b.textContent = n > 99 ? '99+' : String(n); b.style.display = n ? 'inline-block' : 'none'; }
+    var n = totalUnread(), b = document.getElementById('mrpMsgHdrBadge'), btn = document.getElementById('mrpMsgHdrBtn');
+    if (btn) { btn.style.display = window.__mrpRole ? 'inline-flex' : 'none'; btn.setAttribute('aria-label', 'Team Messaging' + (n ? ', ' + n + ' unread' : '')); }
+    if (b) { b.textContent = n > 99 ? '99+' : String(n); b.style.display = n ? 'block' : 'none'; }
+    try { document.title = document.title.replace(/^\(\d+\)\s*/, ''); if (n) document.title = '(' + n + ') ' + document.title; } catch (e) {}
+  }
+  var seen = null, convQ = '', openedMark = {};
+  function toast(c, m) {
+    var t = document.getElementById('mrpMsgToast'); if (t) t.remove();
+    t = document.createElement('button'); t.id = 'mrpMsgToast'; t.type = 'button';
+    t.style.cssText = 'position:fixed;top:12px;right:12px;z-index:210;max-width:320px;text-align:left;padding:10px 14px;border-radius:14px;background:#12304a;border:1px solid #00e6c7;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:13px';
+    t.innerHTML = '<b>' + esc(nm(m.sender)) + '</b> &middot; ' + esc(convTitle(c)) + '<div style="color:#cbd5e1;font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(m.body) + '</div>';
+    t.onclick = function () { t.remove(); mrpMsgOpen(c.id); };
+    document.body.appendChild(t); setTimeout(function () { if (t.parentNode) t.remove(); }, 7000);
+  }
+  /* Each new message from someone else notifies once (tracked by id). System notifications only if you already allowed them. */
+  function notifyNew(list) {
+    var ids = {}; list.forEach(function (x) { ids[x.id] = 1; });
+    if (seen === null) { seen = ids; return; }
+    var fresh = list.filter(function (x) { return !seen[x.id] && x.sender !== me; });
+    seen = Object.assign(seen, ids);
+    fresh.forEach(function (m) {
+      var c = convs.find(function (k) { return k.id === m.conv_id; }); if (!c) return;
+      var viewing = openId === m.conv_id && document.getElementById('mrpMsgThread') && document.visibilityState === 'visible';
+      if (viewing) return;
+      if (document.visibilityState === 'visible') toast(c, m);
+      try { if (window.Notification && Notification.permission === 'granted' && document.visibilityState !== 'visible') { var n = new Notification(nm(m.sender) + ' · ' + convTitle(c), { body: m.body, tag: 'mrp-msg-' + m.id }); n.onclick = function () { window.focus(); mrpMsgOpen(c.id); n.close(); }; } } catch (e) {}
+    });
   }
   async function load() {
     if (!window.__mrpRpc || !window.__mrpTable || !window.__mrpUid) return;
@@ -13297,6 +13337,7 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
       var cm = await db('mrp_conv_members').select('conv_id,user_id,last_read_at,history_from'); if (cm.error) throw cm.error; cmembers = cm.data || [];
       var cv = await db('mrp_conversations').select('id,kind,title,created_at'); if (cv.error) throw cv.error; convs = cv.data || [];
       var ms = await db('mrp_messages').select('id,conv_id,sender,body,visit_no,created_at').order('created_at', { ascending: true }).limit(1500); if (ms.error) throw ms.error; msgs = ms.data || [];
+      notifyNew(ms.data || []);
       loaded = true;
     } catch (e) {
       var t = String((e && e.message) || e || '');
@@ -13317,41 +13358,62 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
   function head(title, extra) { return '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #1e293b"><div style="font-weight:900;font-size:15px;color:#fff;flex:1">' + title + '</div>' + (extra || '') + '<button type="button" aria-label="Close messages" onclick="mrpMsgClose()" style="' + BTN + '">Close</button></div>'; }
   window.mrpMsgClose = function () { var ov = document.getElementById('mrpMsg'); if (ov) ov.remove(); };
   window.mrpMsgOpen = async function (cid) {
-    shell(head('Messages') + '<div style="padding:16px">Loading...</div>');
+    if (!cid && window.innerWidth <= 560) openId = null;
+    shell(head('Messages') + '<div style="padding:16px">Loading messages...</div>');
     await load();
     if (err) { shell(head('Messages') + '<div style="padding:16px;color:#fcd34d">' + esc(err) + '</div>'); return; }
-    openId = cid || openId; render();
+    if (cid) { await mrpMsgPick(cid); } else render();
   };
+  function convMatches(c, q) {
+    if (!q) return true; q = q.toLowerCase();
+    if (convTitle(c).toLowerCase().indexOf(q) >= 0) return true;
+    if (cmembers.some(function (m) { return m.conv_id === c.id && nm(m.user_id).toLowerCase().indexOf(q) >= 0; })) return true;
+    return msgs.some(function (x) { return x.conv_id === c.id && String(x.body).toLowerCase().indexOf(q) >= 0; });
+  }
+  function listHtml() {
+    var list = convs.filter(function (c) { return convMatches(c, convQ); }).sort(function (a, b) { return String(lastTs(b)).localeCompare(String(lastTs(a))); });
+    if (!list.length) return '<div style="padding:12px;color:#94a3b8">' + (convQ ? 'No conversations match "' + esc(convQ) + '".' : 'No conversations yet. Tap New Message.') + '</div>';
+    return list.map(function (c) {
+      var u = unread(c), on = c.id === openId, last = msgs.filter(function (x) { return x.conv_id === c.id; }).pop();
+      return '<button type="button" onclick="mrpMsgPick(\'' + c.id + '\')" style="display:block;width:100%;text-align:left;padding:9px 12px;border-bottom:1px solid #1e293b;background:' + (on ? '#12304a' : (u ? '#0f2438' : 'transparent')) + ';color:#fff;border-left:3px solid ' + (u ? '#f43f5e' : 'transparent') + '">'
+        + '<div style="display:flex;align-items:center;gap:6px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (u ? 900 : 600) + '">' + (c.kind === 'group' ? '&#128101; ' : '') + esc(convTitle(c)) + '</span>' + (u ? '<span style="background:#f43f5e;color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:1px 7px">' + u + '</span>' : '') + '</div>'
+        + (last ? '<div style="font-size:11px;color:' + (u ? '#e2e8f0' : '#94a3b8') + ';font-weight:' + (u ? 700 : 400) + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px">' + (last.sender === me ? 'You: ' : '') + esc(last.body) + '</div>' : '') + '</button>';
+    }).join('');
+  }
+  window.mrpMsgSearch = function (q) { convQ = String(q || '').trim(); var l = document.getElementById('mrpConvList'); if (l) l.innerHTML = listHtml(); };
   function render() {
-    var list = convs.slice().sort(function (a, b) { return String(lastTs(b)).localeCompare(String(lastTs(a))); });
-    var left = list.length ? list.map(function (c) {
-      var u = unread(c), on = c.id === openId;
-      return '<button type="button" onclick="mrpMsgPick(\'' + c.id + '\')" style="display:flex;width:100%;text-align:left;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid #1e293b;background:' + (on ? '#12304a' : 'transparent') + ';color:#fff"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (u ? 900 : 700) + '">' + (c.kind === 'group' ? '&#128101; ' : '') + esc(convTitle(c)) + '</span>' + (u ? '<span style="background:#f43f5e;color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:1px 7px">' + u + '</span>' : '') + '</button>';
-    }).join('') : '<div style="padding:12px;color:#94a3b8">No conversations yet. Tap New Message.</div>';
     var c = convs.find(function (x) { return x.id === openId; });
     shell(head('Messages', '<button type="button" onclick="mrpMsgNew()" style="' + BTN2 + '">New Message</button>')
-      + '<div style="display:flex;flex:1;min-height:0"><div style="width:240px;max-width:38%;border-right:1px solid #1e293b;overflow-y:auto">' + left + '</div><div style="flex:1;min-width:0;display:flex;flex-direction:column">' + (c ? thread(c) : '<div style="padding:16px;color:#94a3b8">Choose a conversation.</div>') + '</div></div>');
+      + '<div class="mm-body' + (c ? ' mm-has' : '') + '" style="display:flex;flex:1;min-height:0"><div class="mm-left" style="width:260px;max-width:38%;border-right:1px solid #1e293b;display:flex;flex-direction:column;min-height:0"><div style="padding:8px"><input id="mrpConvQ" type="search" autocomplete="off" value="' + esc(convQ) + '" placeholder="Search conversations" oninput="mrpMsgSearch(this.value)" style="width:100%;padding:8px 10px;border-radius:10px;background:#0f172a;border:1px solid #475569;color:#fff;font-size:13px"></div><div id="mrpConvList" style="flex:1;overflow-y:auto">' + listHtml() + '</div></div>'
+      + '<div class="mm-right" style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">' + (c ? thread(c) : '<div style="padding:16px;color:#94a3b8">Choose a conversation, or tap New Message.</div>') + '</div></div>');
     var th = document.getElementById('mrpMsgThread'); if (th) th.scrollTop = th.scrollHeight;
   }
   function thread(c) {
     var mem = cmembers.filter(function (m) { return m.conv_id === c.id; });
+    var mark = openedMark[c.id] || '9999', shownNew = false;
     var rows = msgs.filter(function (x) { return x.conv_id === c.id; }).map(function (x) {
-      var mine = x.sender === me;
-      return '<div style="display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') + ';margin-bottom:8px"><div style="font-size:10px;color:#94a3b8">' + (mine ? 'You' : esc(nm(x.sender))) + ' &middot; ' + ct(x.created_at) + ' CT</div>'
-        + '<div style="max-width:85%;padding:7px 10px;border-radius:12px;background:' + (mine ? '#0e7490' : '#1e293b') + ';color:#fff;white-space:pre-wrap;word-break:break-word">' + esc(x.body)
+      var mine = x.sender === me, isNew = !mine && x.created_at > mark, div = '';
+      if (isNew && !shownNew) { shownNew = true; div = '<div style="text-align:center;font-size:11px;font-weight:900;color:#fda4af;margin:6px 0;border-top:1px solid #7f1d1d;padding-top:4px">New messages</div>'; }
+      return div + '<div style="display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') + ';margin-bottom:8px"><div style="font-size:10px;color:#94a3b8">' + (mine ? 'You' : esc(nm(x.sender))) + ' &middot; ' + ct(x.created_at) + ' CT' + (mine ? ' &middot; &#10003; Delivered' : '') + '</div>'
+        + '<div style="max-width:85%;padding:7px 10px;border-radius:12px;background:' + (mine ? '#0e7490' : (isNew ? '#3b1d4f' : '#1e293b')) + ';color:#fff;white-space:pre-wrap;word-break:break-word;' + (isNew ? 'border:1px solid #f472b6' : '') + '">' + esc(x.body)
         + (x.visit_no ? '<div style="margin-top:6px"><button type="button" onclick="mrpOpenVisitNo(' + Number(x.visit_no) + ',\'' + c.id + '\')" style="padding:3px 9px;border-radius:8px;background:#042f2e;border:1px solid #5eead4;color:#99f6e4;font-weight:900;font-size:12px">Visit file #' + Number(x.visit_no) + '</button></div>' : '') + '</div></div>';
-    }).join('') || '<div style="color:#94a3b8">No messages yet.</div>';
+    }).join('') || '<div style="color:#94a3b8">No messages yet. Say hello below.</div>';
     var who = c.kind === 'group' ? '<div style="font-size:11px;color:#94a3b8;padding:0 14px 6px">Group: ' + mem.map(function (m) { return esc(nm(m.user_id)); }).join(', ') + ' &middot; <button type="button" onclick="mrpMsgAdd(\'' + c.id + '\')" style="color:#5eead4;font-weight:800;text-decoration:underline">Add person</button></div>' : '<div style="font-size:11px;color:#94a3b8;padding:0 14px 6px">Private conversation. Only you and ' + esc(convTitle(c)) + ' can see it.</div>';
-    return '<div style="padding:10px 14px 4px;font-weight:900;color:#fff">' + esc(convTitle(c)) + '</div>' + who
+    return '<div style="padding:10px 14px 4px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px"><button type="button" class="mm-back" onclick="mrpMsgBack()" style="' + BTN + '">&larr; Back</button><span>' + esc(convTitle(c)) + '</span></div>' + who
       + '<div id="mrpMsgThread" style="flex:1;overflow-y:auto;padding:8px 14px">' + rows + '</div>'
       + '<div style="border-top:1px solid #1e293b;padding:8px 14px"><div id="mrpMsgLinkRow" style="margin-bottom:6px">' + linkRow() + '</div>'
-      + '<div style="display:flex;gap:8px"><textarea id="mrpMsgText" rows="2" maxlength="4000" placeholder="Write a message" style="flex:1;padding:8px;border-radius:10px;background:#0f172a;border:1px solid #475569;color:#fff;font-size:13px;resize:none"></textarea><button type="button" onclick="mrpMsgSend(\'' + c.id + '\')" style="' + BTN2 + ';height:auto;min-width:72px">Send</button></div></div>';
+      + '<div style="display:flex;gap:8px"><textarea id="mrpMsgText" rows="2" maxlength="4000" placeholder="Write a message" style="flex:1;padding:8px;border-radius:10px;background:#0f172a;border:1px solid #475569;color:#fff;font-size:14px;resize:none" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey&&window.innerWidth>560){event.preventDefault();mrpMsgSend(\'' + c.id + '\')}"></textarea><button type="button" id="mrpMsgSendBtn" onclick="mrpMsgSend(\'' + c.id + '\')" style="' + BTN2 + ';height:auto;min-width:72px">Send</button></div><div id="mrpMsgErr" style="color:#fda4af;font-size:12px;min-height:14px;margin-top:4px"></div></div>';
   }
+  window.mrpMsgBack = function () { openId = null; render(); };
   function linkRow() {
     if (linked) return '<span style="padding:3px 9px;border-radius:8px;background:#042f2e;border:1px solid #5eead4;color:#99f6e4;font-weight:900;font-size:12px">Visit file #' + linked + '</span> <button type="button" onclick="mrpMsgUnlink()" style="color:#fda4af;font-size:11px;font-weight:800;text-decoration:underline">remove</button>';
     return '<button type="button" onclick="mrpMsgLinkOpen()" style="color:#5eead4;font-size:12px;font-weight:800;text-decoration:underline">Related Visit / File Number</button>';
   }
-  window.mrpMsgPick = async function (id) { openId = id; var cm = cmembers.find(function (m) { return m.conv_id === id && m.user_id === me; }); if (cm) { cm.last_read_at = new Date().toISOString(); try { await db('mrp_conv_members').update({ last_read_at: cm.last_read_at }).eq('conv_id', id).eq('user_id', me); } catch (e) {} } badge(); render(); };
+  window.mrpMsgPick = async function (id) {
+    openId = id; var cm = cmembers.find(function (m) { return m.conv_id === id && m.user_id === me; });
+    if (cm) { openedMark[id] = cm.last_read_at; cm.last_read_at = new Date().toISOString(); try { await db('mrp_conv_members').update({ last_read_at: cm.last_read_at }).eq('conv_id', id).eq('user_id', me); } catch (e) {} }
+    badge(); render();
+  };
   window.mrpMsgUnlink = function () { linked = null; document.getElementById('mrpMsgLinkRow').innerHTML = linkRow(); };
   window.mrpMsgLinkOpen = function () {
     var row = document.getElementById('mrpMsgLinkRow');
@@ -13365,10 +13427,13 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
   };
   window.mrpMsgLinkSet = function (n) { linked = n; document.getElementById('mrpMsgLinkRow').innerHTML = linkRow(); };
   window.mrpMsgSend = async function (cid) {
-    var t = document.getElementById('mrpMsgText'), body = (t.value || '').trim(); if (!body) return;
-    var r = await db('mrp_messages').insert({ conv_id: cid, body: body, visit_no: linked }).select('id,conv_id,sender,body,visit_no,created_at').single();
-    if (r.error) { alert_('Could not send: ' + r.error.message); return; }
-    msgs.push(r.data); linked = null; render();
+    var t = document.getElementById('mrpMsgText'), btn = document.getElementById('mrpMsgSendBtn'), er = document.getElementById('mrpMsgErr'), body = (t.value || '').trim(); if (!body) return;
+    btn.disabled = true; btn.textContent = 'Sending...'; er.textContent = '';
+    var r;
+    try { r = await db('mrp_messages').insert({ conv_id: cid, body: body, visit_no: linked }).select('id,conv_id,sender,body,visit_no,created_at').single(); } catch (e) { r = { error: { message: 'Could not reach the server. Your message is still in the box. Try again.' } }; }
+    if (r.error) { btn.disabled = false; btn.textContent = 'Send'; er.textContent = 'Not sent: ' + r.error.message; return; }
+    msgs.push(r.data); if (seen) seen[r.data.id] = 1; linked = null; var cm = cmembers.find(function (m) { return m.conv_id === cid && m.user_id === me; }); if (cm) cm.last_read_at = new Date().toISOString();
+    openedMark[cid] = '9999'; render();
   };
   function alert_(m) { var th = document.getElementById('mrpMsgThread'); if (th) th.insertAdjacentHTML('beforeend', '<div style="color:#fda4af;font-size:12px">' + esc(m) + '</div>'); }
   /* New message: one person = private chat; several = choose separate private messages or one group */
@@ -13387,6 +13452,8 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
       + '<div style="display:flex;gap:8px;margin-top:8px"><button type="button" onclick="mrpNmSend()" style="' + BTN2 + '">Send</button><button type="button" onclick="mrpMsgOpen()" style="' + BTN + '">Cancel</button></div></div>');
     mrpNmMode();
   };
+  function canAll() { return ['owner', 'admin', 'manager'].indexOf(window.__mrpRole) >= 0; }
+  window.mrpNmAll = function () { [].forEach.call(document.querySelectorAll('#mrpNmList input'), function (i) { i.checked = true; }); mrpNmMode(); var g = document.querySelector('input[name=mrpNmMode][value=group]'); if (g) g.checked = true; };
   window.mrpNmMode = function () { var n = document.querySelectorAll('#mrpNmList input:checked').length, b = document.getElementById('mrpNmModeBox'); if (b) b.style.display = n >= 2 ? '' : 'none'; };
   window.mrpNmSend = async function () {
     var ids = [].map.call(document.querySelectorAll('#mrpNmList input:checked'), function (i) { return i.value; }), msg = document.getElementById('mrpNmMsg');
@@ -13435,7 +13502,8 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
       + '<div style="margin-top:12px"><button type="button" onclick="mrpMsgNew(\'' + esc(uid) + '\')" style="' + BTN2 + '">Start a conversation</button></div></div>');
   };
   window.mrpMsgPoll = async function () { if (!window.__mrpRole) return; await load(); var ov = document.getElementById('mrpMsg'); if (ov && !err && openId && document.getElementById('mrpMsgThread') && !document.getElementById('mrpMsgText').value) render(); };
-  setInterval(function () { if (window.__mrpUid) mrpMsgPoll(); }, 45000);
+  setInterval(function () { if (window.__mrpUid) mrpMsgPoll(); }, 20000);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && window.__mrpUid) mrpMsgPoll(); });
   setTimeout(function () { if (window.__mrpUid) mrpMsgPoll(); else badge(); }, 7000);
 })();
 </script>
