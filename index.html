@@ -5023,7 +5023,7 @@ Add New Stop
       const value = box.querySelector('textarea').value.trim();
       const item = visits.find(v => v.id === box.dataset.nid);
       if (!item) return;
-      if ((item.notes || '') === value) { showToast('Note is already saved'); return; }
+      if ((item.notes || '') === value && !(value && isOnRoute(item))) { showToast('Note is already saved'); return; }
       item.notes = value;
       // A note saved on a stop from today's list means that visit is done: it leaves Today's visits and goes back into the route tracker (still saved, listed by date).
       let moved = false;
