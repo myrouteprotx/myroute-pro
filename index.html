@@ -358,6 +358,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     try { document.documentElement.classList.add('mrp-role-' + role); } catch (e) {}
     window.__mrpRpc = function (name, args) { return sb.rpc(name, args || {}); };
     window.__mrpTable = function (t) { return sb.from(t); };
+    window.__mrpInvoke = function (name, body) { if (!sb) return Promise.reject(new Error('offline')); return sb.functions.invoke(name, { body: body }); };
     window.__mrpUid = uid;
     if (viewOnly) {
       try { localStorage.removeItem(KEY); localStorage.removeItem(PEND); localStorage.removeItem(PBLOB); localStorage.removeItem(SYNCED); } catch (e) {}
@@ -416,6 +417,7 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   
   <!-- Lucide Icons CDN (pinned) -->
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <script src="mrp-verify.js"></script>
   <script>
     /* Icons are drawn once per screen refresh instead of once per call (the page used to rescan itself dozens of times per save, which slowed phones down) */
     (function () {
@@ -1065,6 +1067,44 @@ body.mrp-modal-open *{animation-play-state:paused !important}
       #weekBanner > div { justify-content: flex-start !important; gap: 12px 16px; }
       #radarSection > div:first-child { border-bottom: 0 !important; padding-bottom: 0 !important; }
     }
+
+    /* Google Places + Address Verification tiles */
+    #vtiles { display: grid; grid-template-columns: minmax(0,1fr); gap: 1.25rem; }
+    @media screen and (min-width: 900px) { #vtiles { grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: stretch; } #vtiles .vt-tile { min-height: 470px; } }
+    #vtiles .vt-tile { position: relative; display: flex; flex-direction: column; gap: 10px; min-width: 0; border-radius: 1.5rem; padding: 1rem 1.1rem 1.1rem; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    #vtiles .vt-pl { border: 1px solid rgba(56,189,248,.45); background: linear-gradient(135deg, rgba(8,47,73,.55), #0f172a 70%); }
+    #vtiles .vt-av { border: 1px solid rgba(45,212,191,.45); background: linear-gradient(135deg, rgba(4,47,46,.55), #0f172a 70%); }
+    #vtiles .vt-h { display: flex; align-items: center; gap: 8px; }
+    #vtiles .vt-num { width: 26px; height: 26px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: #fff; flex: none; }
+    #vtiles .vt-pl .vt-num { background: #0369a1; } #vtiles .vt-av .vt-num { background: #0f766e; }
+    #vtiles .vt-t { font-size: 16px; font-weight: 900; color: #fff; }
+    #vtiles .vt-i { width: 22px; height: 22px; border-radius: 999px; border: 1px solid #94a3b8; color: #cbd5e1; background: transparent; font-weight: 900; font-size: 12px; font-style: italic; font-family: Georgia, serif; line-height: 1; cursor: pointer; flex: none; }
+    #vtiles .vt-info { display: none; font-size: 12px; line-height: 1.45; color: #e2e8f0; background: rgba(2,6,23,.6); border: 1px solid #475569; border-radius: 12px; padding: 9px 11px; }
+    #vtiles .vt-info.open { display: block; }
+    #vtiles .vt-d { font-size: 12px; color: #cbd5e1; line-height: 1.4; }
+    #vtiles .vt-cost { font-size: 11px; font-weight: 700; color: #fcd34d; background: rgba(120,53,15,.3); border: 1px solid rgba(245,158,11,.45); border-radius: 10px; padding: 6px 9px; }
+    #vtiles .vt-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+    #vtiles .vt-in { flex: 1 1 200px; min-width: 0; height: 44px; padding: 0 12px; font-size: 14px; color: #fff; background: #020617; border: 1px solid #475569; border-radius: 12px; }
+    #vtiles .vt-in:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56,189,248,.35); }
+    #vtiles .vt-btn { height: 44px; padding: 0 18px; border-radius: 12px; font-size: 13px; font-weight: 900; color: #fff; border: 1px solid rgba(255,255,255,.35); cursor: pointer; white-space: nowrap; }
+    #vtiles .vt-pl .vt-btn.main { background: #0369a1; } #vtiles .vt-av .vt-btn.main { background: #0f766e; }
+    #vtiles .vt-btn.alt { background: #334155; font-size: 12px; height: 36px; }
+    #vtiles .vt-btn:disabled { opacity: .55; cursor: wait; }
+    #vtiles .vt-lbl { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+    #vtiles .vt-fld { flex: 1 1 200px; min-width: 0; }
+    #vtiles .vt-res { flex: 1; min-height: 120px; overflow-y: auto; border-top: 1px dashed #334155; padding-top: 8px; }
+    #vtiles .vt-msg { font-size: 12px; color: #94a3b8; }
+    #vtiles .vt-err { font-size: 12px; font-weight: 700; color: #fda4af; }
+    #vtiles .vt-card { border: 1px solid #334155; border-radius: 14px; background: rgba(2,6,23,.55); padding: 9px 11px; margin-bottom: 8px; }
+    #vtiles .vt-card b.n { color: #fff; font-size: 14px; }
+    #vtiles .vt-sub { font-size: 12px; color: #cbd5e1; word-break: break-word; }
+    #vtiles .vt-tag { display: inline-block; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 999px; margin: 3px 4px 0 0; }
+    #vtiles .vt-tag.ok { background: #064e3b; color: #6ee7b7; } #vtiles .vt-tag.bad { background: #7f1d1d; color: #fecaca; } #vtiles .vt-tag.n { background: #1e293b; color: #cbd5e1; }
+    #vtiles .vt-chip { display: inline-block; font-size: 12px; font-weight: 900; padding: 4px 12px; border-radius: 999px; }
+    #vtiles .vt-chip.nc { background: #334155; color: #e2e8f0; } #vtiles .vt-chip.v { background: #065f46; color: #a7f3d0; } #vtiles .vt-chip.r { background: #92400e; color: #fde68a; }
+    #vtiles .vt-src { font-size: 12px; font-weight: 700; color: #99f6e4; background: rgba(4,47,46,.6); border: 1px solid rgba(45,212,191,.5); border-radius: 10px; padding: 6px 9px; display: none; }
+    #vtiles .vt-ask { border: 1px solid #f59e0b; background: rgba(120,53,15,.35); border-radius: 12px; padding: 9px 11px; font-size: 12px; color: #fde68a; margin-top: 8px; }
+    .vt-link { color: #5eead4; font-size: 11px; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; background: none; border: 0; padding: 2px 0; cursor: pointer; display: inline-block; margin-top: 2px; }
     /* Text and boxes 3% larger across the app */
     header, main { zoom: 1.03; }
     /* Desktop default display about 90% of before (set to 1 to undo). Browser zoom is not touched. */
@@ -1816,6 +1856,29 @@ html.mrp-role-user button[onclick^="editVisit"], html.mrp-role-user .act-wrap > 
         </div>
         <div id="reachBackCardsGrid" style="display:none" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-4">
           <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- Google Places + Address Verification tiles -->
+      <section id="vtiles" aria-label="Google Places and Address Verification">
+        <div class="vt-tile vt-pl">
+          <div class="vt-h"><span class="vt-num">1</span><h2 class="vt-t">Google Places</h2><button type="button" class="vt-i" aria-label="About Google Places" title="Look up a business or address on Google" onclick="vtInfo(this)">i</button></div>
+          <div class="vt-info">Type a business name or a street address and tap Search. Google lists matching places with their address, type, and whether they are open or closed. Police stations, post offices, P.O. boxes and closed businesses are flagged so you do not drive to them. Pick a result to send it to Address Verification.</div>
+          <div class="vt-d">Find a business on Google and check that it is a real, open location.</div>
+          <div class="vt-cost">Google searches may cost money. Nothing is searched until you tap Search.</div>
+          <div class="vt-row"><input id="vtPlQ" class="vt-in" type="search" autocomplete="off" placeholder="Business name or street address" onkeydown="if(event.key==='Enter'){vtSearch()}"><button type="button" id="vtPlBtn" class="vt-btn main" onclick="vtSearch()">Search</button></div>
+          <div id="vtPlRes" class="vt-res"><div class="vt-msg">Results will appear here.</div></div>
+        </div>
+        <div class="vt-tile vt-av">
+          <div class="vt-h"><span class="vt-num">2</span><h2 class="vt-t">Address Verification</h2><button type="button" class="vt-i" aria-label="About Address Verification" title="Check an address and get a suggested correction" onclick="vtInfo(this)">i</button></div>
+          <div class="vt-info">Enter an address (or pick one from Google Places or a visit) and tap Verify Address. Google checks that the address is complete and real. The status shows Verified or Review Needed, with a suggested correction. A saved visit address is never changed until you approve it.</div>
+          <div class="vt-d">Check that an address is complete and deliverable before you drive there.</div>
+          <div class="vt-src" id="vtSrc"></div>
+          <div class="vt-row" id="vtFileWrap" style="display:none"><div class="vt-fld"><div class="vt-lbl">File number</div><input id="vtFile" class="vt-in" style="width:100%" type="search" inputmode="numeric" autocomplete="off" placeholder="Visit file number" oninput="vtFileLook()"></div></div>
+          <div class="vt-row"><div class="vt-fld" style="flex-basis:100%"><div class="vt-lbl">Address</div><input id="vtAddr" class="vt-in" style="width:100%" type="text" autocomplete="off" placeholder="Street, city, state, zip" onkeydown="if(event.key==='Enter'){vtVerify()}"></div></div>
+          <div id="vtBiz" class="vt-sub"></div>
+          <div class="vt-row" style="align-items:center"><button type="button" id="vtBtn" class="vt-btn main" onclick="vtVerify()">Verify Address</button><span id="vtStatus" class="vt-chip nc">Not Checked</span></div>
+          <div id="vtRes" class="vt-res"><div class="vt-msg">Results and suggested corrections will appear here.</div></div>
         </div>
       </section>
 
@@ -5791,7 +5854,7 @@ Add New Stop
           + dEdit('When to reach back', kind, id, 'followUpDate', v.followUpDate, 'date')
           + dEdit('Outcome status', kind, id, 'visitStatus', v.visitStatus || 'New Lead', 'select', STATUS_OPTIONS.map(x => [x, x]))
           + dEdit('Result of visit', kind, id, 'visitResult', v.visitResult || '', 'select', RESULT_OPTIONS.map(r => [r.value, r.label]))
-          + dEdit('Address', kind, id, 'streetAddress', v.streetAddress, 'text', null, v.streetAddress ? '<div style="margin-top:8px;font-size:14px">' + addrLinkHtml(v.streetAddress, v.businessName) + '</div>' : '')
+          + dEdit('Address', kind, id, 'streetAddress', v.streetAddress, 'text', null, v.streetAddress ? '<div style="margin-top:8px;font-size:14px">' + addrLinkHtml(v.streetAddress, v.businessName) + '</div>' : '') + '<button type="button" class="vt-link" onclick="vtLoadVisit(\'' + escapeHtml(String(id)) + '\')">Verify Address</button>'
           + dEdit('Notes', kind, id, 'notes', v.notes, 'textarea')
           + detailGroupBox(id)
           + dField('Follow-up email', followUpBox(v))
@@ -6233,6 +6296,7 @@ Add New Stop
                   <a href="https://www.google.com/maps/search/?api=1&query=${mapsQuery}" target="_blank" title="Navigate" class="p-1.5 text-emerald-400 hover:bg-slate-800 rounded-lg transition">
                     <i data-lucide="map" class="w-3.5 h-3.5"></i>
                   </a>
+                  <button type="button" class="vt-link" style="margin:0 0 0 4px" onclick="event.stopPropagation(); vtLoadVisit('${item.id}')">Verify Address</button>
                 ` : ''}
                 ${item.email ? `
                   <a href="mailto:${escapeHtml(item.email)}" title="Email" class="p-1.5 text-pink-400 hover:bg-slate-800 rounded-lg transition">
@@ -6397,6 +6461,7 @@ Add New Stop
               ${item.streetAddress ? `
                 <div class="text-[11px] font-semibold" style="word-break:break-word">${addrLinkHtml(item.streetAddress, item.businessName)}</div>
               ` : '<span class="text-slate-500 italic text-[11px]">No address</span>'}
+              <button type="button" class="vt-link" onclick="event.stopPropagation(); vtLoadVisit('${item.id}')">Verify Address</button>
             </td>
 
             <td class="py-3.5 px-4 whitespace-nowrap text-slate-300 font-semibold">
@@ -13372,6 +13437,115 @@ document.addEventListener('click', function (e) { if (e.target && e.target.close
   window.mrpMsgPoll = async function () { if (!window.__mrpRole) return; await load(); var ov = document.getElementById('mrpMsg'); if (ov && !err && openId && document.getElementById('mrpMsgThread') && !document.getElementById('mrpMsgText').value) render(); };
   setInterval(function () { if (window.__mrpUid) mrpMsgPoll(); }, 45000);
   setTimeout(function () { if (window.__mrpUid) mrpMsgPoll(); else badge(); }, 7000);
+})();
+</script>
+
+<script>
+/* Google Places + Address Verification tiles (both use the shared MRPVerify code and the existing Supabase "places" function) */
+(function () {
+  var V = window.MRPVerify, vt = { src: null, results: [], sug: null, sugData: null };
+  function $(id) { return document.getElementById(id); }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function invoke(n, b) { return window.__mrpInvoke(n, b); }
+  function chip(kind, text) { var c = $('vtStatus'); c.className = 'vt-chip ' + kind; c.textContent = text; }
+  window.vtInfo = function (btn) { var i = btn.closest('.vt-tile').querySelector('.vt-info'); i.classList.toggle('open'); };
+  function fileField() { var w = $('vtFileWrap'); if (!w) return; var has = false; try { has = visits.some(function (v) { return v && v.fileNo; }); } catch (e) {} w.style.display = has ? '' : 'none'; }
+  setInterval(fileField, 4000); setTimeout(fileField, 1500);
+
+  /* ---- 1. Google Places ---- */
+  window.vtSearch = async function () {
+    var q = ($('vtPlQ').value || '').trim(), box = $('vtPlRes'), btn = $('vtPlBtn');
+    if (!q) { box.innerHTML = '<div class="vt-err">Type a business name or street address first.</div>'; return; }
+    btn.disabled = true; btn.textContent = 'Searching...'; box.innerHTML = '<div class="vt-msg">Asking Google...</div>';
+    try {
+      var list = await V.search(invoke, q);
+      vt.results = list;
+      if (!list.length) { box.innerHTML = '<div class="vt-msg">Google found nothing for "' + esc(q) + '". Try the business name with the city, or a full street address.</div>'; }
+      else box.innerHTML = list.map(function (p, i) {
+        var fl = V.flags(p), open = V.openText(p), okOpen = p.status === 'OPERATIONAL';
+        return '<div class="vt-card"><b class="n">' + esc(p.name || '(no name)') + '</b><div class="vt-sub">' + esc(p.address || 'No address listed') + '</div>'
+          + '<div><span class="vt-tag n">' + esc(V.pretty(p.type) || 'business') + '</span><span class="vt-tag ' + (okOpen ? 'ok' : (p.status ? 'bad' : 'n')) + '">' + esc(open) + '</span>'
+          + fl.filter(function (f) { return f.k !== 'closed'; }).map(function (f) { return '<span class="vt-tag bad">&#9888; ' + esc(f.t) + '</span>'; }).join('') + '</div>'
+          + '<div style="margin-top:6px"><button type="button" class="vt-btn alt" onclick="vtSend(' + i + ')">Send to Address Verification</button></div></div>';
+      }).join('');
+    } catch (e) { box.innerHTML = '<div class="vt-err">' + esc((e && e.message) || 'The search failed.') + '</div>'; }
+    btn.disabled = false; btn.textContent = 'Search';
+  };
+  window.vtSend = function (i) {
+    var p = vt.results[i]; if (!p) return;
+    $('vtAddr').value = p.address || ''; vtReset();
+    $('vtBiz').innerHTML = '<b style="color:#fff">' + esc(p.name || '') + '</b>' + (p.phone ? ' &middot; ' + esc(p.phone) : '') + (p.type ? ' &middot; ' + esc(V.pretty(p.type)) : '');
+    var t = $('vtAddr').closest('.vt-tile'); if (window.innerWidth < 900 && t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('vtAddr').focus({ preventScroll: true });
+  };
+
+  /* ---- 2. Address Verification ---- */
+  function vtReset() { vt.sug = null; vt.sugData = null; chip('nc', 'Not Checked'); $('vtRes').innerHTML = '<div class="vt-msg">Results and suggested corrections will appear here.</div>'; }
+  function visitById(id) { try { return visits.find(function (v) { return String(v.id) === String(id); }); } catch (e) { return null; } }
+  function srcBanner() {
+    var b = $('vtSrc'), v = vt.src && visitById(vt.src);
+    if (!v) { b.style.display = 'none'; return; }
+    b.style.display = 'block';
+    b.innerHTML = 'From visit: <b>' + esc(v.businessName || 'Visit') + '</b>' + (v.fileNo ? ' &middot; file #' + esc(v.fileNo) : '') + ' &middot; <button type="button" class="vt-link" onclick="vtClearSrc()">Stop linking</button>';
+  }
+  window.vtClearSrc = function () { vt.src = null; srcBanner(); };
+  window.vtLoadVisit = function (id) {
+    var v = visitById(id); if (!v) return;
+    try { var dp = $('detailPage'); if (dp && !dp.classList.contains('hidden')) closeDetail(true); } catch (e) {}
+    try { var rt = $('routeTrackerView'); if (rt && rt.style.display === 'none') switchMainTab('tracker'); } catch (e) {}
+    fileField(); vt.src = String(v.id); vtReset();
+    $('vtAddr').value = v.streetAddress || ''; $('vtFile').value = v.fileNo || '';
+    $('vtBiz').innerHTML = '<b style="color:#fff">' + esc(v.businessName || 'Visit') + '</b>' + (v.phone ? ' &middot; ' + esc(v.phone) : '') + (v.clientName ? ' &middot; ' + esc(v.clientName) : '');
+    srcBanner();
+    if (!v.streetAddress) $('vtRes').innerHTML = '<div class="vt-err">This visit has no saved address. Type one above, then tap Verify Address.</div>';
+    var t = $('vtiles'); if (t && t.scrollIntoView) setTimeout(function () { t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+  };
+  window.vtFileLook = function () {
+    var n = String($('vtFile').value || '').replace(/[^0-9]/g, ''); if (!n) { return; }
+    var v = null; try { v = visits.find(function (x) { return String(x.fileNo) === n; }); } catch (e) {}
+    if (!v) { $('vtBiz').innerHTML = '<span style="color:#fcd34d">No visit has file number ' + esc(n) + '.</span>'; return; }
+    vt.src = String(v.id); vtReset(); $('vtAddr').value = v.streetAddress || '';
+    $('vtBiz').innerHTML = '<b style="color:#fff">' + esc(v.businessName || 'Visit') + '</b>' + (v.phone ? ' &middot; ' + esc(v.phone) : '') + (v.clientName ? ' &middot; ' + esc(v.clientName) : '');
+    srcBanner();
+  };
+  window.vtVerify = async function () {
+    var addr = ($('vtAddr').value || '').trim(), box = $('vtRes'), btn = $('vtBtn');
+    if (!addr) { box.innerHTML = '<div class="vt-err">There is no address to check. Type one, or load a visit that has an address.</div>'; chip('nc', 'Not Checked'); return; }
+    btn.disabled = true; btn.textContent = 'Checking...'; box.innerHTML = '<div class="vt-msg">Asking Google...</div>';
+    try {
+      var d = await V.validate(invoke, addr), j = V.judge(addr, d), sug = j.suggestion;
+      var same = sug && V.streetKey(sug.replace(/,?\s*(USA|United States)$/i, '')) === V.streetKey(addr);
+      vt.sug = same ? null : sug; vt.sugData = d;
+      chip(j.status === 'verified' ? 'v' : 'r', j.status === 'verified' ? 'Verified' : 'Review Needed');
+      var h = '';
+      h += '<div class="vt-sub" style="margin-bottom:6px;color:' + (d.mode === 'fallback' ? '#fcd34d' : '#99f6e4') + '">' + (d.mode === 'fallback'
+        ? 'Address Validation is not turned on for your Google key yet, so this was checked through Google Places instead. It is less exact.'
+        : 'Checked with Google Address Validation.') + '</div>';
+      h += j.reasons.length ? '<ul style="margin:0 0 6px 16px;padding:0;font-size:12px;color:#fde68a;list-style:disc">' + j.reasons.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>' : '<div class="vt-sub" style="color:#a7f3d0;margin-bottom:6px">No problems found with this address.</div>';
+      if (d.mode === 'fallback' && d.places && d.places[0]) { var p = d.places[0]; h += '<div class="vt-card"><div class="vt-lbl">Closest Google match</div><b class="n">' + esc(p.name) + '</b><div class="vt-sub">' + esc(p.address) + '</div><div>' + '<span class="vt-tag n">' + esc(V.pretty(p.type) || 'place') + '</span><span class="vt-tag ' + (p.status === 'OPERATIONAL' ? 'ok' : 'n') + '">' + esc(V.openText(p)) + '</span></div></div>'; }
+      if (vt.sug) {
+        h += '<div class="vt-card"><div class="vt-lbl">Suggested correction</div><div class="vt-sub" style="color:#fff;font-weight:800">' + esc(vt.sug) + '</div><div class="vt-row" style="margin-top:8px"><button type="button" class="vt-btn alt" onclick="vtUse()">Use in the address field</button>'
+          + (vt.src && visitById(vt.src) ? '<button type="button" class="vt-btn alt" style="background:#b45309" onclick="vtAsk()">Update saved address...</button>' : '') + '</div><div id="vtAsk"></div></div>';
+      }
+      box.innerHTML = h;
+    } catch (e) { box.innerHTML = '<div class="vt-err">' + esc((e && e.message) || 'The check failed.') + '</div>'; chip('nc', 'Not Checked'); }
+    btn.disabled = false; btn.textContent = 'Verify Address';
+  };
+  window.vtUse = function () { if (vt.sug) $('vtAddr').value = vt.sug.replace(/,?\s*(USA|United States)$/i, ''); };
+  window.vtAsk = function () {
+    var v = visitById(vt.src); if (!v || !vt.sug) return;
+    var nw = vt.sug.replace(/,?\s*(USA|United States)$/i, '');
+    $('vtAsk').innerHTML = '<div class="vt-ask">Change the saved address for <b>' + esc(v.businessName || 'this visit') + '</b>?<br>From: ' + esc(v.streetAddress || '(none)') + '<br>To: <b>' + esc(nw) + '</b><div class="vt-row" style="margin-top:8px"><button type="button" class="vt-btn alt" style="background:#047857" onclick="vtApply()">Yes, update this visit</button><button type="button" class="vt-btn alt" onclick="document.getElementById(\'vtAsk\').innerHTML=\'\'">No, keep it</button></div></div>';
+  };
+  window.vtApply = function () {
+    var v = visitById(vt.src); if (!v || !vt.sug) return;
+    var nw = vt.sug.replace(/,?\s*(USA|United States)$/i, ''), d = vt.sugData || {};
+    v.streetAddress = nw;
+    if (v.lat != null && d.lat != null && d.mode === 'validation') { v.lat = d.lat; v.lng = d.lng; }
+    try { saveRecords(); renderTable(); renderReachBackQueue(); } catch (e) {}
+    try { showToast('Address updated for ' + (v.businessName || 'visit')); } catch (e) {}
+    $('vtAddr').value = nw; $('vtAsk').innerHTML = '<div class="vt-sub" style="color:#a7f3d0;margin-top:6px">Saved. This visit now has the new address.</div>'; srcBanner();
+  };
 })();
 </script>
 </body></html>

@@ -58,6 +58,7 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
   <div id="list"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="mrp-verify.js"></script>
 <script>
 (function () {
   var SB_URL = 'https://rrhmykprzkumixcjsygo.supabase.co', SB_KEY = 'sb_publishable_-Tc0Yl6WAYnmVAJV-hYRXQ_HwLeW4Dj';
@@ -67,10 +68,8 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function say(t) { $('status').textContent = t; }
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  function digits(t) { return String(t || '').replace(/\D/g, '').slice(-10); }
-  function norm(t) { return String(t || '').toLowerCase().replace(/&/g, 'and').replace(/\b(inc|llc|co|company|corp|the)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
-  function nameOk(a, b) { var x = norm(a), y = norm(b); if (!x || !y) return false; if (x === y || x.indexOf(y) > -1 || y.indexOf(x) > -1) return true; var xs = x.split(' '), ys = y.split(' '), hit = 0; xs.forEach(function (w) { if (w.length > 2 && ys.indexOf(w) > -1) hit++; }); return hit >= Math.min(2, xs.length); }
-  function mail(p) { return /\b(pmb|p\.?\s*o\.?\s*box|mailbox)\b/i.test(String(p.address || '') + ' ' + String(p.suite || '')) || /\b(ups store|fedex office|fedex ship|regus|mail boxes|mailbox|postal annex|pak mail|usps|post office)\b/i.test(String(p.name || '')); }
+  var V = window.MRPVerify, nameOk = V.nameOk, mail = V.mail;
+  var invoke = function (name, body) { return sb.functions.invoke(name, { body: body }); };
 
   function show(logged) { $('login').hidden = logged; $('tool').hidden = !logged; }
   sb.auth.getSession().then(function (r) { show(!!(r.data && r.data.session)); });
@@ -83,26 +82,7 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
   $('out').onclick = async function () { await sb.auth.signOut(); show(false); };
   $('pick').onclick = function () { $('file').click(); };
 
-  function classify(rec, list) {
-    var out = { level: 'red', why: [], pick: null, top: list[0] || null };
-    var cand = list.filter(function (p) { return nameOk(rec.businessName, p.name); })[0];
-    if (!cand) { out.why.push(list.length ? 'No Google listing with this name. Closest: ' + list[0].name + ' (' + list[0].address + ')' : 'Google found nothing'); return out; }
-    out.pick = cand;
-    var hard = [];
-    if (cand.bad) hard.push('Google lists it as a ' + cand.bad.replace(/_/g, ' '));
-    if (cand.status && cand.status !== 'OPERATIONAL') hard.push('Google says it is ' + cand.status.replace(/_/g, ' ').toLowerCase());
-    if (mail(cand)) hard.push('Looks like a mailbox store or P.O. box');
-    if (!cand.street) hard.push('No street address');
-    if (hard.length) { out.why = hard; return out; }
-    var soft = [];
-    if (!cand.plumber) soft.push('Not listed as a plumber on Google (' + (cand.type || 'business').replace(/_/g, ' ') + ')');
-    var fp = digits(rec.phone), gp = digits(cand.phone);
-    if (!gp) soft.push('Google has no phone number for it');
-    else if (!fp) soft.push('No phone in your file to compare');
-    else if (fp !== gp) soft.push('Phone differs: file ' + rec.phone + ', Google ' + cand.phone);
-    if (!cand.website && !(cand.ratings >= 1)) soft.push('No website and no reviews');
-    out.level = soft.length ? 'yellow' : 'green'; out.why = soft; return out;
-  }
+  function classify(rec, list) { return V.classify(rec, list); }
 
   $('file').addEventListener('change', async function (e) {
     var f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -116,10 +96,8 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
       var v = DATA[keys[i]]; say('Checking ' + (i + 1) + ' of ' + keys.length + ': ' + v.businessName);
       var tail = String(v.streetAddress || '').replace(/dispatch/ig, '').replace(/\s+/g, ' ').trim();
       try {
-        var res = await sb.functions.invoke('places', { body: { query: v.businessName + ' ' + tail, lat: v.lat != null ? v.lat : undefined, lng: v.lng != null ? v.lng : undefined } });
-        if (res.error) { var ctx = res.error.context, code = ctx && ctx.status, txt = ''; try { txt = JSON.stringify(await ctx.clone().json()); } catch (x) {}
-          say(code === 403 ? 'Your login is not allowed to run checks. Ask the administrator.' : (code === 404 ? 'The lookup function is not deployed in Supabase yet.' : (/no_key/.test(txt) ? 'The Google key is not saved in Supabase yet.' : 'Stopped: ' + (txt || res.error.message)))); return; }
-        var r = classify(v, (res.data && res.data.places) || []);
+        var list = await V.search(invoke, v.businessName + ' ' + tail, { lat: v.lat != null ? v.lat : null, lng: v.lng });
+        var r = classify(v, list);
         RES.push({ key: keys[i], rec: v, r: r, use: r.level !== 'red' });
       } catch (er) { say('Stopped: ' + ((er && er.message) || er)); return; }
       await sleep(200);
