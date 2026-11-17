@@ -1,7 +1,7 @@
 -- MyRoute Pro: team setup (the "members" table and the functions Team Management uses)
 -- RUN FIRST. Safe to re-run. Adds tables, functions and extra access rules only. Deletes and changes NO existing data.
 -- Security model:
---   * "Owners" are the accounts listed in mrp_team_owners. At the end of this file your existing data owner is registered automatically.
+--   * "Owners" are the accounts listed in mrp_team_owners. You register YOUR login email near the top of this file (edit it in the SQL Editor first).
 --   * Only a registered owner, or an administrator on that owner's team, can manage a team. Nobody else can, even though they are signed in.
 --   * Every team function works only on the caller's OWN team. Nobody can touch another team's people or data.
 
@@ -12,6 +12,23 @@ create table if not exists public.mrp_team_owners (
 );
 alter table public.mrp_team_owners enable row level security;
 revoke all on public.mrp_team_owners from anon, authenticated;    -- no policies: only the database owner and our functions can use it
+
+-- ---------- register YOUR exact login as the team owner (runs first so a mistake stops everything before any change) ----------
+-- BEFORE RUNNING: in the SQL Editor, replace PUT_YOUR_LOGIN_EMAIL_HERE below with your MyRoute Pro login email (keep the quote marks).
+-- (Your email is typed in the editor only, never saved in GitHub.) If it does not match exactly ONE account, this stops with an error.
+do $$
+declare v_email text := 'PUT_YOUR_LOGIN_EMAIL_HERE'; n int; v_id uuid;
+begin
+  if v_email is null or v_email like 'PUT\_YOUR%' then
+    raise exception 'Stopped: replace PUT_YOUR_LOGIN_EMAIL_HERE with your MyRoute Pro login email, then run again. Nothing was changed.';
+  end if;
+  select count(*) into n from auth.users where lower(email) = lower(trim(v_email));
+  if n <> 1 then
+    raise exception 'Stopped: % account(s) match "%". Expected exactly 1. Nothing was changed.', n, v_email;
+  end if;
+  select id into v_id from auth.users where lower(email) = lower(trim(v_email));
+  insert into public.mrp_team_owners(owner) values (v_id) on conflict (owner) do nothing;
+end $$;
 
 -- ---------- team membership ----------
 create table if not exists public.members (
@@ -132,15 +149,5 @@ do $$ begin
   end if;
 end $$;
 
--- ---------- register YOUR account as the owner ----------
--- The account that already owns the most saved data (your visits) is registered as the owner. Nothing is changed in that data.
-do $$ begin
-  if to_regclass('public.docs') is not null then
-    insert into public.mrp_team_owners(owner)
-      select t.owner from (select d.owner, count(*) as c from public.docs d group by d.owner order by c desc limit 1) t
-      on conflict (owner) do nothing;
-  end if;
-end $$;
-
--- CHECK THIS RESULT: the email shown must be YOUR MyRoute Pro login. If it is empty or wrong, tell me before running anything else.
+-- Final check: shows the registered owner account(s). It must be YOUR login email.
 select u.email as registered_owner_email from public.mrp_team_owners o join auth.users u on u.id = o.owner;
