@@ -40,7 +40,15 @@ body.mrp-modal-open *{animation-play-state:paused !important}
   #settingsPanel > .mt-4 > *{margin-top:0!important}
   #settingsPanel > .mt-4 > #mrpTeamCard,#settingsPanel > .mt-4 > .mrp-wide{grid-column:1 / -1}
 }
-@media (min-width:1500px){#settingsPanel > .mt-4{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:900px){#settingsPanel > .mt-4 > div.p-3:has(> .grid > button[onclick*="openLibrary"]){align-self:stretch}}
+#settingsPanel .dm-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+#settingsPanel .dm-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+#settingsPanel .dm-sec{padding:10px 12px;border-radius:14px;background:rgba(2,6,23,.35);border:1px solid rgba(148,163,184,.22)}
+#settingsPanel .dm-sec > .text-\[10px\]:first-child{margin-top:0}
+#settingsPanel .ap-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+#settingsPanel .ap-col{min-width:0}
+#settingsPanel .ap-intro{padding:10px 12px;border-radius:14px;background:rgba(2,6,23,.35);border:1px solid rgba(148,163,184,.22)}
+@media (max-width:899px){#settingsPanel .dm-grid,#settingsPanel .ap-grid{grid-template-columns:1fr}}
 #settingsPanel > .mt-4 > div.p-3{--acc:#8b5cf6;border:1px solid color-mix(in srgb,var(--acc) 40%,#1e293b)!important;border-left:5px solid var(--acc)!important;background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 18%,#0f172a),#0d1428 70%)!important}
 #settingsPanel > .mt-4 > div.p-3:nth-of-type(6n+2){--acc:#f59e0b}
 #settingsPanel > .mt-4 > div.p-3:nth-of-type(6n+3){--acc:#ec4899}
@@ -49,11 +57,11 @@ body.mrp-modal-open *{animation-play-state:paused !important}
 #settingsPanel > .mt-4 > div.p-3:nth-of-type(6n+6){--acc:#f43f5e}
 #settingsPanel > .mt-4 > div.p-3 .text-\[10px\].font-black{color:color-mix(in srgb,var(--acc) 55%,#ffffff)!important;font-size:12px;letter-spacing:.08em}
 #settingsPanel > .mt-4 > div.p-3 .text-\[11px\]{color:#cbd5e1!important}
-#settingsPanel button:not([aria-label]):not([onclick="closeSettings()"]):not([onclick^="toggleIntro"]):not([onclick^="bulkAll"]):not(.hidden){width:200px;max-width:100%;height:40px;display:inline-flex;align-items:center;justify-content:center;text-align:center;padding:8px 12px!important;font-size:12px!important;font-weight:800!important;border-radius:12px!important;line-height:1.15}
+#settingsPanel button:not([aria-label]):not([onclick="closeSettings()"]):not([onclick^="toggleIntro"]):not([onclick^="bulkAll"]):not(.hidden){min-width:200px;width:auto;max-width:100%;height:38px;display:inline-flex;align-items:center;justify-content:center;text-align:center;padding:0 16px!important;font-size:12px!important;font-weight:800!important;border-radius:12px!important;line-height:1;white-space:nowrap}
 #settingsPanel > .mt-4 > div.p-3 button.bg-slate-800,#settingsPanel > .mt-4 > div.p-3 button.bg-slate-700{background:color-mix(in srgb,var(--acc) 70%,#0b1226)!important;border:1px solid color-mix(in srgb,var(--acc) 60%,#ffffff)!important;color:#fff!important}
 #settingsPanel > .mt-4 > div.p-3 button.bg-slate-800:hover,#settingsPanel > .mt-4 > div.p-3 button.bg-slate-700:hover{filter:brightness(1.2)}
 #settingsPanel .grid:has(> button){display:flex!important;flex-wrap:wrap;gap:8px}
-#settingsPanel > .mt-4 > div.p-3 a{height:40px;width:200px;max-width:100%;display:inline-flex!important;align-items:center;justify-content:center;border-radius:12px}
+#settingsPanel > .mt-4 > div.p-3 a{height:38px;min-width:200px;width:auto;max-width:100%;padding:0 16px!important;display:inline-flex!important;align-items:center;justify-content:center;border-radius:12px;font-size:12px!important;font-weight:800!important;line-height:1;white-space:nowrap}
 #settingsPanel button.bg-slate-800:not([aria-label]),#settingsPanel button.bg-slate-700:not([aria-label]){background:#0e7490;border:1px solid #67e8f9;color:#fff}
 #settingsPanel [aria-label="Close settings"]{color:#fff!important;background:#334155;border:1px solid #64748b;border-radius:12px;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}
 #settingsPanel > .mt-4 > div.p-3 > label{color:#e2e8f0}
@@ -3275,27 +3283,13 @@ Add New Stop
         </div>
 
         <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Account</div>
-          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Everything you do is saved online as you go and shows up on your other devices. <span id="mrpSyncStatus" class="font-bold text-emerald-300"></span></div>
-          <div id="mrpMyRole" class="text-xs text-slate-200 mb-2" style="display:none"></div>
-          <button type="button" onclick="window.__mrpSignOut()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Sign out of this device</button>
-        </div>
-
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <div class="text-xs font-bold text-slate-200">Opening intro movie</div>
-              <div class="text-[11px] text-slate-400 mt-0.5">Plays every time you open the app. Turn it off here if you want to go straight in. This setting is for this device only.</div>
-            </div>
-            <button type="button" id="introToggleBtn" onclick="toggleIntroSetting()" class="shrink-0 px-3 py-1.5 text-xs font-black rounded-xl border transition">On</button>
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Files and email wording</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Photos and PDFs you attach to emails, and the wording of your follow-up emails.</div>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="closeSettings(); fuVisitId = null; openLibrary('manage')" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">My Files</button>
+            <button type="button" onclick="closeSettings(); fuVisitId = null; openTemplateFolder()" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">Email Templates</button>
+            <button type="button" id="bulkEmailSettingsBtn" onclick="closeSettings(); bmOpen()" class="px-3 py-2.5 text-xs font-black text-white bg-gradient-to-r from-emerald-500 to-teal-500 border border-white/50 rounded-xl">Bulk email</button>
           </div>
-        </div>
-
-
-        <div id="mrpLockBlock" style="display:none" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Face ID lock</div>
-          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Ask for Face ID (or this device's fingerprint or passcode) each time you open the app. Set it up once on each device. <span id="mrpLockStatus" class="font-bold text-emerald-300"></span></div>
-          <button type="button" id="mrpLockBtn" onclick="window.__mrpLockToggle()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Turn on Face ID lock</button>
         </div>
 
         <div id="homeAddrCard" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
@@ -3306,20 +3300,32 @@ Add New Stop
         </div>
 
         <div class="mrp-admin-only p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Address Checker</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Check a file of collected addresses on Google before you import it. Opens in its own page.</div>
+          <a href="address-checker.html" target="_blank" rel="noopener" class="inline-block px-3 py-1.5 text-xs font-bold text-white rounded-xl" style="background:#0e7490;border:1px solid #67e8f9">Open Address Checker</a>
+        </div>
+
+        <div id="mrpDataMgmt" class="mrp-wide p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Data Management</div>
+          <div class="dm-grid">
+            <div class="dm-col">
+              <div class="dm-sec mrp-admin-only">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Import a backup</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Choose your MyRoute Pro backup file or photos file (.json). It is added to this device only and nothing is uploaded.</div>
           <input type="file" id="importBackupInput" accept=".json,application/json" class="hidden">
           <button type="button" onclick="document.getElementById('importBackupInput').click()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Choose backup file</button>
           <p id="importBackupStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
         </div>
-
-        <div class="mrp-admin-only p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Address Checker</div>
-          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Check a file of collected addresses on Google before you import it. Opens in its own page.</div>
-          <a href="address-checker.html" target="_blank" rel="noopener" class="inline-block px-3 py-1.5 text-xs font-bold text-white rounded-xl" style="background:#0e7490;border:1px solid #67e8f9">Open Address Checker</a>
-        </div>
-
-        <div class="mrp-admin-only p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+              <div class="dm-sec">
+                <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Export all stops (CSV)</div>
+                <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Download every stop as a spreadsheet file.</div>
+                <button type="button" onclick="document.getElementById('exportCsvBtn').click()" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Export all stops (CSV)</span>
+        </button>
+              </div>
+            </div>
+            <div class="dm-col"><div class="dm-sec mrp-admin-only">
           <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Remove a batch of stops</div>
           <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Pick a range of visit dates, tap Show stops, then uncheck any you want to keep. Nothing is deleted until you tap Delete and enter the administrator password.</div>
           <div class="grid grid-cols-2 gap-2 mb-2">
@@ -3337,23 +3343,34 @@ Add New Stop
             <button type="button" id="bulkDelBtn" onclick="bulkDelete()" class="mt-2 w-full px-3 py-2.5 text-xs font-black text-white bg-rose-600 border border-white/40 rounded-xl">Delete checked stops</button>
           </div>
           <p id="bulkStatus" class="text-xs text-slate-300 font-semibold mt-2 min-h-[1rem]"></p>
-        </div>
-
-        <div class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Files and email wording</div>
-          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Photos and PDFs you attach to emails, and the wording of your follow-up emails.</div>
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" onclick="closeSettings(); fuVisitId = null; openLibrary('manage')" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">My Files</button>
-            <button type="button" onclick="closeSettings(); fuVisitId = null; openTemplateFolder()" class="px-3 py-2.5 text-xs font-black text-white bg-fuchsia-600 border border-white/50 rounded-xl">Email Templates</button>
-            <button type="button" onclick="closeSettings(); fuVisitId = null; openProfileEditor()" class="px-3 py-2.5 text-xs font-black text-white bg-slate-700 border border-white/50 rounded-xl">Email signature</button>
-            <button type="button" id="bulkEmailSettingsBtn" onclick="closeSettings(); bmOpen()" class="px-3 py-2.5 text-xs font-black text-white bg-gradient-to-r from-emerald-500 to-teal-500 border border-white/50 rounded-xl">Bulk email</button>
+        </div></div>
           </div>
         </div>
 
-        <button type="button" onclick="document.getElementById('exportCsvBtn').click()" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">
-          <i data-lucide="download" class="w-4 h-4"></i>
-          <span>Export all stops (CSV)</span>
-        </button>
+        <div id="acctPrefs" class="mrp-wide p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="ap-grid">
+            <div class="ap-col">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Account &amp; Preferences</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Everything you do is saved online as you go and shows up on your other devices. <span id="mrpSyncStatus" class="font-bold text-emerald-300"></span></div>
+          <div id="mrpMyRole" class="text-xs text-slate-200 mb-2" style="display:none"></div>
+        </div>
+            <div class="ap-col ap-intro">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-slate-200">Opening intro movie</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Plays every time you open the app. Turn it off here if you want to go straight in. This setting is for this device only.</div>
+            </div>
+            <button type="button" id="introToggleBtn" onclick="toggleIntroSetting()" class="shrink-0 px-3 py-1.5 text-xs font-black rounded-xl border transition">On</button>
+          </div>
+        </div>
+          </div>
+        </div>
+
+        <div id="mrpLockBlock" style="display:none" class="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Face ID lock</div>
+          <div class="text-[11px] text-slate-400 mt-0.5 mb-2">Ask for Face ID (or this device's fingerprint or passcode) each time you open the app. Set it up once on each device. <span id="mrpLockStatus" class="font-bold text-emerald-300"></span></div>
+          <button type="button" id="mrpLockBtn" onclick="window.__mrpLockToggle()" class="px-3 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">Turn on Face ID lock</button>
+        </div>
       </div>
 
       <div class="flex justify-end pt-4 mt-4 border-t border-slate-800">
@@ -3381,6 +3398,7 @@ Add New Stop
 
   <!-- Notification Toast -->
   <div class="no-print mobile-settings-link" style="text-align:center;padding:18px 0 28px"><button type="button" onclick="openSettings()" style="color:#93a3b9;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0">Settings</button></div>
+  <div class="no-print" style="text-align:center;padding:0 0 22px"><button type="button" onclick="window.__mrpSignOut && window.__mrpSignOut()" style="color:#93a3b9;font-size:12px;font-weight:700;text-decoration:underline;background:none;border:0">Sign out</button></div>
   <div id="undoDock" class="no-print fixed bottom-5 left-5 z-50 max-w-[90vw]" style="display: inline-grid; grid-template-columns: 2fr 1fr; gap: 8px; align-items: stretch;">
     <button type="button" id="undoBtn" onclick="goBack()" class="dock-btn inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-xs font-black text-white bg-gradient-to-r from-amber-500 to-orange-600 active:scale-95 transition">
       <i data-lucide="undo-2" class="w-4 h-4 shrink-0"></i>
