@@ -62,7 +62,7 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
 
   <div id="status"></div>
   <div id="sum" class="sum"></div>
-  <div id="dlbar" hidden style="margin-bottom:12px"><button class="dl" id="dl" type="button">Download checked file</button> <span class="sm">Green and yellow stops that are ticked go in the file. Red stops are left out.</span></div>
+  <div id="dlbar" hidden style="margin-bottom:12px"><button class="dl" id="dl" type="button">Download checked file</button> <span class="sm">Strict mode: only green stops are ticked. Yellow stops (call first) are left out unless you tick them. Red stops are never driven to.</span></div>
   <div id="list"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -102,7 +102,8 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
   };
   $('pick').onclick = function () { $('file').click(); };
 
-  function classify(rec, list) { return V.classify(rec, list); }
+  var OLDFN = false;
+  function classify(rec, list, val) { return V.classify(rec, list, val); }
 
   $('file').addEventListener('change', async function (e) {
     var f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -117,8 +118,11 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
       var tail = String(v.streetAddress || '').replace(/dispatch/ig, '').replace(/\s+/g, ' ').trim();
       try {
         var list = await V.search(invoke, v.businessName + ' ' + tail, { lat: v.lat != null ? v.lat : null, lng: v.lng });
-        var r = classify(v, list);
-        RES.push({ key: keys[i], rec: v, r: r, use: r.level !== 'red' });
+        var val = null;
+        if (/^\d/.test(tail)) { try { val = await V.validate(invoke, tail); } catch (e2) { val = null; } }
+        if (list.length && typeof list[0].hours === 'undefined') OLDFN = true;
+        var r = classify(v, list, val);
+        RES.push({ key: keys[i], rec: v, r: r, use: r.level === 'green' });
       } catch (er) { say('Stopped: ' + ((er && er.message) || er)); return; }
       await sleep(200);
     }
@@ -128,7 +132,7 @@ button.dl{background:#059669;border-color:#6ee7b7;color:#fff}
   function counts() { var c = { green: 0, yellow: 0, red: 0 }; RES.forEach(function (x) { c[x.r.level]++; }); return c; }
   function render() {
     var c = counts();
-    say('Done. ' + RES.length + ' stops checked.');
+    say('Done. ' + RES.length + ' stops checked.' + (OLDFN ? ' NOTE: the "places" function in Supabase has not been updated yet, so the storefront, hours and residence checks were skipped. Redeploy it, then run this again.' : ''));
     $('sum').innerHTML = '<span class="t-green">' + c.green + ' green</span><span class="t-yellow">' + c.yellow + ' yellow, call first</span><span class="t-red">' + c.red + ' red, left out</span>';
     $('dlbar').hidden = false;
     var order = { red: 0, yellow: 1, green: 2 };

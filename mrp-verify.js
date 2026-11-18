@@ -76,25 +76,53 @@
     }
     return { status: why.length ? 'review' : 'verified', reasons: why, suggestion: sug };
   };
-  /* Used by the Address Checker page: green / yellow / red for one saved stop */
-  V.classify = function (rec, list) {
+  /* Same building? Compares the street number and the street name (ignores North/Ave/Suite and similar words). */
+  V.sameStreet = function (fileAddr, googleStreet) {
+    var A = String(fileAddr || '').split(',')[0], G = String(googleStreet || '').split(',')[0];
+    var na = (A.trim().match(/^\d+/) || [''])[0], ng = (G.trim().match(/^\d+/) || [''])[0];
+    if (!na || !ng || na !== ng) return false;
+    var drop = { n: 1, s: 1, e: 1, w: 1, ne: 1, nw: 1, se: 1, sw: 1, north: 1, south: 1, east: 1, west: 1, st: 1, rd: 1, dr: 1, ave: 1, blvd: 1, hwy: 1, ln: 1, pkwy: 1, parkway: 1, ct: 1, court: 1, fwy: 1, freeway: 1, frontage: 1, tx: 1, texas: 1, state: 1, fm: 1, farm: 1, market: 1, to: 1, road: 1, street: 1, drive: 1, avenue: 1, lane: 1, boulevard: 1, highway: 1 };
+    var toks = function (t) { return V.streetKey(String(t).replace(/\b(ste|suite|unit|apt|bldg|building)\.?\s*#?\s*[a-z0-9-]+/ig, ' ').replace(/#\s*\w+/g, ' ')).replace(/^\d+[a-z]?\s*/, '').split(' ').filter(function (w) { return w && !drop[w]; }); };
+    var ta = toks(A), tg = toks(G);
+    if (!ta.length || !tg.length) return true;
+    return ta.some(function (w) { return tg.indexOf(w) > -1; });
+  };
+  /* STRICT check used by the Address Checker page. rec = the stop in your file, list = Google Places results, val = Address Validation (USPS) answer.
+     red = do not drive there. yellow = call first. green = every check passed. */
+  V.classify = function (rec, list, val) {
     var out = { level: 'red', why: [], pick: null, top: list[0] || null };
-    var cand = list.filter(function (p) { return V.nameOk(rec.businessName, p.name); })[0];
+    var fileAddr = String(rec.streetAddress || '').replace(/dispatch/ig, ' ').replace(/\s+/g, ' ').trim();
+    if (!/^\d+/.test(fileAddr)) { out.why.push('Your file has no street address for this stop (only an area), so it cannot be verified'); return out; }
+    var named = list.filter(function (p) { return V.nameOk(rec.businessName, p.name); });
+    var cand = named.filter(function (p) { return V.sameStreet(fileAddr, p.street); })[0] || named[0];
     if (!cand) { out.why.push(list.length ? 'No Google listing with this name. Closest: ' + list[0].name + ' (' + list[0].address + ')' : 'Google found nothing'); return out; }
     out.pick = cand;
     var hard = [];
     if (cand.bad) hard.push('Google lists it as a ' + cand.bad.replace(/_/g, ' '));
-    if (cand.status && cand.status !== 'OPERATIONAL') hard.push('Google says it is ' + cand.status.replace(/_/g, ' ').toLowerCase());
+    if (cand.status !== 'OPERATIONAL') hard.push(cand.status ? 'Google says it is ' + cand.status.replace(/_/g, ' ').toLowerCase() : 'Google does not say that it is open for business');
     if (V.mail(cand)) hard.push('Looks like a mailbox store or P.O. box');
-    if (!cand.street) hard.push('No street address');
-    if (hard.length) { out.why = hard; return out; }
+    if (!cand.street) hard.push('Google has no street address for it');
+    else if (!V.sameStreet(fileAddr, cand.street)) hard.push('Google has this business at a different address: ' + cand.address + ' (your file: ' + fileAddr.split(',')[0] + ')');
+    if (cand.serviceArea) hard.push('Google lists it as a service-area business with no storefront to visit');
     var soft = [];
+    if (val && val.mode === 'validation') {
+      if (val.cmra) hard.push('The US Postal Service lists this address as a mailbox / mail-receiving store');
+      if (val.vacant) hard.push('The US Postal Service lists this address as vacant');
+      if (val.poBox) hard.push('This is a P.O. box');
+      if (val.residential) hard.push('The US Postal Service lists this address as a residence, not a business');
+      if (val.dpv === 'N' || !val.dpv) hard.push('The US Postal Service does not recognize this delivery address');
+      else if (val.dpv !== 'Y') soft.push('The building is confirmed but the suite or unit is not');
+      if (!val.complete) soft.push('Google says the address is incomplete');
+    } else soft.push('The US Postal Service check was not available for this address');
     if (!cand.plumber) soft.push('Not listed as a plumber on Google (' + (cand.type || 'business').replace(/_/g, ' ') + ')');
     var fp = V.digits(rec.phone), gp = V.digits(cand.phone);
     if (!gp) soft.push('Google has no phone number for it');
     else if (!fp) soft.push('No phone in your file to compare');
     else if (fp !== gp) soft.push('Phone differs: file ' + rec.phone + ', Google ' + cand.phone);
-    if (!cand.website && !(cand.ratings >= 1)) soft.push('No website and no reviews');
+    if (!cand.website) soft.push('No website on Google');
+    if (!(cand.ratings >= 5)) soft.push('Only ' + (cand.ratings || 0) + ' Google review' + (cand.ratings === 1 ? '' : 's'));
+    if (cand.hours === false) soft.push('No business hours listed on Google');
+    if (hard.length) { out.why = hard; return out; }
     out.level = soft.length ? 'yellow' : 'green'; out.why = soft; return out;
   };
   window.MRPVerify = V;

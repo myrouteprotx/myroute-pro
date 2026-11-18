@@ -24,7 +24,7 @@ async function searchPlaces(key: string, q: string, body: any) {
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
-        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.types,places.primaryType,places.businessStatus,places.nationalPhoneNumber,places.websiteUri,places.userRatingCount",
+        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.types,places.primaryType,places.businessStatus,places.nationalPhoneNumber,places.websiteUri,places.userRatingCount,places.pureServiceAreaBusiness,places.regularOpeningHours",
       },
       body: JSON.stringify(payload),
     });
@@ -52,6 +52,8 @@ async function searchPlaces(key: string, q: string, body: any) {
         phone: p.nationalPhoneNumber || "",
         website: p.websiteUri || "",
         ratings: p.userRatingCount ?? 0,
+        serviceArea: !!p.pureServiceAreaBusiness,   // Google says it has no storefront customers can visit
+        hours: !!(p.regularOpeningHours && (p.regularOpeningHours.periods || []).length),
       };
     });
     return { places };
@@ -89,6 +91,8 @@ async function validateAddress(key: string, address: string) {
     dpv: usps.dpvConfirmation || "",
     cmra: usps.dpvCmra === "Y",
     vacant: usps.dpvVacant === "Y",
+    residential: res.metadata?.residential === true,
+    poBox: res.metadata?.poBox === true,
     missing,
     formatted,
     street: lines.join(", "),
