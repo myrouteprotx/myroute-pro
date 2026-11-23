@@ -710,6 +710,11 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     /* Neon border around the top bar with the Route Tracker / Route Map / Report Studio tabs */
     #libPasteZone:empty::before { content: attr(data-ph); color: #93a3b9; }
     .main-nav { border: 3px solid #ff7b00 !important; border-radius: 22px; box-shadow: 0 0 10px #ff7b00, 0 0 26px rgba(255,123,0,.7), inset 0 0 14px rgba(255,123,0,.30) !important; }
+    .rep-note { display: block; width: 100%; min-width: 11rem; box-sizing: border-box; font-size: 11px; line-height: 1.45; font-style: italic; color: #334155; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 8px; resize: vertical; font-family: inherit; }
+    .rep-note:focus { outline: 2px solid #6366f1; outline-offset: 0; border-color: #6366f1; }
+    .rep-note-save { margin-top: 6px; font-size: 11px; font-weight: 800; color: #ffffff; background: #4f46e5; border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+    .rep-note-save:hover { background: #4338ca; }
+    @media print { .rep-note { border: 0 !important; padding: 0 !important; resize: none; background: transparent !important; overflow: visible; } .rep-note-save { display: none !important; } }
     @media print { .main-nav { border: 0 !important; box-shadow: none !important; } }
 
     /* Brighter white text and category labels on the dark screens */
@@ -3972,6 +3977,53 @@ Add New Stop
       queueSettingsPush(settings);
     }
 
+    // ----- Report notes: an always-open box in the Notes column, with a Save button that appears when you change the text -----
+    function repNoteBox(kind, id, notes) {
+      const k = escapeHtml(kind), i = escapeHtml(id);
+      return `<textarea class="rep-note" data-nk="${k}" data-nid="${i}" data-orig="${escapeHtml(notes || '')}" rows="2" placeholder="Add a note..." aria-label="Notes" oninput="repNoteInput(this)">${escapeHtml(notes || '')}</textarea>`
+        + `<button type="button" class="rep-note-save no-print" style="display:none" onclick="repNoteSave(this)">Save note</button>`;
+    }
+    function repNoteSize(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight + 2) + 'px'; }
+    function repNoteInput(el) {
+      repNoteSize(el);
+      const dirty = el.value !== el.dataset.orig;
+      el.dataset.dirty = dirty ? '1' : '';
+      const b = el.nextElementSibling;
+      if (b && b.classList.contains('rep-note-save')) b.style.display = dirty ? 'inline-block' : 'none';
+    }
+    function repNoteSave(btn) {
+      const el = btn.previousElementSibling;
+      if (!el) return;
+      const kind = el.dataset.nk, id = el.dataset.nid, value = el.value.trim();
+      // keep what you typed in the other notes while the report redraws
+      el.dataset.dirty = ''; el.dataset.orig = value;
+      if (kind === 'visit') {
+        const v = visits.find(x => x.id === id); if (!v) return;
+        if ((v.notes || '') !== value) { v.notes = value; saveRecords(); }
+      } else {
+        const c = leadCfg(kind); const f = leadFind(kind, id); if (!f) return;
+        if ((f.notes || '') !== value) { f.notes = value; c.write(f); c.after(); }
+      }
+      btn.style.display = 'none';
+      showToast('Note saved');
+    }
+    function repNoteStash() {
+      const m = {};
+      document.querySelectorAll('textarea.rep-note[data-dirty="1"]').forEach(t => { m[t.dataset.nk + ':' + t.dataset.nid] = t.value; });
+      return m;
+    }
+    function repNoteRestore(m) {
+      document.querySelectorAll('textarea.rep-note').forEach(t => {
+        const key = t.dataset.nk + ':' + t.dataset.nid;
+        if (Object.prototype.hasOwnProperty.call(m, key) && m[key] !== t.dataset.orig) { t.value = m[key]; repNoteInput(t); }
+        else repNoteSize(t);
+      });
+    }
+    ['renderVibrantReport', 'renderReportFires', 'renderReportWaters', 'renderReportPcws'].forEach(n => {
+      const f = window[n]; if (typeof f !== 'function') return;
+      window[n] = function () { const st = repNoteStash(); const r = f.apply(this, arguments); repNoteRestore(st); return r; };
+    });
+
     function showToast(message) {
       if (undoAwaitLabel) { undoAwaitLabel.label = String(message || '').slice(0, 70); undoAwaitLabel = null; renderUndoBtn(); }
       const toast = document.getElementById('toastNotification');
@@ -6898,7 +6950,7 @@ Add New Stop
                 <div class="text-[10px] text-indigo-700 font-bold">Via ${escapeHtml(item.preferredContact || 'Phone')} (${item.priority || 'Med'})</div>
               </td>
               <td class="py-3 px-4 max-w-xs">
-                ${item.notes ? `<p class="text-[11px] text-slate-700 italic">"${escapeHtml(item.notes)}"</p>` : '<span class="text-slate-400 italic text-[10px]">No specific notes</span>'}
+                ${repNoteBox('visit', item.id, item.notes)}
                 ${getPrevNoteHtml(item)}
                 ${(item.calls && item.calls.length) ? `<div class="text-[10px] text-emerald-700 font-bold mt-1">Calls: ${escapeHtml(item.calls.map(c => formatCallTime(c.at)).join('; '))}</div>` : ''}
               </td>
@@ -10834,7 +10886,7 @@ Add New Stop
           </td>
           <td class="py-3 px-4 whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">${escapeHtml(f.visitDate || '—')}</span></td>
           <td class="py-3 px-4"><span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold" style="background:#ffe8e1;color:#9c3718;">${escapeHtml(f.outcome || 'No outcome yet')}</span></td>
-          <td class="py-3 px-4 max-w-xs">${f.notes ? `<p class="text-[11px] text-slate-700 italic">"${escapeHtml(f.notes)}"</p>` : '<span class="text-slate-400 italic text-[10px]">No notes</span>'}</td>
+          <td class="py-3 px-4 max-w-xs">${repNoteBox('fire', f.id, f.notes)}</td>
         </tr>`).join('');
     }
 
@@ -11256,7 +11308,7 @@ Add New Stop
           </td>
           <td class="py-3 px-4 whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">${escapeHtml(f.visitDate || '—')}</span></td>
           <td class="py-3 px-4"><span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold" style="background:#dfedff;color:#043d88;">${escapeHtml(f.outcome || 'No outcome yet')}</span></td>
-          <td class="py-3 px-4 max-w-xs">${f.notes ? `<p class="text-[11px] text-slate-700 italic">"${escapeHtml(f.notes)}"</p>` : '<span class="text-slate-400 italic text-[10px]">No notes</span>'}</td>
+          <td class="py-3 px-4 max-w-xs">${repNoteBox('water', f.id, f.notes)}</td>
         </tr>`).join('');
     }
 
@@ -11678,7 +11730,7 @@ Add New Stop
           </td>
           <td class="py-3 px-4 whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">${escapeHtml(f.visitDate || '—')}</span></td>
           <td class="py-3 px-4"><span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold" style="background:#d0fbf5;color:#046155;">${escapeHtml(f.outcome || 'No outcome yet')}</span></td>
-          <td class="py-3 px-4 max-w-xs">${f.notes ? `<p class="text-[11px] text-slate-700 italic">"${escapeHtml(f.notes)}"</p>` : '<span class="text-slate-400 italic text-[10px]">No notes</span>'}</td>
+          <td class="py-3 px-4 max-w-xs">${repNoteBox('pcw', f.id, f.notes)}</td>
         </tr>`).join('');
     }
 
