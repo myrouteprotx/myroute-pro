@@ -6792,7 +6792,7 @@ Add New Stop
       const ids = new Set((stops || []).map(s => s.id));
       Array.from(repSel).forEach(id => { if (!ids.has(id)) repSel.delete(id); });
       const hiddenCount = weekly ? visits.filter(v => hiddenInWeek(v, wk) && ((v.visitDate && v.visitDate >= getWeekRange(wk)[0] && v.visitDate <= getWeekRange(wk)[1]) || v.includeInWeek === wk)).length : visits.filter(v => hiddenInWeek(v, wk) && v.visitDate === wk).length;
-      const show = ((stops || []).length > 0 || hiddenCount > 0);
+      const show = weekly && ((stops || []).length > 0 || hiddenCount > 0);
       bar.classList.toggle('hidden', !show);
       bar.classList.toggle('flex', show);
       const rb = document.getElementById('repRestoreBtn');
@@ -6850,7 +6850,7 @@ Add New Stop
       if (reportCadence === 'daily') {
         const selectedDate = document.getElementById('repDateSelector').value || todayString;
         return {
-          stops: clusterGroups(visits.filter(v => v.visitDate === selectedDate && !hiddenInWeek(v, selectedDate))),
+          stops: clusterGroups(visits.filter(v => v.visitDate === selectedDate)),
           periodLabel: selectedDate,
           titleText: 'Daily Field Operations Report',
           badgeText: 'MyRoute Pro Daily Field Briefing'
@@ -6903,7 +6903,7 @@ Add New Stop
         : 'Weekly Consolidated Route Manifest & Outreach';
 
       document.getElementById('repTableCountPill').textContent = `${stops.length} stop${stops.length === 1 ? '' : 's'} (${periodLabel})`;
-      const repWeekly = true; // checkboxes show in both the weekly and the daily report
+      const repWeekly = reportCadence === 'weekly'; // checkboxes are on the weekly report only; the notes boxes are on both
       const reportTbody = document.getElementById('repTableBody');
 
       if (stops.length === 0) {
