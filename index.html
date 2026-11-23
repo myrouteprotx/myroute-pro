@@ -712,8 +712,9 @@ body.mrp-modal-open *{animation-play-state:paused !important}
     .main-nav { border: 3px solid #ff7b00 !important; border-radius: 22px; box-shadow: 0 0 10px #ff7b00, 0 0 26px rgba(255,123,0,.7), inset 0 0 14px rgba(255,123,0,.30) !important; }
     .rep-note { display: block; width: 100%; min-width: 11rem; box-sizing: border-box; font-size: 11px; line-height: 1.45; font-style: italic; color: #334155; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 8px; resize: vertical; font-family: inherit; }
     .rep-note:focus { outline: 2px solid #6366f1; outline-offset: 0; border-color: #6366f1; }
-    .rep-note-save { margin-top: 6px; font-size: 11px; font-weight: 800; color: #ffffff; background: #4f46e5; border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+    .rep-note-save { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 800; color: #ffffff; background: #4f46e5; border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
     .rep-note-save:hover { background: #4338ca; }
+    .rep-note-save.dirty { background: #059669; box-shadow: 0 0 0 2px rgba(5,150,105,.35); }
     @media print { .rep-note { border: 0 !important; padding: 0 !important; resize: none; background: transparent !important; overflow: visible; } .rep-note-save { display: none !important; } }
     @media print { .main-nav { border: 0 !important; box-shadow: none !important; } }
 
@@ -3981,7 +3982,7 @@ Add New Stop
     function repNoteBox(kind, id, notes) {
       const k = escapeHtml(kind), i = escapeHtml(id);
       return `<textarea class="rep-note" data-nk="${k}" data-nid="${i}" data-orig="${escapeHtml(notes || '')}" rows="2" placeholder="Add a note..." aria-label="Notes" oninput="repNoteInput(this)">${escapeHtml(notes || '')}</textarea>`
-        + `<button type="button" class="rep-note-save no-print" style="display:none" onclick="repNoteSave(this)">Save note</button>`;
+        + `<button type="button" class="rep-note-save no-print" onclick="repNoteSave(this)">Save note</button>`;
     }
     function repNoteSize(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight + 2) + 'px'; }
     function repNoteInput(el) {
@@ -3989,7 +3990,7 @@ Add New Stop
       const dirty = el.value !== el.dataset.orig;
       el.dataset.dirty = dirty ? '1' : '';
       const b = el.nextElementSibling;
-      if (b && b.classList.contains('rep-note-save')) b.style.display = dirty ? 'inline-block' : 'none';
+      if (b && b.classList.contains('rep-note-save')) b.classList.toggle('dirty', dirty);
     }
     function repNoteSave(btn) {
       const el = btn.previousElementSibling;
@@ -4004,7 +4005,7 @@ Add New Stop
         const c = leadCfg(kind); const f = leadFind(kind, id); if (!f) return;
         if ((f.notes || '') !== value) { f.notes = value; c.write(f); c.after(); }
       }
-      btn.style.display = 'none';
+      btn.classList.remove('dirty');
       showToast('Note saved');
     }
     function repNoteStash() {
@@ -6779,16 +6780,19 @@ Add New Stop
     const repSel = new Set();
     let repSelWeek = '';
     function repWeekNow() { return (document.getElementById('repWeekSelector') || {}).value || getISOWeekString(); }
+    // The report being shown: its week (weekly report) or its date (daily report). Removed visits are remembered per report.
+    function repKeyNow() { return reportCadence === 'daily' ? ((document.getElementById('repDateSelector') || {}).value || todayString) : repWeekNow(); }
+    function repPeriodWord() { return reportCadence === 'daily' ? "this day's report" : "this week's report"; }
     function repSelRender(stops) {
       const bar = document.getElementById('repSelBar');
       if (!bar) return;
       const weekly = reportCadence === 'weekly';
-      const wk = repWeekNow();
+      const wk = repKeyNow();
       if (repSelWeek !== wk) { repSel.clear(); repSelWeek = wk; }
       const ids = new Set((stops || []).map(s => s.id));
       Array.from(repSel).forEach(id => { if (!ids.has(id)) repSel.delete(id); });
-      const hiddenCount = weekly ? visits.filter(v => hiddenInWeek(v, wk) && ((v.visitDate && v.visitDate >= getWeekRange(wk)[0] && v.visitDate <= getWeekRange(wk)[1]) || v.includeInWeek === wk)).length : 0;
-      const show = weekly && ((stops || []).length > 0 || hiddenCount > 0);
+      const hiddenCount = weekly ? visits.filter(v => hiddenInWeek(v, wk) && ((v.visitDate && v.visitDate >= getWeekRange(wk)[0] && v.visitDate <= getWeekRange(wk)[1]) || v.includeInWeek === wk)).length : visits.filter(v => hiddenInWeek(v, wk) && v.visitDate === wk).length;
+      const show = ((stops || []).length > 0 || hiddenCount > 0);
       bar.classList.toggle('hidden', !show);
       bar.classList.toggle('flex', show);
       const rb = document.getElementById('repRestoreBtn');
@@ -6815,7 +6819,7 @@ Add New Stop
     }
     function repRemoveSelected() {
       if (!repSel.size) return;
-      const wk = repWeekNow();
+      const wk = repKeyNow();
       let n = 0;
       repSel.forEach(id => {
         const v = visits.find(x => x.id === id);
@@ -6826,10 +6830,10 @@ Add New Stop
       repSel.clear();
       if (!n) { repSelSync(); return; }
       saveRecords();
-      showToast('Removed ' + n + ' visit' + (n === 1 ? '' : 's') + " from this week's report. They are still saved in your Route Tracker.");
+      showToast('Removed ' + n + ' visit' + (n === 1 ? '' : 's') + " from " + repPeriodWord() + ". They are still saved in your Route Tracker.");
     }
     function repRestoreRemoved() {
-      const wk = repWeekNow();
+      const wk = repKeyNow();
       let n = 0;
       visits.forEach(v => {
         if (!hiddenInWeek(v, wk)) return;
@@ -6839,14 +6843,14 @@ Add New Stop
       });
       if (!n) return;
       saveRecords();
-      showToast('Put ' + n + ' visit' + (n === 1 ? '' : 's') + " back in this week's report");
+      showToast('Put ' + n + ' visit' + (n === 1 ? '' : 's') + " back in " + repPeriodWord());
     }
 
     function getActiveReportStops() {
       if (reportCadence === 'daily') {
         const selectedDate = document.getElementById('repDateSelector').value || todayString;
         return {
-          stops: clusterGroups(visits.filter(v => v.visitDate === selectedDate)),
+          stops: clusterGroups(visits.filter(v => v.visitDate === selectedDate && !hiddenInWeek(v, selectedDate))),
           periodLabel: selectedDate,
           titleText: 'Daily Field Operations Report',
           badgeText: 'MyRoute Pro Daily Field Briefing'
@@ -6899,14 +6903,14 @@ Add New Stop
         : 'Weekly Consolidated Route Manifest & Outreach';
 
       document.getElementById('repTableCountPill').textContent = `${stops.length} stop${stops.length === 1 ? '' : 's'} (${periodLabel})`;
-      const repWeekly = reportCadence === 'weekly';
+      const repWeekly = true; // checkboxes show in both the weekly and the daily report
       const reportTbody = document.getElementById('repTableBody');
 
       if (stops.length === 0) {
         reportTbody.innerHTML = `
           <tr>
             <td colspan="6" class="py-8 text-center text-slate-500 italic">
-              No field visits shown for ${periodLabel}. Choose another date/week above or log stops via the Route Tracker tab.${repWeekly && visits.some(v => hiddenInWeek(v, repWeekNow())) ? ' Visits you removed from this week can be brought back with Restore removed.' : ''}
+              No field visits shown for ${periodLabel}. Choose another date/week above or log stops via the Route Tracker tab.${repWeekly && visits.some(v => hiddenInWeek(v, repKeyNow())) ? ' Visits you removed from this report can be brought back with Restore removed.' : ''}
             </td>
           </tr>
         `;
