@@ -2499,6 +2499,16 @@ Add New Stop
             </span>
           </div>
 
+          <!-- Weekly report only: tick visits and remove them from this week's report (the visits stay in the Route Tracker) -->
+          <div id="repSelBar" class="no-print hidden flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
+              <input type="checkbox" id="repSelAll" onchange="repSelAll(this.checked)" class="w-5 h-5 accent-pink-600"> Select all
+            </label>
+            <button type="button" id="repRemoveBtn" onclick="repRemoveSelected()" disabled class="px-3.5 py-2 rounded-xl text-xs font-black text-white bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed">Remove selected</button>
+            <button type="button" id="repRestoreBtn" onclick="repRestoreRemoved()" class="hidden px-3.5 py-2 rounded-xl text-xs font-black text-slate-700 bg-white border border-slate-300 hover:bg-slate-100">Restore removed</button>
+            <span id="repSelHint" class="text-[11px] font-semibold text-slate-500">Tick visits, then Remove selected. They stay saved in your Route Tracker.</span>
+          </div>
+
           <div class="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm">
             <table class="stack w-full text-left text-xs border-collapse">
               <thead>
@@ -4104,7 +4114,10 @@ Add New Stop
       let color = 'text-slate-400 hover:text-pink-300';
       let icon = 'calendar-plus';
       let title = "Add this visit to this week's report";
-      if (natural) {
+      if (hiddenInWeek(item, wk)) {
+        color = 'text-amber-400';
+        title = "Removed from this week's report. Tap to add it back.";
+      } else if (natural) {
         color = 'text-indigo-300';
         icon = 'calendar-check';
         title = "Already in this week's report";
@@ -4120,6 +4133,13 @@ Add New Stop
       const item = visits.find(v => v.id === id);
       if (!item) return;
       const wk = getISOWeekString();
+      if (hiddenInWeek(item, wk)) {
+        item.hideFromWeeks = item.hideFromWeeks.filter(w => w !== wk);
+        if (!item.hideFromWeeks.length) delete item.hideFromWeeks;
+        saveRecords();
+        showToast(`Added ${item.businessName} back to this week's report`);
+        return;
+      }
       if (visitInWeek(item, wk)) {
         showToast(`${item.businessName} is already in this week's report`);
         return;
@@ -6702,6 +6722,74 @@ Add New Stop
       showToast(kind === 'add' ? 'Added to the group' : 'Removed from the group');
     }
 
+    // ----- Weekly report: tick visits and remove them from that week's report (the visit itself is kept) -----
+    function hiddenInWeek(v, wk) { return !!(v && Array.isArray(v.hideFromWeeks) && v.hideFromWeeks.indexOf(wk) >= 0); }
+    const repSel = new Set();
+    let repSelWeek = '';
+    function repWeekNow() { return (document.getElementById('repWeekSelector') || {}).value || getISOWeekString(); }
+    function repSelRender(stops) {
+      const bar = document.getElementById('repSelBar');
+      if (!bar) return;
+      const weekly = reportCadence === 'weekly';
+      const wk = repWeekNow();
+      if (repSelWeek !== wk) { repSel.clear(); repSelWeek = wk; }
+      const ids = new Set((stops || []).map(s => s.id));
+      Array.from(repSel).forEach(id => { if (!ids.has(id)) repSel.delete(id); });
+      const hiddenCount = weekly ? visits.filter(v => hiddenInWeek(v, wk) && ((v.visitDate && v.visitDate >= getWeekRange(wk)[0] && v.visitDate <= getWeekRange(wk)[1]) || v.includeInWeek === wk)).length : 0;
+      const show = weekly && ((stops || []).length > 0 || hiddenCount > 0);
+      bar.classList.toggle('hidden', !show);
+      bar.classList.toggle('flex', show);
+      const rb = document.getElementById('repRestoreBtn');
+      rb.classList.toggle('hidden', hiddenCount === 0);
+      rb.textContent = 'Restore removed (' + hiddenCount + ')';
+      repSelSync();
+    }
+    function repSelSync() {
+      const boxes = Array.from(document.querySelectorAll('#repTableBody input.rep-cb'));
+      boxes.forEach(b => { b.checked = repSel.has(b.dataset.id); });
+      const all = document.getElementById('repSelAll');
+      if (all) {
+        const n = boxes.filter(b => b.checked).length;
+        all.checked = boxes.length > 0 && n === boxes.length;
+        all.indeterminate = n > 0 && n < boxes.length;
+      }
+      const btn = document.getElementById('repRemoveBtn');
+      if (btn) { btn.disabled = repSel.size === 0; btn.textContent = repSel.size ? 'Remove selected (' + repSel.size + ')' : 'Remove selected'; }
+    }
+    function repSelToggle(id, on) { if (on) repSel.add(id); else repSel.delete(id); repSelSync(); }
+    function repSelAll(on) {
+      document.querySelectorAll('#repTableBody input.rep-cb').forEach(b => { if (on) repSel.add(b.dataset.id); else repSel.delete(b.dataset.id); });
+      repSelSync();
+    }
+    function repRemoveSelected() {
+      if (!repSel.size) return;
+      const wk = repWeekNow();
+      let n = 0;
+      repSel.forEach(id => {
+        const v = visits.find(x => x.id === id);
+        if (!v || hiddenInWeek(v, wk)) return;
+        v.hideFromWeeks = (Array.isArray(v.hideFromWeeks) ? v.hideFromWeeks : []).concat(wk);
+        n++;
+      });
+      repSel.clear();
+      if (!n) { repSelSync(); return; }
+      saveRecords();
+      showToast('Removed ' + n + ' visit' + (n === 1 ? '' : 's') + " from this week's report. They are still saved in your Route Tracker.");
+    }
+    function repRestoreRemoved() {
+      const wk = repWeekNow();
+      let n = 0;
+      visits.forEach(v => {
+        if (!hiddenInWeek(v, wk)) return;
+        v.hideFromWeeks = v.hideFromWeeks.filter(w => w !== wk);
+        if (!v.hideFromWeeks.length) delete v.hideFromWeeks;
+        n++;
+      });
+      if (!n) return;
+      saveRecords();
+      showToast('Put ' + n + ' visit' + (n === 1 ? '' : 's') + " back in this week's report");
+    }
+
     function getActiveReportStops() {
       if (reportCadence === 'daily') {
         const selectedDate = document.getElementById('repDateSelector').value || todayString;
@@ -6715,7 +6803,7 @@ Add New Stop
         const selectedWeek = document.getElementById('repWeekSelector').value || getISOWeekString();
         const [startDate, endDate] = getWeekRange(selectedWeek);
         return {
-          stops: clusterGroups(visits.filter(v => (v.visitDate && v.visitDate >= startDate && v.visitDate <= endDate) || v.includeInWeek === selectedWeek)
+          stops: clusterGroups(visits.filter(v => ((v.visitDate && v.visitDate >= startDate && v.visitDate <= endDate) || v.includeInWeek === selectedWeek) && !hiddenInWeek(v, selectedWeek))
                        .sort((a, b) => (a.visitDate || '').localeCompare(b.visitDate || ''))),
           periodLabel: `${selectedWeek} (${startDate} to ${endDate})`,
           titleText: 'Weekly Field Route Performance Report',
@@ -6759,13 +6847,14 @@ Add New Stop
         : 'Weekly Consolidated Route Manifest & Outreach';
 
       document.getElementById('repTableCountPill').textContent = `${stops.length} stop${stops.length === 1 ? '' : 's'} (${periodLabel})`;
+      const repWeekly = reportCadence === 'weekly';
       const reportTbody = document.getElementById('repTableBody');
 
       if (stops.length === 0) {
         reportTbody.innerHTML = `
           <tr>
             <td colspan="6" class="py-8 text-center text-slate-500 italic">
-              No field visits logged for ${periodLabel}. Choose another date/week above or log stops via the Route Tracker tab.
+              No field visits shown for ${periodLabel}. Choose another date/week above or log stops via the Route Tracker tab.${repWeekly && visits.some(v => hiddenInWeek(v, repWeekNow())) ? ' Visits you removed from this week can be brought back with Restore removed.' : ''}
             </td>
           </tr>
         `;
@@ -6776,10 +6865,15 @@ Add New Stop
           return `
             <tr data-rvid="${escapeHtml(item.id)}" title="Click to open and edit this visit" class="hover:bg-indigo-50/40 transition">
               <td class="py-3 px-4">
+                <div class="flex items-start gap-3">
+                  ${repWeekly ? `<label class="no-print shrink-0 p-1 -m-1 cursor-pointer" title="Select this visit"><input type="checkbox" class="rep-cb w-5 h-5 accent-pink-600" data-id="${escapeHtml(item.id)}" ${repSel.has(item.id) ? 'checked' : ''} onchange="repSelToggle(this.dataset.id, this.checked)" aria-label="Select ${escapeHtml(item.businessName)} to remove from this week's report"></label>` : ''}
+                  <div class="min-w-0 flex-1">
                 <div class="font-black text-slate-900 text-xs">${idx + 1}. ${escapeHtml(item.businessName)}</div>
                 ${groupChipLight(item, stops)}
                 ${managedItems(item).length ? `<div class="prop-incell mt-1.5"><div class="text-[10px] text-slate-600 font-bold mb-1">Manages:</div>${managedCards(item, 'light')}</div>` : ''}
                 ${item.streetAddress ? `<div class="text-[10px] text-slate-500 truncate max-w-xs mt-0.5">📍 ${escapeHtml(item.streetAddress)}</div>` : ''}
+                  </div>
+                </div>
               </td>
               <td class="py-3 px-4">
                 <div class="font-extrabold text-slate-800 text-xs">${escapeHtml(item.clientName)}</div>
@@ -6814,6 +6908,7 @@ Add New Stop
         }).join('');
       }
 
+      repSelRender(stops);
       renderReportFires();
       renderReportWaters();
       renderReportPcws();
